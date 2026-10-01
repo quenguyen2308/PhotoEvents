@@ -16,4 +16,8 @@
     <color name="colorOnSecondary">#4A1B0C</color>
     <color name="colorSecondaryContainer">#712B13</color>
     <color name="colorOnSecondaryContainer">#FAECE7</color>
+
+    <color name="badge_date_bg">#E62E2D29</color>
+    <color name="badge_date_text">#EDEBE4</color>
+    <color name="amber_primary">#FBBF24</color>
 </resources>

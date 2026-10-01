@@ -58,9 +58,11 @@ class EventDetailActivity : AppCompatActivity() {
         ItemTouchHelper(ImageDragCallback(adapter) { persistImageOrder() })
             .attachToRecyclerView(findViewById(R.id.recyclerImages))
 
+        findViewById<android.view.View>(R.id.btnBack)?.setOnClickListener { finish() }
+
         findViewById<TextView>(R.id.txtEventDate).setOnClickListener { showDatePicker() }
 
-        findViewById<Button>(R.id.btnAddImages).setOnClickListener {
+        findViewById<android.view.View>(R.id.btnAddImages).setOnClickListener {
             pickImages.launch(androidx.activity.result.PickVisualMediaRequest(
                 ActivityResultContracts.PickVisualMedia.ImageOnly
             ))
@@ -72,9 +74,11 @@ class EventDetailActivity : AppCompatActivity() {
                     if (eventWithImages == null) { finish(); return@collect }
                     findViewById<TextView>(R.id.txtTitle).text = eventWithImages.event.title
                     findViewById<TextView>(R.id.txtNote).text = eventWithImages.event.note
+                    findViewById<TextView>(R.id.txtNote).visibility =
+                        if (eventWithImages.event.note.isBlank()) android.view.View.GONE else android.view.View.VISIBLE
                     currentEventDate = eventWithImages.event.eventDate
                     findViewById<TextView>(R.id.txtEventDate).text =
-                        "📅 ${formatDate(currentEventDate)} · Đổi ngày"
+                        "${formatDate(currentEventDate)} · Đổi ngày"
                     explicitCoverId = eventWithImages.event.coverImageId
                     adapter.submitList(eventWithImages.visibleImages)
                     adapter.setCover(eventWithImages.coverImage?.id)

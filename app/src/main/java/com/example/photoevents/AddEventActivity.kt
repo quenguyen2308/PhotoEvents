@@ -41,6 +41,7 @@ class AddEventActivity : AppCompatActivity() {
     private lateinit var previewContainer: LinearLayout
     private lateinit var btnSave: Button
     private lateinit var txtEventDate: TextView
+    private lateinit var txtPickedCount: TextView
     private var isSaving = false
     // Mặc định hôm nay — được đưa về 00:00 để chỉ mang ý nghĩa "ngày", không lẫn giờ/phút/giây
     private var selectedDate: Long = normalizeToMidnight(System.currentTimeMillis())
@@ -58,11 +59,15 @@ class AddEventActivity : AppCompatActivity() {
         previewContainer = findViewById(R.id.previewContainer)
         btnSave = findViewById(R.id.btnSave)
         txtEventDate = findViewById(R.id.txtEventDate)
+        txtPickedCount = findViewById(R.id.txtPickedCount)
         txtEventDate.text = formatDate(selectedDate)
+        updatePickedCount()
 
-        findViewById<Button>(R.id.btnPickDate).setOnClickListener { showDatePicker() }
+        findViewById<android.view.View>(R.id.btnBack)?.setOnClickListener { finish() }
 
-        findViewById<Button>(R.id.btnPickImage).setOnClickListener {
+        findViewById<android.view.View>(R.id.btnPickDate).setOnClickListener { showDatePicker() }
+
+        findViewById<android.view.View>(R.id.btnPickImage).setOnClickListener {
             pickImages.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
 
@@ -117,6 +122,14 @@ class AddEventActivity : AppCompatActivity() {
     private fun formatDate(millis: Long): String =
         SimpleDateFormat("dd/MM/yyyy", Locale("vi", "VN")).format(millis)
 
+    private fun updatePickedCount() {
+        txtPickedCount.text = if (pickedLocalPaths.isEmpty()) {
+            "Tối đa 10 ảnh"
+        } else {
+            "Đã chọn ${pickedLocalPaths.size} ảnh"
+        }
+    }
+
     private fun copyAndPreview(uris: List<Uri>) {
         lifecycleScope.launch {
             uris.forEach { uri ->
@@ -135,15 +148,60 @@ class AddEventActivity : AppCompatActivity() {
     }
 
     private fun addPreviewThumbnail(path: String) {
-        val size = (96 * resources.displayMetrics.density).toInt()
+        val size = (88 * resources.displayMetrics.density).toInt()
         val margin = (4 * resources.displayMetrics.density).toInt()
-        val imageView = ImageView(this).apply {
+        val radius = 14 * resources.displayMetrics.density
+
+        val card = com.google.android.material.card.MaterialCardView(this).apply {
             layoutParams = LinearLayout.LayoutParams(size, size).apply {
                 setMargins(margin, margin, margin, margin)
             }
+            this.radius = radius
+            cardElevation = 0f
+            strokeWidth = (1 * resources.displayMetrics.density).toInt()
+            setStrokeColor(com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOutlineVariant))
+        }
+
+        val frame = android.widget.FrameLayout(this).apply {
+            layoutParams = android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        val imageView = ImageView(this).apply {
+            layoutParams = android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+            )
             scaleType = ImageView.ScaleType.CENTER_CROP
         }
         Glide.with(this).load(path).centerCrop().into(imageView)
-        previewContainer.addView(imageView)
+        frame.addView(imageView)
+
+        val btnDelete = android.widget.ImageButton(this).apply {
+            val btnSize = (26 * resources.displayMetrics.density).toInt()
+            val btnMargin = (4 * resources.displayMetrics.density).toInt()
+            layoutParams = android.widget.FrameLayout.LayoutParams(btnSize, btnSize).apply {
+                gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                setMargins(btnMargin, btnMargin, btnMargin, btnMargin)
+            }
+            setBackgroundResource(R.drawable.bg_circle_button)
+            setImageResource(R.drawable.ic_close)
+            val pad = (4 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, pad)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setColorFilter(android.graphics.Color.WHITE)
+            contentDescription = "Xoá ảnh này"
+            setOnClickListener {
+                pickedLocalPaths.remove(path)
+                previewContainer.removeView(card)
+                updatePickedCount()
+            }
+        }
+        frame.addView(btnDelete)
+        card.addView(frame)
+        previewContainer.addView(card)
+        updatePickedCount()
     }
 }

@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity() {
             }
         }.also { callback -> backPressedCallback = callback })
 
-        findViewById<FloatingActionButton>(R.id.fabAdd).setOnClickListener {
+        findViewById<View>(R.id.fabAdd).setOnClickListener {
             startActivity(Intent(this, AddEventActivity::class.java))
         }
 

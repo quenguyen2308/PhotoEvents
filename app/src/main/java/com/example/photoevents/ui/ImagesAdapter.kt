@@ -1,12 +1,18 @@
 package com.example.photoevents.ui
 
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
+import androidx.core.content.ContextCompat
+import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.color.MaterialColors
 import com.example.photoevents.R
 import com.example.photoevents.data.EventImage
 
@@ -54,6 +60,7 @@ class ImagesAdapter(
     override fun getItemCount() = items.size
 
     class VH(view: View) : RecyclerView.ViewHolder(view) {
+        val card: MaterialCardView = view.findViewById(R.id.cardContainer)
         val img: ImageView = view.findViewById(R.id.imgThumb)
         val btnCover: ImageButton = view.findViewById(R.id.btnCover)
         val btnDelete: ImageButton = view.findViewById(R.id.btnDelete)
@@ -70,7 +77,30 @@ class ImagesAdapter(
         Glide.with(holder.img).load(src).centerCrop().into(holder.img)
 
         val isCover = image.id == coverImageId
-        holder.btnCover.setImageResource(if (isCover) R.drawable.ic_star else R.drawable.ic_star_outline)
+        val context = holder.itemView.context
+        val density = context.resources.displayMetrics.density
+
+        if (isCover) {
+            holder.card.strokeWidth = (2.5f * density).toInt()
+            holder.card.strokeColor = ContextCompat.getColor(context, R.color.amber_primary)
+            holder.btnCover.setImageResource(R.drawable.ic_star)
+            ImageViewCompat.setImageTintList(
+                holder.btnCover,
+                ColorStateList.valueOf(ContextCompat.getColor(context, R.color.amber_primary))
+            )
+        } else {
+            holder.card.strokeWidth = (1f * density).toInt()
+            holder.card.strokeColor = MaterialColors.getColor(
+                holder.card,
+                com.google.android.material.R.attr.colorOutlineVariant
+            )
+            holder.btnCover.setImageResource(R.drawable.ic_star_outline)
+            ImageViewCompat.setImageTintList(
+                holder.btnCover,
+                ColorStateList.valueOf(Color.WHITE)
+            )
+        }
+
         holder.btnCover.contentDescription = if (isCover) "Đang là ảnh đại diện" else "Đặt làm ảnh đại diện"
         holder.btnCover.setOnClickListener { onToggleCover(image) }
         holder.btnDelete.setOnClickListener { onDelete(image) }

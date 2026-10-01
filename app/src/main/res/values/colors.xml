@@ -26,4 +26,8 @@
     <color name="colorOnSecondary">#FFFFFF</color>
     <color name="colorSecondaryContainer">@color/coral_100</color>
     <color name="colorOnSecondaryContainer">@color/coral_700</color>
+
+    <color name="badge_date_bg">#EEFFFFFF</color>
+    <color name="badge_date_text">#1C1B1F</color>
+    <color name="amber_primary">#F59E0B</color>
 </resources>

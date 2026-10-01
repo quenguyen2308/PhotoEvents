@@ -123,7 +123,7 @@ class EventsAdapter(
 
         if (images.size > 1) {
             holder.imageCount.visibility = View.VISIBLE
-            holder.imageCount.text = "${images.size}"
+            holder.imageCount.text = "${images.size} ảnh"
         } else {
             holder.imageCount.visibility = View.GONE
         }
@@ -168,9 +168,9 @@ class EventsAdapter(
 
     private fun populateStrip(holder: VH, sources: List<Any?>) {
         val context = holder.itemView.context
-        val size = (56 * context.resources.displayMetrics.density).toInt()
-        val margin = (4 * context.resources.displayMetrics.density).toInt()
-        val radius = (10 * context.resources.displayMetrics.density)
+        val size = (68 * context.resources.displayMetrics.density).toInt()
+        val margin = (6 * context.resources.displayMetrics.density).toInt()
+        val radius = (14 * context.resources.displayMetrics.density)
 
         holder.imagesStrip.removeAllViews()
         sources.forEach { src ->
