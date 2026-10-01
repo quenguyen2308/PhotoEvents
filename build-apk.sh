@@ -47,8 +47,11 @@ if [[ "$FOUND_APK" == *unsigned* ]]; then
     echo "CẢNH BÁO: APK chưa được ký nên KHÔNG cài được lên máy thật. Kiểm tra cấu hình signing."
 fi
 
-mkdir -p PhotoEvents_apk
-DEST_APK="PhotoEvents_apk/PhotoEvents_${BUILD_TYPE}_${timestamp}.apk"
-cp "$FOUND_APK" "$DEST_APK"
-
-echo "Done: $DEST_APK"
+if [[ "$BUILD_TYPE" == "debug" ]]; then
+    echo "Done: $FOUND_APK"
+else
+    mkdir -p PhotoEvents_apk
+    DEST_APK="PhotoEvents_apk/PhotoEvents_${BUILD_TYPE}_${timestamp}.apk"
+    cp "$FOUND_APK" "$DEST_APK"
+    echo "Done: $DEST_APK"
+fi

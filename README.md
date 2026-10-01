@@ -65,7 +65,7 @@ chmod +x gradlew build-apk.sh   # chỉ cần làm 1 lần
 ./build-apk.sh debug            # hoặc: release
 ```
 
-APK ra ở `PhotoEvents_apk/`. `./gradlew assembleDebug` / `assembleRelease` dùng trực tiếp cũng được.
+APK bản release ra ở `PhotoEvents_apk/`, bản debug giữ nguyên ở vị trí mặc định `app/build/outputs/apk/debug/app-debug.apk`. `./gradlew assembleDebug` / `assembleRelease` dùng trực tiếp cũng được.
 
 ### Đăng nhập Google theo build type
 
