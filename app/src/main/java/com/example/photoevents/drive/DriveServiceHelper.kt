@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
+import com.google.api.client.http.ByteArrayContent
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
@@ -23,6 +25,13 @@ const val THUMBNAIL_MAX_SIZE = 512 // px, cạnh dài nhất
 class DriveServiceHelper(context: Context, account: Account) {
 
     private val drive: Drive
+    private val prefs = context.getSharedPreferences("drive_cache_${account.name}", Context.MODE_PRIVATE)
+
+    @Volatile
+    private var cachedFolderId: String? = prefs.getString("folder_id", null)
+
+    @Volatile
+    private var cachedMetadataFileId: String? = prefs.getString("metadata_file_id", null)
 
     init {
         val credential = GoogleAccountCredential.usingOAuth2(
@@ -36,59 +45,90 @@ class DriveServiceHelper(context: Context, account: Account) {
         ).setApplicationName("PhotoEvents").build()
     }
 
-    /** Tìm hoặc tạo folder riêng của app trên Drive (chỉ app này thấy/đọc/ghi vì dùng scope drive.file). */
-    private suspend fun getOrCreateAppFolderId(): String = withContext(Dispatchers.IO) {
+    private fun saveFolderId(id: String?) {
+        cachedFolderId = id
+        prefs.edit().putString("folder_id", id).apply()
+    }
+
+    private fun saveMetadataFileId(id: String?) {
+        cachedMetadataFileId = id
+        prefs.edit().putString("metadata_file_id", id).apply()
+    }
+
+    fun invalidateCache() {
+        saveFolderId(null)
+        saveMetadataFileId(null)
+    }
+
+    /** Tìm hoặc tạo folder riêng của app trên Drive. Lưu cache vào SharedPreferences để tránh gọi API list liên tục. */
+    suspend fun getOrCreateAppFolderId(): String = withContext(Dispatchers.IO) {
+        cachedFolderId?.let { return@withContext it }
+
         val query = "mimeType = 'application/vnd.google-apps.folder' and name = '$APP_FOLDER_NAME' and trashed = false"
-        val result = drive.files().list().setQ(query).setSpaces("drive").execute()
-        result.files?.firstOrNull()?.id ?: run {
+        val result = drive.files().list()
+            .setQ(query)
+            .setSpaces("drive")
+            .setFields("files(id)")
+            .execute()
+
+        val id = result.files?.firstOrNull()?.id ?: run {
             val meta = DriveFile().apply {
                 name = APP_FOLDER_NAME
                 mimeType = "application/vnd.google-apps.folder"
             }
             drive.files().create(meta).setFields("id").execute().id
         }
+
+        saveFolderId(id)
+        id
     }
 
-    /** Resize ảnh và upload làm thumbnail cho 1 event. Trả về (fileId, webContentLink). */
-    suspend fun uploadThumbnail(context: Context, eventId: String, sourceUri: Uri): Pair<String, String?> =
+    /**
+     * Resize ảnh và upload làm thumbnail cho 1 ảnh (imageId).
+     * Chỉ thực hiện 1 request create kèm setFields("id, webContentLink") thay vì nhiều request thừa.
+     */
+    suspend fun uploadThumbnail(context: Context, imageId: String, sourceUri: Uri): Pair<String, String?> =
         withContext(Dispatchers.IO) {
             val folderId = getOrCreateAppFolderId()
             val bitmap = decodeSampledBitmap(context, sourceUri, THUMBNAIL_MAX_SIZE)
             val bytes = ByteArrayOutputStream().use { out ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
                 out.toByteArray()
             }
 
-            val fileName = "$eventId.jpg"
-            // Nếu đã có thumbnail cho event này thì update thay vì tạo file mới
-            val existing = drive.files().list()
-                .setQ("name = '$fileName' and '$folderId' in parents and trashed = false")
-                .setFields("files(id)")
-                .execute().files?.firstOrNull()
-
-            val content = com.google.api.client.http.ByteArrayContent("image/jpeg", bytes)
-
-            val fileId = if (existing != null) {
-                drive.files().update(existing.id, null, content).execute()
-                existing.id
-            } else {
-                val meta = DriveFile().apply {
-                    name = fileName
-                    parents = listOf(folderId)
-                }
-                drive.files().create(meta, content).setFields("id").execute().id
+            val fileName = "$imageId.jpg"
+            val content = ByteArrayContent("image/jpeg", bytes)
+            val meta = DriveFile().apply {
+                name = fileName
+                parents = listOf(folderId)
             }
 
-            val webContentLink = drive.files().get(fileId)
-                .setFields("webContentLink").execute().webContentLink
-            fileId to webContentLink
+            try {
+                val created = drive.files().create(meta, content)
+                    .setFields("id, webContentLink")
+                    .execute()
+                created.id to created.webContentLink
+            } catch (e: GoogleJsonResponseException) {
+                if (e.statusCode == 404) {
+                    // Folder có thể đã bị xóa trên Drive ngoài ý muốn
+                    invalidateCache()
+                    val newFolderId = getOrCreateAppFolderId()
+                    meta.parents = listOf(newFolderId)
+                    val created = drive.files().create(meta, content)
+                        .setFields("id, webContentLink")
+                        .execute()
+                    created.id to created.webContentLink
+                } else {
+                    throw e
+                }
+            }
         }
 
     /** Xoá hẳn 1 file (vd. thumbnail) trên Drive. Bỏ qua lỗi nếu file đã không còn tồn tại. */
     suspend fun deleteFile(fileId: String): Unit = withContext(Dispatchers.IO) {
         try {
             drive.files().delete(fileId).execute()
-        } catch (e: com.google.api.client.googleapis.json.GoogleJsonResponseException) {
+        } catch (e: GoogleJsonResponseException) {
             if (e.statusCode != 404) throw e
         }
     }
@@ -101,36 +141,76 @@ class DriveServiceHelper(context: Context, account: Account) {
         destPath
     }
 
-    /** Đọc metadata.json hiện có trên Drive (danh sách event của mọi thiết bị). Null nếu chưa có. */
+    /**
+     * Đọc metadata.json hiện có trên Drive.
+     * Sử dụng cachedMetadataFileId để tải thẳng (1 request duy nhất) thay vì list query 2 lần.
+     */
     suspend fun downloadMetadataJson(): String? = withContext(Dispatchers.IO) {
+        val fileId = cachedMetadataFileId
+        if (fileId != null) {
+            try {
+                val out = ByteArrayOutputStream()
+                drive.files().get(fileId).executeMediaAndDownloadTo(out)
+                return@withContext out.toString("UTF-8")
+            } catch (e: GoogleJsonResponseException) {
+                if (e.statusCode == 404) {
+                    saveMetadataFileId(null)
+                } else {
+                    throw e
+                }
+            }
+        }
+
+        // Nếu chưa cache hoặc fileId cũ bị 404, tìm kiếm trong folder
         val folderId = getOrCreateAppFolderId()
         val existing = drive.files().list()
             .setQ("name = '$METADATA_FILE_NAME' and '$folderId' in parents and trashed = false")
             .setFields("files(id)")
             .execute().files?.firstOrNull() ?: return@withContext null
 
+        saveMetadataFileId(existing.id)
         val out = ByteArrayOutputStream()
         drive.files().get(existing.id).executeMediaAndDownloadTo(out)
         out.toString("UTF-8")
     }
 
-    /** Ghi đè metadata.json trên Drive bằng dữ liệu đã merge. */
+    /**
+     * Ghi đè metadata.json trên Drive bằng dữ liệu đã merge.
+     * Sử dụng cachedMetadataFileId để update thẳng 1 request duy nhất.
+     */
     suspend fun uploadMetadataJson(json: String): Unit = withContext(Dispatchers.IO) {
+        val content = ByteArrayContent("application/json", json.toByteArray())
+        val fileId = cachedMetadataFileId
+
+        if (fileId != null) {
+            try {
+                drive.files().update(fileId, null, content).execute()
+                return@withContext
+            } catch (e: GoogleJsonResponseException) {
+                if (e.statusCode == 404) {
+                    saveMetadataFileId(null)
+                } else {
+                    throw e
+                }
+            }
+        }
+
         val folderId = getOrCreateAppFolderId()
         val existing = drive.files().list()
             .setQ("name = '$METADATA_FILE_NAME' and '$folderId' in parents and trashed = false")
             .setFields("files(id)")
             .execute().files?.firstOrNull()
 
-        val content = com.google.api.client.http.ByteArrayContent("application/json", json.toByteArray())
         if (existing != null) {
+            saveMetadataFileId(existing.id)
             drive.files().update(existing.id, null, content).execute()
         } else {
             val meta = DriveFile().apply {
                 name = METADATA_FILE_NAME
                 parents = listOf(folderId)
             }
-            drive.files().create(meta, content).execute()
+            val created = drive.files().create(meta, content).setFields("id").execute()
+            saveMetadataFileId(created.id)
         }
     }
 

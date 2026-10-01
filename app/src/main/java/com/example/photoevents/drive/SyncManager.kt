@@ -9,6 +9,9 @@ import com.example.photoevents.data.Event
 import com.example.photoevents.data.EventImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -24,24 +27,16 @@ private data class SyncPayload(
 data class SyncResult(val downloadFailed: Int = 0, val firstError: String? = null)
 
 /**
- * Đồng bộ 2 chiều kiểu "last-write-wins" theo updatedAt, áp dụng cho cả bảng events và
- * bảng event_images (1 sự kiện có nhiều ảnh):
- * 1. Tải metadata.json hiện có trên Drive.
- * 2. Merge events theo id, merge images theo id — bản nào updatedAt lớn hơn thắng.
- * 3. Ảnh đã bị đánh dấu deleted mà vẫn còn driveFileId -> xoá file thật trên Drive.
- * 4. Ảnh local mới (chưa có driveFileId) -> upload lên Drive.
- * 5. Ảnh đã có driveFileId nhưng máy này chưa có cache -> tải về (lỗi được báo lại, không nuốt).
- * 6. Ghi kết quả merge vào Room + ghi đè metadata.json trên Drive.
- *
- * - Chạy trong NonCancellable: rời màn hình giữa chừng không làm sync dừng nửa vời (đã upload ảnh
- *   nhưng chưa kịp ghi metadata.json).
- * - Mutex toàn app: các lần sync gọi chồng nhau (mở app + thêm ảnh ở màn chi tiết...) được xếp
- *   hàng, tránh đọc-ghi metadata.json đè lên nhau.
+ * Đồng bộ 2 chiều kiểu "last-write-wins" theo updatedAt:
+ * 1. Tải metadata.json hiện có trên Drive (sử dụng cache file ID trực tiếp, 1 request).
+ * 2. Merge events và images. CẬP NHẬT ROOM NGAY LẬP TỨC để UI nhận dữ liệu tức thì.
+ * 3. Xoá file Drive cho ảnh đã bị soft-delete (chạy song song).
+ * 4. Upload ảnh local mới lên Drive (chạy song song).
+ * 5. Tải ảnh thumbnail về local cache cho ảnh chưa có file cục bộ (chạy song song).
+ * 6. Chỉ tải lên metadata.json mới nếu thực sự CÓ THAY ĐỔI (bỏ qua nếu không đổi, giúp pull-to-refresh cực nhanh).
  */
 class SyncManager(private val context: Context, private val drive: DriveServiceHelper) {
 
-    // excludeFieldsWithoutExposeAnnotation(): chỉ field có @Expose mới vào metadata.json —
-    // localImagePath là đường dẫn riêng từng máy, không được sync.
     private val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
     private val eventDao = AppDatabase.get(context).eventDao()
     private val imageDao = AppDatabase.get(context).eventImageDao()
@@ -56,50 +51,115 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
             gson.fromJson(remoteJson, SyncPayload::class.java)
         } else SyncPayload()
 
-        val mergedEvents = mergeById(eventDao.getAllIncludingDeleted(), remotePayload.events ?: emptyList()) { it.id }
-        val mergedImages = mergeById(imageDao.getAllIncludingDeleted(), remotePayload.images ?: emptyList()) { it.id }
+        val localEvents = eventDao.getAllIncludingDeleted()
+        val localImages = imageDao.getAllIncludingDeleted()
+        val remoteEvents = remotePayload.events ?: emptyList()
+        val remoteImages = remotePayload.images ?: emptyList()
 
-        // 1) Xoá file Drive cho ảnh đã bị đánh dấu deleted nhưng vẫn còn driveFileId
+        val mergedEvents = mergeById(localEvents, remoteEvents) { it.id }
+        val mergedImages = mergeById(localImages, remoteImages) { it.id }
+
+        // Cập nhật Room sớm: UI lập tức nhận được các sự kiện và metadata ảnh mới mà không phải đợi tải xong toàn bộ file
+        eventDao.upsertAll(mergedEvents)
+        imageDao.upsertAll(mergedImages)
+
+        // 1) Xoá file Drive cho ảnh đã bị đánh dấu deleted nhưng vẫn còn driveFileId (chạy song song)
+        val imagesToDeleteOnDrive = mergedImages.filter { it.deleted && it.driveFileId != null }
+        if (imagesToDeleteOnDrive.isNotEmpty()) {
+            coroutineScope {
+                imagesToDeleteOnDrive.map { image ->
+                    async(Dispatchers.IO) {
+                        runCatching { drive.deleteFile(image.driveFileId!!) }
+                    }
+                }.awaitAll()
+            }
+        }
         val afterRemoteDelete = mergedImages.map { image ->
             if (image.deleted && image.driveFileId != null) {
-                runCatching { drive.deleteFile(image.driveFileId!!) }
                 image.copy(driveFileId = null, driveThumbnailLink = null)
             } else image
         }
 
-        // 2) Upload ảnh local mới (chưa từng lên Drive)
+        // 2) Upload ảnh local mới (chưa từng lên Drive) - chạy song song
+        val imagesToUpload = afterRemoteDelete.filter { !it.deleted && it.driveFileId == null && it.localImagePath != null }
+        val uploadedResults = if (imagesToUpload.isNotEmpty()) {
+            coroutineScope {
+                imagesToUpload.map { image ->
+                    async(Dispatchers.IO) {
+                        try {
+                            val (fileId, link) = drive.uploadThumbnail(
+                                context, image.id, Uri.fromFile(File(image.localImagePath!!))
+                            )
+                            image.id to (fileId to link)
+                        } catch (e: Exception) {
+                            image.id to null
+                        }
+                    }
+                }.awaitAll().toMap()
+            }
+        } else emptyMap()
+
         val afterUpload = afterRemoteDelete.map { image ->
-            if (!image.deleted && image.driveFileId == null && image.localImagePath != null) {
-                val (fileId, link) = drive.uploadThumbnail(
-                    context, image.id, Uri.fromFile(File(image.localImagePath!!))
-                )
-                image.copy(driveFileId = fileId, driveThumbnailLink = link)
+            val uploadInfo = uploadedResults[image.id]
+            if (uploadInfo != null) {
+                image.copy(driveFileId = uploadInfo.first, driveThumbnailLink = uploadInfo.second)
             } else image
         }
 
-        // 3) Tải ảnh về cache cho máy chưa có bản local; ghi nhận lỗi thay vì nuốt im lặng
+        // 3) Tải ảnh về cache cho máy chưa có bản local (chạy song song)
         var downloadFailed = 0
         var firstError: String? = null
         val cacheDir = File(context.filesDir, "thumbnails").apply { mkdirs() }
+        val imagesToDownload = afterUpload.filter { !it.deleted && it.driveFileId != null && it.localImagePath == null }
+
+        val downloadResults = if (imagesToDownload.isNotEmpty()) {
+            coroutineScope {
+                imagesToDownload.map { image ->
+                    async(Dispatchers.IO) {
+                        val dest = File(cacheDir, "${image.id}.jpg")
+                        try {
+                            drive.downloadFileTo(image.driveFileId!!, dest.absolutePath)
+                            image.id to dest.absolutePath
+                        } catch (e: Exception) {
+                            dest.delete()
+                            image.id to null
+                        }
+                    }
+                }.awaitAll().toMap()
+            }
+        } else emptyMap()
+
+        imagesToDownload.forEach { image ->
+            if (downloadResults[image.id] == null) {
+                downloadFailed++
+                if (firstError == null) firstError = "Lỗi tải ảnh ${image.id}"
+            }
+        }
+
         val afterDownload = afterUpload.map { image ->
-            if (!image.deleted && image.driveFileId != null && image.localImagePath == null) {
-                val dest = File(cacheDir, "${image.id}.jpg")
-                try {
-                    drive.downloadFileTo(image.driveFileId!!, dest.absolutePath)
-                    image.copy(localImagePath = dest.absolutePath)
-                } catch (e: Exception) {
-                    dest.delete() // tránh để lại file tải dở
-                    downloadFailed++
-                    if (firstError == null) firstError = e.message ?: e.javaClass.simpleName
-                    image
-                }
+            val downloadedPath = downloadResults[image.id]
+            if (downloadedPath != null) {
+                image.copy(localImagePath = downloadedPath)
             } else image
         }
 
-        eventDao.upsertAll(mergedEvents)
-        imageDao.upsertAll(afterDownload)
+        // Ghi lại Room nếu có ảnh vừa upload hoặc download thành công
+        if (imagesToUpload.isNotEmpty() || downloadResults.isNotEmpty() || imagesToDeleteOnDrive.isNotEmpty()) {
+            imageDao.upsertAll(afterDownload)
+        }
 
-        drive.uploadMetadataJson(gson.toJson(SyncPayload(mergedEvents, afterDownload)))
+        // 4) Chỉ tải lên metadata.json nếu thực sự có thay đổi so với remote
+        val newPayload = SyncPayload(mergedEvents, afterDownload)
+        val newJson = gson.toJson(newPayload)
+        val hasChanges = remoteJson == null ||
+                imagesToDeleteOnDrive.isNotEmpty() ||
+                imagesToUpload.isNotEmpty() ||
+                newJson != remoteJson
+
+        if (hasChanges) {
+            drive.uploadMetadataJson(newJson)
+        }
+
         return SyncResult(downloadFailed, firstError)
     }
 
