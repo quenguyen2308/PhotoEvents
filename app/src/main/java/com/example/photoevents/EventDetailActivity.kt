@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -36,6 +37,8 @@ class EventDetailActivity : AppCompatActivity() {
     private lateinit var adapter: ImagesAdapter
     private var explicitCoverId: String? = null
     private var currentEventDate: Long = normalizeToMidnight(System.currentTimeMillis())
+    private var currentTitle: String = ""
+    private var currentNote: String = ""
 
     private val pickImages = registerForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(10)
@@ -62,6 +65,9 @@ class EventDetailActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.txtEventDate).setOnClickListener { showDatePicker() }
 
+        findViewById<android.view.View>(R.id.btnEditTitle)?.setOnClickListener { showEditTitleDialog() }
+        findViewById<TextView>(R.id.txtTitle).setOnClickListener { showEditTitleDialog() }
+
         findViewById<android.view.View>(R.id.btnAddImages).setOnClickListener {
             pickImages.launch(androidx.activity.result.PickVisualMediaRequest(
                 ActivityResultContracts.PickVisualMedia.ImageOnly
@@ -72,10 +78,12 @@ class EventDetailActivity : AppCompatActivity() {
             AppDatabase.get(this@EventDetailActivity).eventDao()
                 .observeOneWithImages(eventId).collect { eventWithImages ->
                     if (eventWithImages == null) { finish(); return@collect }
-                    findViewById<TextView>(R.id.txtTitle).text = eventWithImages.event.title
-                    findViewById<TextView>(R.id.txtNote).text = eventWithImages.event.note
+                    currentTitle = eventWithImages.event.title
+                    currentNote = eventWithImages.event.note
+                    findViewById<TextView>(R.id.txtTitle).text = currentTitle
+                    findViewById<TextView>(R.id.txtNote).text = currentNote
                     findViewById<TextView>(R.id.txtNote).visibility =
-                        if (eventWithImages.event.note.isBlank()) android.view.View.GONE else android.view.View.VISIBLE
+                        if (currentNote.isBlank()) android.view.View.GONE else android.view.View.VISIBLE
                     currentEventDate = eventWithImages.event.eventDate
                     findViewById<TextView>(R.id.txtEventDate).text =
                         "${formatDate(currentEventDate)} · Đổi ngày"
@@ -89,6 +97,43 @@ class EventDetailActivity : AppCompatActivity() {
         // khác), nên chủ động sync ngay khi mở màn hình này. Chạy hoàn toàn ngầm — lifecycleScope
         // tự huỷ coroutine này khi Activity đóng, không cần tự giới hạn thời gian chờ riêng.
         triggerSync()
+    }
+
+    private fun showEditTitleDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_event, null)
+        val edtTitle = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.edtEditTitle)
+        val edtNote = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.edtEditNote)
+        val layoutTitle = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.layoutEditTitle)
+
+        edtTitle.setText(currentTitle)
+        edtNote.setText(currentNote)
+        edtTitle.setSelection(edtTitle.text?.length ?: 0)
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("Sửa thông tin sự kiện")
+            .setView(dialogView)
+            .setPositiveButton("Lưu", null)
+            .setNegativeButton("Huỷ", null)
+            .create()
+
+        dialog.show()
+
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val newTitle = edtTitle.text?.toString()?.trim().orEmpty()
+            val newNote = edtNote.text?.toString()?.trim().orEmpty()
+            if (newTitle.isEmpty()) {
+                layoutTitle.error = "Tên sự kiện không được để trống"
+                return@setOnClickListener
+            }
+            layoutTitle.error = null
+
+            lifecycleScope.launch {
+                AppDatabase.get(this@EventDetailActivity).eventDao()
+                    .updateEventInfo(eventId, newTitle, newNote)
+                triggerSync()
+            }
+            dialog.dismiss()
+        }
     }
 
     private fun showDatePicker() {

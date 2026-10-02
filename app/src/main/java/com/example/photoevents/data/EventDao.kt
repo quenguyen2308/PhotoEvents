@@ -39,4 +39,13 @@ interface EventDao {
     /** Đổi ngày diễn ra sự kiện — [date] nên đã được đưa về 00:00 (xem [normalizeToMidnight]). */
     @Query("UPDATE events SET eventDate = :date, updatedAt = :now WHERE id = :id")
     suspend fun setEventDate(id: String, date: Long, now: Long = System.currentTimeMillis())
+
+    /** Sửa tiêu đề sự kiện. */
+    @Query("UPDATE events SET title = :title, updatedAt = :now WHERE id = :id")
+    suspend fun setTitle(id: String, title: String, now: Long = System.currentTimeMillis())
+
+    /** Sửa tiêu đề và ghi chú sự kiện. */
+    @Query("UPDATE events SET title = :title, note = :note, updatedAt = :now WHERE id = :id")
+    suspend fun updateEventInfo(id: String, title: String, note: String, now: Long = System.currentTimeMillis())
 }
+

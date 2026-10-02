@@ -69,15 +69,34 @@
                     android:orientation="vertical"
                     android:padding="18dp">
 
-                    <TextView
-                        android:id="@+id/txtTitle"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textSize="21sp"
-                        android:textStyle="bold"
-                        android:fontFamily="sans-serif-black"
-                        android:textColor="?attr/colorOnSurface"
-                        tools:text="Chuyến đi Đà Lạt" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/txtTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textSize="21sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-black"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="Chuyến đi Đà Lạt" />
+
+                        <ImageButton
+                            android:id="@+id/btnEditTitle"
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:layout_marginStart="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:src="@drawable/ic_edit"
+                            app:tint="?attr/colorPrimary"
+                            android:contentDescription="Sửa tên sự kiện" />
+
+                    </LinearLayout>
 
                     <!-- Chip ngày diễn ra có thể nhấn để đổi -->
                     <TextView
