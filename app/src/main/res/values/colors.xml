@@ -1,33 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="teal_900">#04342C</color>
-    <color name="teal_700">#0F6E56</color>
-    <color name="teal_500">#1D9E75</color>
-    <color name="teal_200">#9FE1CB</color>
-    <color name="teal_100">#E1F5EE</color>
+    <!-- Sakura Blossom Palette (light) matching weibo-image-download-tool -->
+    <color name="sakura_pink">#FF6584</color>
+    <color name="sakura_pink_light">#FF8FA3</color>
+    <color name="sakura_pink_glow">#FFB3C1</color>
+    <color name="sakura_pink_container">#FFE8EE</color>
+    <color name="sakura_blush_bg">#FFF8FA</color>
+    <color name="sakura_surface">#FFFFFF</color>
+    <color name="sakura_border_soft">#FFE0E8</color>
+    <color name="sakura_border_subtle">#FFF0F4</color>
+    <color name="sakura_text_primary">#2E1A29</color>
+    <color name="sakura_text_secondary">#7E6676</color>
 
-    <color name="coral_700">#993C1D</color>
-    <color name="coral_500">#D85A30</color>
-    <color name="coral_100">#FAECE7</color>
-
-    <color name="warm_bg">#FBF9F4</color>
-    <color name="surface">#FFFFFF</color>
-    <color name="surface_variant">#F1EFE8</color>
-    <color name="on_surface">#2C2C2A</color>
-    <color name="on_surface_variant">#5F5E5A</color>
-    <color name="outline">#D8D5CB</color>
-    <color name="outline_variant">#EAE7DE</color>
-
-    <color name="colorPrimary">@color/teal_700</color>
-    <color name="colorOnPrimary">#FFFFFF</color>
-    <color name="colorPrimaryContainer">@color/teal_100</color>
-    <color name="colorOnPrimaryContainer">@color/teal_900</color>
-    <color name="colorSecondary">@color/coral_500</color>
-    <color name="colorOnSecondary">#FFFFFF</color>
-    <color name="colorSecondaryContainer">@color/coral_100</color>
-    <color name="colorOnSecondaryContainer">@color/coral_700</color>
-
-    <color name="badge_date_bg">#EEFFFFFF</color>
-    <color name="badge_date_text">#1C1B1F</color>
+    <!-- Pastel accents -->
+    <color name="pastel_lavender">#F3E8FF</color>
+    <color name="pastel_lavender_text">#8B5CF6</color>
+    <color name="pastel_mint">#E6F9F4</color>
+    <color name="pastel_mint_text">#0D9488</color>
     <color name="amber_primary">#F59E0B</color>
+
+    <!-- Semantic tokens (light) -->
+    <color name="colorPrimary">@color/sakura_pink</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorPrimaryContainer">@color/sakura_pink_container</color>
+    <color name="colorOnPrimaryContainer">#8E1B3E</color>
+    <color name="colorSecondary">#A855F7</color>
+    <color name="colorOnSecondary">#FFFFFF</color>
+    <color name="colorSecondaryContainer">@color/pastel_lavender</color>
+    <color name="colorOnSecondaryContainer">@color/pastel_lavender_text</color>
+
+    <color name="warm_bg">@color/sakura_blush_bg</color>
+    <color name="surface">@color/sakura_surface</color>
+    <color name="surface_variant">#FFF2F5</color>
+    <color name="on_surface">@color/sakura_text_primary</color>
+    <color name="on_surface_variant">@color/sakura_text_secondary</color>
+    <color name="outline">@color/sakura_border_soft</color>
+    <color name="outline_variant">@color/sakura_border_subtle</color>
+
+    <!-- Badges -->
+    <color name="badge_date_bg">#EEFFFFFF</color>
+    <color name="badge_date_text">@color/sakura_text_primary</color>
+    <color name="badge_pink_bg">@color/sakura_pink_container</color>
+    <color name="badge_pink_text">@color/sakura_pink</color>
 </resources>

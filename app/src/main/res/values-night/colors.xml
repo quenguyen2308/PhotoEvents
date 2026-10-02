@@ -1,23 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="warm_bg">#1C1B18</color>
-    <color name="surface">#242320</color>
-    <color name="surface_variant">#2E2D29</color>
-    <color name="on_surface">#EDEBE4</color>
-    <color name="on_surface_variant">#B4B2A9</color>
-    <color name="outline">#444441</color>
-    <color name="outline_variant">#38372F</color>
+    <!-- Sakura Dark Palette -->
+    <color name="warm_bg">#221720</color>
+    <color name="surface">#2C1E2A</color>
+    <color name="surface_variant">#3A2837</color>
+    <color name="on_surface">#FDEEF2</color>
+    <color name="on_surface_variant">#CBB6C4</color>
+    <color name="outline">#40FF6584</color>
+    <color name="outline_variant">#20FFFFFF</color>
 
-    <color name="colorPrimary">#5DCAA5</color>
-    <color name="colorOnPrimary">#04342C</color>
-    <color name="colorPrimaryContainer">#0F6E56</color>
-    <color name="colorOnPrimaryContainer">#E1F5EE</color>
-    <color name="colorSecondary">#F0997B</color>
-    <color name="colorOnSecondary">#4A1B0C</color>
-    <color name="colorSecondaryContainer">#712B13</color>
-    <color name="colorOnSecondaryContainer">#FAECE7</color>
+    <color name="colorPrimary">#FF6584</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorPrimaryContainer">#4A1828</color>
+    <color name="colorOnPrimaryContainer">#FFB3C1</color>
+    <color name="colorSecondary">#C084FC</color>
+    <color name="colorOnSecondary">#1F0D33</color>
+    <color name="colorSecondaryContainer">#3B1F4F</color>
+    <color name="colorOnSecondaryContainer">#E9D5FF</color>
 
-    <color name="badge_date_bg">#E62E2D29</color>
-    <color name="badge_date_text">#EDEBE4</color>
-    <color name="amber_primary">#FBBF24</color>
+    <color name="badge_date_bg">#E62C1E2A</color>
+    <color name="badge_date_text">#FDEEF2</color>
+    <color name="badge_pink_bg">#4A1828</color>
+    <color name="badge_pink_text">#FFB3C1</color>
 </resources>

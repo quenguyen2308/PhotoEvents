@@ -6,10 +6,10 @@
     android:layout_width="match_parent"
     android:layout_height="120dp"
     android:layout_margin="5dp"
-    app:cardCornerRadius="16dp"
+    app:cardCornerRadius="14dp"
     app:cardElevation="0dp"
     app:strokeWidth="1dp"
-    app:strokeColor="?attr/colorOutlineVariant"
+    app:strokeColor="?attr/colorOutline"
     app:cardBackgroundColor="?attr/colorSurfaceVariant">
 
     <FrameLayout

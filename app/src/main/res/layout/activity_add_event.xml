@@ -24,7 +24,7 @@
             android:layout_height="44dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_close"
-            app:tint="?attr/colorOnSurface"
+            app:tint="?attr/colorPrimary"
             android:contentDescription="Đóng" />
 
         <TextView
@@ -32,8 +32,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="Tạo sự kiện mới"
-            android:textSize="19sp"
+            android:text="🌸 Tạo sự kiện mới"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="?attr/colorOnSurface" />
 
@@ -76,10 +76,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="1dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeColor="?attr/colorOutline"
                 app:cardBackgroundColor="?attr/colorSurface">
 
                 <LinearLayout
@@ -88,7 +88,7 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:paddingHorizontal="16dp"
-                    android:paddingVertical="12dp">
+                    android:paddingVertical="14dp">
 
                     <FrameLayout
                         android:layout_width="40dp"
@@ -138,6 +138,9 @@
                         android:layout_height="wrap_content"
                         android:text="Đổi ngày"
                         android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        app:backgroundTint="?attr/colorPrimaryContainer"
                         app:cornerRadius="100dp" />
 
                 </LinearLayout>
@@ -181,7 +184,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Ảnh kỷ niệm"
+                        android:text="🌸 Ảnh kỷ niệm"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnSurface" />
@@ -200,15 +203,18 @@
                     android:id="@+id/btnPickImage"
                     style="@style/Widget.Material3.Button.OutlinedButton.Icon"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Chọn ảnh từ thiết bị"
+                    android:layout_height="50dp"
+                    android:text="✨ Chọn ảnh từ thiết bị"
                     android:textSize="14sp"
+                    android:textStyle="bold"
                     android:textColor="?attr/colorPrimary"
                     app:icon="@drawable/ic_photo_library"
                     app:iconTint="?attr/colorPrimary"
-                    app:strokeColor="?attr/colorPrimary"
-                    app:strokeWidth="1dp"
-                    app:cornerRadius="14dp" />
+                    app:iconSize="20dp"
+                    app:strokeColor="?attr/colorOutline"
+                    app:strokeWidth="1.2dp"
+                    app:backgroundTint="@color/badge_pink_bg"
+                    app:cornerRadius="25dp" />
 
                 <HorizontalScrollView
                     android:layout_width="match_parent"
@@ -230,22 +236,23 @@
 
     </ScrollView>
 
-    <!-- Nút Lưu sự kiện dạng MaterialButton full width bo tròn -->
+    <!-- Nút Lưu sự kiện dạng MaterialButton full width bo tròn pill -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
         android:background="?attr/colorSurface"
-        android:elevation="8dp">
+        android:elevation="6dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:text="Lưu sự kiện"
+            android:text="✨ Lưu sự kiện"
             android:textSize="15sp"
             android:textStyle="bold"
-            app:cornerRadius="16dp"
+            android:letterSpacing="0.02"
+            app:cornerRadius="26dp"
             app:backgroundTint="?attr/colorPrimary"
             android:textColor="?attr/colorOnPrimary" />
 

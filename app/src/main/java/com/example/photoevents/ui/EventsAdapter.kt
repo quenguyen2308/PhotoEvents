@@ -119,7 +119,7 @@ class EventsAdapter(
             ImageViewCompat.setImageTintList(holder.img, null)
             holder.img.scaleType = ImageView.ScaleType.CENTER_CROP
             val src: Any? = cover.localImagePath ?: cover.driveThumbnailLink
-            Glide.with(holder.img).load(src).centerCrop().into(holder.img)
+            Glide.with(holder.img).load(src).transform(TopCropTransformation()).into(holder.img)
 
             if (otherImages.isNotEmpty()) {
                 // Có từ 2 ảnh trở lên: Kích hoạt Bento Mosaic
@@ -136,13 +136,13 @@ class EventsAdapter(
 
                 val sub1 = otherImages[0]
                 val srcSub1: Any? = sub1.localImagePath ?: sub1.driveThumbnailLink
-                Glide.with(holder.imgSub1).load(srcSub1).centerCrop().into(holder.imgSub1)
+                Glide.with(holder.imgSub1).load(srcSub1).transform(TopCropTransformation()).into(holder.imgSub1)
 
                 if (otherImages.size >= 2) {
                     holder.frameSub2.visibility = View.VISIBLE
                     val sub2 = otherImages[1]
                     val srcSub2: Any? = sub2.localImagePath ?: sub2.driveThumbnailLink
-                    Glide.with(holder.imgSub2).load(srcSub2).centerCrop().into(holder.imgSub2)
+                    Glide.with(holder.imgSub2).load(srcSub2).transform(TopCropTransformation()).into(holder.imgSub2)
 
                     val moreCount = images.size - 3
                     if (moreCount > 0) {
@@ -257,7 +257,7 @@ class EventsAdapter(
                 clipToOutline = true
                 outlineProvider = RoundedOutline(radius)
             }
-            Glide.with(context).load(src).placeholder(R.drawable.ic_image).centerCrop().into(iv)
+            Glide.with(context).load(src).placeholder(R.drawable.ic_image).transform(TopCropTransformation()).into(iv)
             holder.imagesStrip.addView(iv)
         }
     }

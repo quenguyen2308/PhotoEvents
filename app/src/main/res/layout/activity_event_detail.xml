@@ -24,7 +24,7 @@
             android:layout_height="44dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_arrow_back"
-            app:tint="?attr/colorOnSurface"
+            app:tint="?attr/colorPrimary"
             android:contentDescription="Quay lại" />
 
         <TextView
@@ -32,8 +32,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="Chi tiết sự kiện"
-            android:textSize="19sp"
+            android:text="🌸 Chi tiết sự kiện"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="?attr/colorOnSurface" />
 
@@ -58,9 +58,9 @@
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="20dp"
-                app:cardElevation="0dp"
+                app:cardElevation="1dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeColor="?attr/colorOutline"
                 app:cardBackgroundColor="?attr/colorSurface">
 
                 <LinearLayout
@@ -80,7 +80,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:textSize="21sp"
+                            android:textSize="20sp"
                             android:textStyle="bold"
                             android:fontFamily="sans-serif-black"
                             android:textColor="?attr/colorOnSurface"
@@ -149,7 +149,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Bộ sưu tập ảnh"
+                        android:text="🌸 Bộ sưu tập ảnh"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnSurface" />
@@ -168,9 +168,13 @@
                     style="@style/Widget.Material3.Button.TonalButton.Icon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Thêm ảnh"
+                    android:text="✨ Thêm ảnh"
                     android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary"
+                    app:backgroundTint="?attr/colorPrimaryContainer"
                     app:icon="@drawable/ic_add"
+                    app:iconTint="?attr/colorPrimary"
                     app:iconSize="18dp"
                     app:cornerRadius="100dp" />
 
