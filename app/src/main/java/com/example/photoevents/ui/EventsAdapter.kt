@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.color.MaterialColors
+import com.google.android.material.imageview.ShapeableImageView
 import com.example.photoevents.R
 import com.example.photoevents.data.EventWithImages
 import java.text.SimpleDateFormat
@@ -71,7 +72,7 @@ class EventsAdapter(
 
     class VH(view: View) : RecyclerView.ViewHolder(view) {
         val checkbox: CheckBox = view.findViewById(R.id.checkboxSelect)
-        val img: ImageView = view.findViewById(R.id.imgThumbnail)
+        val img: ShapeableImageView = view.findViewById(R.id.imgThumbnail)
         val imageCount: TextView = view.findViewById(R.id.txtImageCount)
         val title: TextView = view.findViewById(R.id.txtTitle)
         val date: TextView = view.findViewById(R.id.txtEventDate)
@@ -79,6 +80,14 @@ class EventsAdapter(
         val btnExpand: ImageButton = view.findViewById(R.id.btnExpand)
         val scrollImages: HorizontalScrollView = view.findViewById(R.id.scrollImages)
         val imagesStrip: LinearLayout = view.findViewById(R.id.imagesStrip)
+
+        // Bento Mosaic views:
+        val frameMainImage: View = view.findViewById(R.id.frameMainImage)
+        val layoutSubImages: View = view.findViewById(R.id.layoutSubImages)
+        val imgSub1: ShapeableImageView = view.findViewById(R.id.imgSub1)
+        val frameSub2: View = view.findViewById(R.id.frameSub2)
+        val imgSub2: ShapeableImageView = view.findViewById(R.id.imgSub2)
+        val txtMoreOverlay: TextView = view.findViewById(R.id.txtMoreImagesOverlay)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -101,15 +110,81 @@ class EventsAdapter(
         holder.checkbox.setOnCheckedChangeListener(null)
         holder.checkbox.isChecked = selected
 
-        // Ảnh đầu tiên luôn hiển thị trước tiêu đề.
-        // Chỉ tô màu (tint) cho icon placeholder; ảnh thật phải để tint = null, nếu không sẽ bị nhuộm xám.
+        // Lưới Bento Mosaic: ảnh đại diện cover bên trái, các ảnh phụ bên phải
         val cover = item.coverImage
+        val otherImages = images.filter { it.id != cover?.id }
+        val radius = 20 * holder.itemView.resources.displayMetrics.density
+
         if (cover != null) {
             ImageViewCompat.setImageTintList(holder.img, null)
             holder.img.scaleType = ImageView.ScaleType.CENTER_CROP
             val src: Any? = cover.localImagePath ?: cover.driveThumbnailLink
             Glide.with(holder.img).load(src).centerCrop().into(holder.img)
+
+            if (otherImages.isNotEmpty()) {
+                // Có từ 2 ảnh trở lên: Kích hoạt Bento Mosaic
+                holder.img.shapeAppearanceModel = holder.img.shapeAppearanceModel.toBuilder()
+                    .setTopLeftCornerSize(radius)
+                    .setTopRightCornerSize(0f)
+                    .build()
+
+                val mainParams = holder.frameMainImage.layoutParams as LinearLayout.LayoutParams
+                mainParams.weight = 60f
+                holder.frameMainImage.layoutParams = mainParams
+
+                holder.layoutSubImages.visibility = View.VISIBLE
+
+                val sub1 = otherImages[0]
+                val srcSub1: Any? = sub1.localImagePath ?: sub1.driveThumbnailLink
+                Glide.with(holder.imgSub1).load(srcSub1).centerCrop().into(holder.imgSub1)
+
+                if (otherImages.size >= 2) {
+                    holder.frameSub2.visibility = View.VISIBLE
+                    val sub2 = otherImages[1]
+                    val srcSub2: Any? = sub2.localImagePath ?: sub2.driveThumbnailLink
+                    Glide.with(holder.imgSub2).load(srcSub2).centerCrop().into(holder.imgSub2)
+
+                    val moreCount = images.size - 3
+                    if (moreCount > 0) {
+                        holder.txtMoreOverlay.visibility = View.VISIBLE
+                        holder.txtMoreOverlay.text = "+$moreCount"
+                    } else {
+                        holder.txtMoreOverlay.visibility = View.GONE
+                    }
+                } else {
+                    holder.frameSub2.visibility = View.GONE
+                    Glide.with(holder.imgSub2).clear(holder.imgSub2)
+                    holder.txtMoreOverlay.visibility = View.GONE
+                }
+            } else {
+                // Chỉ có 1 ảnh duy nhất: Ảnh chính phủ toàn bộ chiều ngang
+                holder.img.shapeAppearanceModel = holder.img.shapeAppearanceModel.toBuilder()
+                    .setTopLeftCornerSize(radius)
+                    .setTopRightCornerSize(radius)
+                    .build()
+
+                val mainParams = holder.frameMainImage.layoutParams as LinearLayout.LayoutParams
+                mainParams.weight = 100f
+                holder.frameMainImage.layoutParams = mainParams
+
+                holder.layoutSubImages.visibility = View.GONE
+                Glide.with(holder.imgSub1).clear(holder.imgSub1)
+                Glide.with(holder.imgSub2).clear(holder.imgSub2)
+            }
         } else {
+            // Không có ảnh
+            holder.img.shapeAppearanceModel = holder.img.shapeAppearanceModel.toBuilder()
+                .setTopLeftCornerSize(radius)
+                .setTopRightCornerSize(radius)
+                .build()
+
+            val mainParams = holder.frameMainImage.layoutParams as LinearLayout.LayoutParams
+            mainParams.weight = 100f
+            holder.frameMainImage.layoutParams = mainParams
+
+            holder.layoutSubImages.visibility = View.GONE
+            Glide.with(holder.imgSub1).clear(holder.imgSub1)
+            Glide.with(holder.imgSub2).clear(holder.imgSub2)
             Glide.with(holder.img).clear(holder.img)
             holder.img.scaleType = ImageView.ScaleType.CENTER
             ImageViewCompat.setImageTintList(

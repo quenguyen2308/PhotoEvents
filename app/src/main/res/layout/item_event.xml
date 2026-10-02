@@ -21,18 +21,88 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Khung ảnh bìa Hero 16:9 với badge ngày tháng nổi -->
+        <!-- Khung Bento Mosaic đa ảnh nghệ thuật -->
         <FrameLayout
+            android:id="@+id/bentoContainer"
             android:layout_width="match_parent"
-            android:layout_height="170dp"
+            android:layout_height="215dp"
             android:background="?attr/colorSurfaceVariant">
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/imgThumbnail"
+            <!-- Lưới Bento Mosaic -->
+            <LinearLayout
+                android:id="@+id/layoutMosaic"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.PhotoEvents.HeroBanner" />
+                android:orientation="horizontal">
+
+                <!-- Cột ảnh chính (Hero / Portrait) -->
+                <FrameLayout
+                    android:id="@+id/frameMainImage"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="60">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/imgThumbnail"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.PhotoEvents.BentoMain" />
+
+                </FrameLayout>
+
+                <!-- Cột ảnh phụ bên phải (chỉ hiện khi có >= 2 ảnh) -->
+                <LinearLayout
+                    android:id="@+id/layoutSubImages"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="40"
+                    android:layout_marginStart="3dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <!-- Ảnh phụ 1 (trên) -->
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/imgSub1"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.PhotoEvents.BentoSubTop" />
+
+                    <!-- Ảnh phụ 2 (dưới) - chỉ hiện khi có >= 3 ảnh -->
+                    <FrameLayout
+                        android:id="@+id/frameSub2"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginTop="3dp"
+                        android:visibility="gone">
+
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/imgSub2"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop" />
+
+                        <!-- Overlay lớp mờ +N ảnh khi tổng số ảnh > 3 -->
+                        <TextView
+                            android:id="@+id/txtMoreImagesOverlay"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="#80000000"
+                            android:gravity="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:visibility="gone"
+                            tools:text="+5" />
+
+                    </FrameLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
 
             <!-- Checkbox khi vào chế độ chọn nhiều -->
             <FrameLayout
@@ -72,7 +142,7 @@
                 android:id="@+id/txtImageCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
+                android:layout_gravity="bottom|start"
                 android:layout_margin="12dp"
                 android:background="@drawable/bg_count_badge"
                 android:drawableStart="@drawable/ic_photo_library"
