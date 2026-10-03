@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Outer Glow & Shadow -->
+    <filter id="iconShadow3" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#0EA5E9" flood-opacity="0.35"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#2E1A29" flood-opacity="0.25"/>
+    </filter>
+
+    <filter id="cloudGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#0284C7" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Base Gradient -->
+    <linearGradient id="baseGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6584"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+
+    <!-- Outer Rim -->
+    <linearGradient id="rimGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0E7490" stop-opacity="0.5"/>
+    </linearGradient>
+
+    <!-- Gallery Image Gradient -->
+    <linearGradient id="galleryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="35%" stop-color="#F43F5E"/>
+      <stop offset="80%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+
+    <!-- Gloss Sheen -->
+    <linearGradient id="glossGrad3" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="85%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E0F2FE"/>
+    </linearGradient>
+
+    <linearGradient id="syncArrows" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main Circle -->
+  <g filter="url(#iconShadow3)">
+    <circle cx="256" cy="256" r="224" fill="url(#baseGrad3)"/>
+    <circle cx="256" cy="256" r="222" fill="none" stroke="url(#rimGrad3)" stroke-width="4"/>
+
+    <!-- Large Rounded Photo Frame in Background -->
+    <g transform="translate(256, 230)">
+      <!-- Frame Border -->
+      <rect x="-135" y="-120" width="270" height="230" rx="42" fill="#FFFFFF" fill-opacity="0.22" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="3"/>
+      <!-- Inner Artwork -->
+      <rect x="-120" y="-105" width="240" height="200" rx="32" fill="url(#galleryGrad)"/>
+      <!-- Sun in Artwork -->
+      <circle cx="65" cy="-45" r="26" fill="#FEF08A" fill-opacity="0.95"/>
+      <!-- Mountains -->
+      <path d="M -120 70 L -60 10 L 0 65 L 75 -5 L 120 70 L 120 95 L -120 95 Z" fill="#1E1B4B" fill-opacity="0.8"/>
+      <path d="M -40 70 L 25 15 L 85 70 L 85 95 L -40 95 Z" fill="#312E81" fill-opacity="0.6"/>
+      <!-- Glass reflection diagonally across frame -->
+      <path d="M -120 -105 L 10 -105 L -70 95 L -120 95 Z" fill="#FFFFFF" fill-opacity="0.2"/>
+    </g>
+
+    <!-- Star Representative Badge (Pinned on Frame) -->
+    <g transform="translate(145, 115)">
+      <polygon points="20,2 26,14 39,16 30,25 32,38 20,32 8,38 10,25 1,16 14,14" 
+               fill="#F59E0B" stroke="#FFFFFF" stroke-width="2"/>
+      <circle cx="17" cy="14" r="2.5" fill="#FEF08A"/>
+    </g>
+
+    <!-- Floating 3D Cloud Sync Emblem (Foreground) -->
+    <g transform="translate(256, 345)" filter="url(#cloudGlow)">
+      <!-- Cloud Body -->
+      <path d="M -70 20 
+               A 32 32 0 0 1 -50 -25 
+               A 45 45 0 0 1 10 -40 
+               A 40 40 0 0 1 65 -15 
+               A 30 30 0 0 1 70 20 
+               Z" 
+            fill="url(#cloudGrad)" stroke="#FFFFFF" stroke-width="3"/>
+      
+      <!-- Synchronize Dual Arrows -->
+      <g transform="translate(0, -6) scale(0.9)">
+        <!-- Clockwise Top Arrow -->
+        <path d="M -16 -4 A 18 18 0 0 1 16 -4" fill="none" stroke="url(#syncArrows)" stroke-width="5" stroke-linecap="round"/>
+        <polygon points="12,-11 22,-4 15,2" fill="#0284C7"/>
+        <!-- Counter-clockwise Bottom Arrow -->
+        <path d="M 16 6 A 18 18 0 0 1 -16 6" fill="none" stroke="url(#syncArrows)" stroke-width="5" stroke-linecap="round"/>
+        <polygon points="-12,13 -22,6 -15,0" fill="#0284C7"/>
+      </g>
+    </g>
+
+    <!-- Sparkles -->
+    <circle cx="395" cy="180" r="5" fill="#FFFFFF" fill-opacity="0.9"/>
+    <path d="M 110 280 Q 120 280 120 270 Q 120 280 130 280 Q 120 280 120 290 Q 120 280 110 280 Z" fill="#FFFFFF"/>
+
+    <!-- High Gloss Glass Dome -->
+    <path d="M 52,190 C 80,100 160,42 256,42 C 352,42 432,100 460,190 C 390,140 310,120 256,120 C 202,120 122,140 52,190 Z" 
+          fill="url(#glossGrad3)"/>
+    <ellipse cx="256" cy="72" rx="140" ry="24" fill="#FFFFFF" fill-opacity="0.4"/>
+  </g>
+</svg>

@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Outer Glow & Shadow -->
+    <filter id="c2_shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#8B5CF6" flood-opacity="0.45"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#2E1A29" flood-opacity="0.3"/>
+    </filter>
+
+    <filter id="c2_elementShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#1E1B4B" flood-opacity="0.4"/>
+    </filter>
+
+    <!-- Base Gradient -->
+    <linearGradient id="c2_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7597"/>
+      <stop offset="45%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#4F46E5"/>
+    </linearGradient>
+
+    <!-- Photo Scenery -->
+    <linearGradient id="c2_photo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="40%" stop-color="#818CF8"/>
+      <stop offset="80%" stop-color="#F43F5E"/>
+      <stop offset="100%" stop-color="#FBBF24"/>
+    </linearGradient>
+
+    <!-- Gold Star -->
+    <linearGradient id="c2_star" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A"/>
+      <stop offset="40%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+
+    <!-- Gloss Highlight -->
+    <linearGradient id="c2_gloss" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="80%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g filter="url(#c2_shadow)">
+    <!-- Base Circle -->
+    <circle cx="256" cy="256" r="224" fill="url(#c2_bg)"/>
+    <circle cx="256" cy="256" r="222" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="4.5"/>
+
+    <!-- Calendar Backing Sheet (Showing Calendar Grid Lines) -->
+    <g transform="translate(256, 256)" filter="url(#c2_elementShadow)">
+      <rect x="-140" y="-140" width="280" height="280" rx="36" fill="#FFFFFF" fill-opacity="0.25" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="3"/>
+      <!-- Calendar Header Line -->
+      <line x1="-120" y1="-85" x2="120" y2="-85" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="3"/>
+      <!-- Mini calendar dots indicating dates -->
+      <circle cx="-90" cy="-55" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+      <circle cx="-45" cy="-55" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+      <circle cx="0" cy="-55" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+      <circle cx="45" cy="-55" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+      <circle cx="90" cy="-55" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+      
+      <circle cx="-90" cy="-20" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+      <circle cx="-45" cy="-20" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+      <circle cx="0" cy="-20" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+      <circle cx="45" cy="-20" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+      <circle cx="90" cy="-20" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+    </g>
+
+    <!-- Foreground: 3D Glossy Photo Card (Pinned on the Calendar) -->
+    <g transform="translate(260, 275) rotate(-6)" filter="url(#c2_elementShadow)">
+      <!-- Polaroid White Paper Shell -->
+      <rect x="-115" y="-125" width="230" height="255" rx="20" fill="#FFFFFF"/>
+      
+      <!-- Photo Surface -->
+      <rect x="-100" y="-110" width="200" height="175" rx="12" fill="url(#c2_photo)"/>
+      
+      <!-- Sunset Silhouette Scenery -->
+      <circle cx="45" cy="-45" r="26" fill="#FEF08A"/>
+      <path d="M -100 45 L -50 -10 L 10 35 L 55 -5 L 100 45 L 100 65 L -100 65 Z" fill="#1E1B4B" fill-opacity="0.85"/>
+
+      <!-- Polaroid Bottom Label: "Event Memories" handwritten style bar -->
+      <rect x="-80" y="85" width="100" height="14" rx="7" fill="#F43F5E" fill-opacity="0.2"/>
+      <text x="-30" y="97" font-family="sans-serif" font-size="12" font-weight="bold" fill="#E11D48">PHOTO EVENT</text>
+
+      <!-- Glass Glare on Photo -->
+      <path d="M -100 -110 L 20 -110 L -60 65 L -100 65 Z" fill="#FFFFFF" fill-opacity="0.25"/>
+
+      <!-- Event Binder Clip / Pin (Fixing the photo to the calendar) -->
+      <g transform="translate(0, -135)">
+        <!-- Golden Metal Clip -->
+        <rect x="-25" y="0" width="50" height="30" rx="8" fill="#F59E0B" stroke="#FFFFFF" stroke-width="2"/>
+        <circle cx="0" cy="15" r="6" fill="#78350F"/>
+        <!-- Clip Highlight -->
+        <line x1="-15" y1="6" x2="15" y2="6" stroke="#FEF08A" stroke-width="2"/>
+      </g>
+    </g>
+
+    <!-- Star Representative Marker (3D Star on Top-Right of Photo) -->
+    <g transform="translate(340, 140)">
+      <circle cx="28" cy="28" r="36" fill="#F59E0B" fill-opacity="0.35"/>
+      <polygon points="28,2 36,18 54,21 41,34 44,52 28,43 12,52 15,34 2,21 20,18" 
+               fill="url(#c2_star)" stroke="#FFFFFF" stroke-width="2.5"/>
+      <polygon points="28,9 33,20 44,22 36,31 38,42 28,36 18,42 20,31 12,22 23,20" 
+               fill="#FEF08A" fill-opacity="0.8"/>
+      <circle cx="23" cy="18" r="3.5" fill="#FFFFFF"/>
+    </g>
+
+    <!-- Glossy Dome Sheen -->
+    <path d="M 52,190 C 80,100 160,42 256,42 C 352,42 432,100 460,190 C 390,140 310,120 256,120 C 202,120 122,140 52,190 Z" 
+          fill="url(#c2_gloss)"/>
+    <ellipse cx="256" cy="72" rx="140" ry="24" fill="#FFFFFF" fill-opacity="0.4"/>
+  </g>
+</svg>

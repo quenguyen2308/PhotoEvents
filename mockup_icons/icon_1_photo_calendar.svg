@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Outer Glow & Shadow -->
+    <filter id="c1_shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="26" flood-color="#FF6584" flood-opacity="0.45"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#3B0764" flood-opacity="0.3"/>
+    </filter>
+
+    <filter id="c1_cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#2E1A29" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Base Gradient -->
+    <linearGradient id="c1_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFA4B6"/>
+      <stop offset="45%" stop-color="#FF6584"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+
+    <!-- Rim 3D Bevel -->
+    <linearGradient id="c1_rim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#4C1D95" stop-opacity="0.5"/>
+    </linearGradient>
+
+    <!-- Photo Artwork Inside Calendar Gradient -->
+    <linearGradient id="c1_scenery" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="35%" stop-color="#FB923C"/>
+      <stop offset="70%" stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+
+    <!-- Golden Star Gradient -->
+    <linearGradient id="c1_star" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A"/>
+      <stop offset="30%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+
+    <!-- Glossy Crescent -->
+    <linearGradient id="c1_gloss" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="80%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Circular Base -->
+  <g filter="url(#c1_shadow)">
+    <circle cx="256" cy="256" r="224" fill="url(#c1_bg)"/>
+    <circle cx="256" cy="256" r="222" fill="none" stroke="url(#c1_rim)" stroke-width="4.5"/>
+
+    <!-- Background Subtle Sync Ring -->
+    <circle cx="256" cy="256" r="195" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="2" stroke-dasharray="10 8"/>
+
+    <!-- MAIN HERO: 3D Calendar Page with Photo Inside -->
+    <g transform="translate(256, 270)" filter="url(#c1_cardShadow)">
+      
+      <!-- Backing Layer (Multi-pages indicating multiple events) -->
+      <rect x="-140" y="-140" width="280" height="260" rx="36" fill="#F3E8FF" fill-opacity="0.8" transform="rotate(-4)"/>
+      <rect x="-140" y="-140" width="280" height="260" rx="36" fill="#FFE8EE" fill-opacity="0.9" transform="rotate(2)"/>
+
+      <!-- Main Calendar Page -->
+      <rect x="-140" y="-145" width="280" height="265" rx="34" fill="#FFFFFF"/>
+
+      <!-- Calendar Header Bar (Sakura Red/Pink with Event Label) -->
+      <path d="M -140,-111 C -140,-130 -125,-145 -106,-145 L 106,-145 C 125,-145 140,-130 140,-111 L 140,-75 L -140,-75 Z" fill="#FF4772"/>
+      
+      <!-- Calendar Rings / Spiral Binders (3 Silver Binder Rings at Top) -->
+      <!-- Ring 1 -->
+      <rect x="-95" y="-160" width="22" height="32" rx="11" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="2"/>
+      <rect x="-91" y="-158" width="6" height="26" rx="3" fill="#FFFFFF"/>
+      <!-- Ring 2 -->
+      <rect x="-11" y="-160" width="22" height="32" rx="11" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="2"/>
+      <rect x="-7" y="-158" width="6" height="26" rx="3" fill="#FFFFFF"/>
+      <!-- Ring 3 -->
+      <rect x="73" y="-160" width="22" height="32" rx="11" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="2"/>
+      <rect x="77" y="-158" width="6" height="26" rx="3" fill="#FFFFFF"/>
+
+      <!-- Calendar Header Text: "EVENT DATE" -->
+      <text x="0" y="-93" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#FFFFFF" letter-spacing="3" text-anchor="middle">EVENT DATE</text>
+
+      <!-- Calendar Body: THE PHOTO ITSELF! (Showing this is a Photo Event) -->
+      <g transform="translate(0, 15)">
+        <!-- Photo Frame / Window inside Calendar -->
+        <rect x="-120" y="-75" width="240" height="160" rx="20" fill="url(#c1_scenery)"/>
+        
+        <!-- Scenery Artwork: Sun + Mountains (Photo visual) -->
+        <circle cx="65" cy="-25" r="24" fill="#FEF08A"/>
+        <path d="M -120 55 L -65 -5 L 0 50 L 55 5 L 120 65 L 120 85 L -120 85 Z" fill="#312E81" fill-opacity="0.85"/>
+        <path d="M -50 65 L 10 15 L 75 65 L 75 85 L -50 85 Z" fill="#4338CA" fill-opacity="0.7"/>
+
+        <!-- Mini Camera Icon Watermark in corner of photo -->
+        <g transform="translate(-95, -55) scale(0.9)">
+          <rect x="0" y="4" width="30" height="22" rx="6" fill="#FFFFFF" fill-opacity="0.85"/>
+          <circle cx="15" cy="15" r="6" fill="#FF4772"/>
+          <path d="M 6 4 L 10 0 L 20 0 L 24 4 Z" fill="#FFFFFF" fill-opacity="0.85"/>
+        </g>
+
+        <!-- Glass Sheen across the photo -->
+        <path d="M -120 -75 L -10 -75 L -80 85 L -120 85 Z" fill="#FFFFFF" fill-opacity="0.25"/>
+      </g>
+    </g>
+
+    <!-- Big 3D Featured Photo Star Badge (Top-Right of Calendar) -->
+    <g transform="translate(345, 125)">
+      <!-- Glow -->
+      <circle cx="28" cy="28" r="38" fill="#F59E0B" fill-opacity="0.4"/>
+      <!-- Star Outer -->
+      <polygon points="28,2 36,18 54,21 41,34 44,52 28,43 12,52 15,34 2,21 20,18" 
+               fill="url(#c1_star)" stroke="#FFFFFF" stroke-width="3"/>
+      <!-- Star Inner Facet -->
+      <polygon points="28,9 33,20 44,22 36,31 38,42 28,36 18,42 20,31 12,22 23,20" 
+               fill="#FEF08A" fill-opacity="0.8"/>
+      <circle cx="23" cy="18" r="3.5" fill="#FFFFFF"/>
+    </g>
+
+    <!-- Google Drive Sync Cloud Emblem (Bottom-Right Floating Badge) -->
+    <g transform="translate(330, 360)">
+      <circle cx="24" cy="24" r="30" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2.5"/>
+      <!-- Sync arrows in cloud -->
+      <path d="M 12 24 A 12 12 0 0 1 36 24" fill="none" stroke="#0284C7" stroke-width="3.5" stroke-linecap="round"/>
+      <polygon points="34,18 41,24 35,28" fill="#0284C7"/>
+      <path d="M 36 26 A 12 12 0 0 1 12 26" fill="none" stroke="#0284C7" stroke-width="3.5" stroke-linecap="round"/>
+      <polygon points="14,32 7,26 13,22" fill="#0284C7"/>
+    </g>
+
+    <!-- High Gloss Dome Reflection Crescent (Glossy Signature) -->
+    <path d="M 52,190 C 80,100 160,42 256,42 C 352,42 432,100 460,190 C 390,140 310,120 256,120 C 202,120 122,140 52,190 Z" 
+          fill="url(#c1_gloss)"/>
+    <ellipse cx="256" cy="72" rx="140" ry="24" fill="#FFFFFF" fill-opacity="0.4"/>
+  </g>
+</svg>

@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Outer Glow & Shadow -->
+    <filter id="c3_shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#EC4899" flood-opacity="0.4"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#1E1B4B" flood-opacity="0.3"/>
+    </filter>
+
+    <filter id="c3_bookShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#2E1A29" flood-opacity="0.4"/>
+    </filter>
+
+    <!-- Base Gradient -->
+    <linearGradient id="c3_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6584"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+
+    <!-- Gloss -->
+    <linearGradient id="c3_gloss" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="80%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="c3_star" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A"/>
+      <stop offset="40%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+
+    <linearGradient id="c3_photoA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB7185"/>
+      <stop offset="100%" stop-color="#F43F5E"/>
+    </linearGradient>
+
+    <linearGradient id="c3_photoB" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#818CF8"/>
+    </linearGradient>
+  </defs>
+
+  <g filter="url(#c3_shadow)">
+    <!-- Base Circle -->
+    <circle cx="256" cy="256" r="224" fill="url(#c3_bg)"/>
+    <circle cx="256" cy="256" r="222" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="4.5"/>
+
+    <!-- MAIN HERO: Open Photo-Event Book / Album -->
+    <g transform="translate(256, 260)" filter="url(#c3_bookShadow)">
+      
+      <!-- Book Cover Base Layer (Curved 3D open book) -->
+      <path d="M -155,100 C -90,90 -25,95 0,110 C 25,95 90,90 155,100 L 155,-95 C 90,-105 25,-100 0,-85 C -25,-100 -90,-105 -155,-95 Z" 
+            fill="#312E81" fill-opacity="0.6"/>
+
+      <!-- Book Pages (Thick white pages) -->
+      <path d="M -150,90 C -85,80 -20,85 0,100 C 20,85 85,80 150,90 L 150,-105 C 85,-115 20,-110 0,-95 C -20,-110 -85,-115 -150,-105 Z" 
+            fill="#FFFFFF"/>
+
+      <!-- Center Spine Binding Shadow -->
+      <line x1="0" y1="-95" x2="0" y2="100" stroke="#CBD5E1" stroke-width="4"/>
+
+      <!-- LEFT PAGE: CALENDAR / EVENT DATE PAGE -->
+      <g transform="translate(-75, -5)">
+        <!-- Calendar Header -->
+        <rect x="-55" y="-85" width="110" height="26" rx="6" fill="#FF4772"/>
+        <text x="0" y="-67" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">EVENT</text>
+        
+        <!-- Big Date Display -->
+        <text x="0" y="-15" font-family="sans-serif" font-size="36" font-weight="900" fill="#1E1B4B" text-anchor="middle">24</text>
+        <text x="0" y="5" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FF4772" text-anchor="middle">OCTOBER</text>
+        
+        <!-- Note Lines simulating event description -->
+        <line x1="-50" y1="25" x2="50" y2="25" stroke="#E2E8F0" stroke-width="4" stroke-linecap="round"/>
+        <line x1="-50" y1="42" x2="35" y2="42" stroke="#E2E8F0" stroke-width="4" stroke-linecap="round"/>
+        <line x1="-50" y1="60" x2="45" y2="60" stroke="#E2E8F0" stroke-width="4" stroke-linecap="round"/>
+      </g>
+
+      <!-- RIGHT PAGE: EVENT PHOTOS (Multi-Photos Grid / Gallery) -->
+      <g transform="translate(75, -5)">
+        <!-- Photo 1 (Featured with star) -->
+        <rect x="-60" y="-85" width="120" height="85" rx="10" fill="url(#c3_photoB)"/>
+        <circle cx="25" cy="-60" r="12" fill="#FEF08A"/>
+        <path d="M -60 -20 L -30 -50 L 10 -25 L 35 -40 L 60 -15 L 60 0 L -60 0 Z" fill="#1E1B4B" fill-opacity="0.8"/>
+        
+        <!-- Photo 2 & 3 Thumbnails below (Showing multi-photo capability) -->
+        <rect x="-60" y="10" width="55" height="55" rx="8" fill="url(#c3_photoA)"/>
+        <circle cx="-32" cy="38" r="10" fill="#FFFFFF" fill-opacity="0.6"/>
+        
+        <rect x="5" y="10" width="55" height="55" rx="8" fill="#A855F7"/>
+        <!-- Plus icon showing "add more photos" -->
+        <circle cx="32" cy="37" r="14" fill="#FFFFFF" fill-opacity="0.3"/>
+        <line x1="32" y1="28" x2="32" y2="46" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+        <line x1="23" y1="37" x2="41" y2="37" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- Golden Bookmark Ribbon with 3D Star Hanging -->
+    <g transform="translate(256, 120)">
+      <!-- Ribbon Hanging Out of Book -->
+      <path d="M -12,0 L 12,0 L 12,65 L 0,55 L -12,65 Z" fill="#F59E0B"/>
+      <!-- Glowing 3D Star on Ribbon -->
+      <g transform="translate(0, 80)">
+        <circle cx="0" cy="0" r="28" fill="#F59E0B" fill-opacity="0.35"/>
+        <polygon points="0,-24 7,-8 24,-2 11,10 14,27 0,18 -14,27 -11,10 -24,-2 -7,-8" 
+                 fill="url(#c3_star)" stroke="#FFFFFF" stroke-width="2.5"/>
+        <circle cx="0" cy="0" r="4" fill="#FFFFFF"/>
+      </g>
+    </g>
+
+    <!-- Glossy Curved Crescent -->
+    <path d="M 52,190 C 80,100 160,42 256,42 C 352,42 432,100 460,190 C 390,140 310,120 256,120 C 202,120 122,140 52,190 Z" 
+          fill="url(#c3_gloss)"/>
+    <ellipse cx="256" cy="72" rx="140" ry="24" fill="#FFFFFF" fill-opacity="0.4"/>
+  </g>
+</svg>

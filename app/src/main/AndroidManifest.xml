@@ -7,7 +7,8 @@
         android:allowBackup="true"
         android:label="Photo Events"
         android:theme="@style/Theme.PhotoEvents"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
 
         <activity
             android:name=".MainActivity"

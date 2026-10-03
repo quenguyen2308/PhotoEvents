@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Outer Glow & Shadow -->
+    <filter id="iconShadow2" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#8B5CF6" flood-opacity="0.4"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#2E1A29" flood-opacity="0.25"/>
+    </filter>
+
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#2E1A29" flood-opacity="0.3"/>
+    </filter>
+
+    <!-- Base Gradient -->
+    <linearGradient id="baseGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7597"/>
+      <stop offset="50%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+
+    <!-- Rim Gradient -->
+    <linearGradient id="rimGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85"/>
+      <stop offset="60%" stop-color="#FFFFFF" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#4338CA" stop-opacity="0.4"/>
+    </linearGradient>
+
+    <!-- Gloss Highlight -->
+    <linearGradient id="glossGrad2" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="80%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Photo Scenery Gradient 1 -->
+    <linearGradient id="photoGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F43F5E"/>
+      <stop offset="50%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#FBBF24"/>
+    </linearGradient>
+
+    <!-- Photo Scenery Gradient 2 -->
+    <linearGradient id="photoGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#C084FC"/>
+    </linearGradient>
+
+    <!-- Golden Star Gradient -->
+    <linearGradient id="goldStar2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A"/>
+      <stop offset="40%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main Circle -->
+  <g filter="url(#iconShadow2)">
+    <circle cx="256" cy="256" r="224" fill="url(#baseGrad2)"/>
+    <circle cx="256" cy="256" r="222" fill="none" stroke="url(#rimGrad2)" stroke-width="4"/>
+
+    <!-- Subtle Inner Rings -->
+    <circle cx="256" cy="256" r="200" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="1.5" stroke-dasharray="8 8"/>
+
+    <!-- Back Photo Card (Tilted Left) -->
+    <g transform="translate(210, 245) rotate(-14) translate(-210, -245)" filter="url(#cardShadow)">
+      <!-- Polaroid Border -->
+      <rect x="120" y="150" width="180" height="210" rx="16" fill="#FFFFFF" fill-opacity="0.95"/>
+      <!-- Photo Interior -->
+      <rect x="135" y="165" width="150" height="140" rx="8" fill="url(#photoGrad2)"/>
+      <!-- Scenery Sun & Mountain -->
+      <circle cx="240" cy="195" r="18" fill="#FEF08A" fill-opacity="0.9"/>
+      <path d="M 135 285 L 180 230 L 220 270 L 255 220 L 285 285 Z" fill="#4338CA" fill-opacity="0.75"/>
+      <path d="M 175 285 L 210 245 L 245 285 Z" fill="#312E81" fill-opacity="0.8"/>
+      <!-- Card Note Line -->
+      <line x1="150" y1="330" x2="220" y2="330" stroke="#CBD5E1" stroke-width="6" stroke-linecap="round"/>
+    </g>
+
+    <!-- Front Photo Card / Event Calendar (Tilted Right) -->
+    <g transform="translate(300, 265) rotate(10) translate(-300, -265)" filter="url(#cardShadow)">
+      <!-- Main Card with Glass Sheen -->
+      <rect x="210" y="165" width="190" height="225" rx="18" fill="#FFFFFF"/>
+      <!-- Event Photo Viewport -->
+      <rect x="225" y="180" width="160" height="150" rx="10" fill="url(#photoGrad1)"/>
+      <!-- Scenery Art Sunset Waves -->
+      <circle cx="330" cy="215" r="22" fill="#FEF08A"/>
+      <path d="M 225 310 Q 260 270 300 290 T 385 280 L 385 330 L 225 330 Z" fill="#BE123C" fill-opacity="0.6"/>
+      <path d="M 225 320 Q 275 295 335 315 T 385 305 L 385 330 L 225 330 Z" fill="#881337" fill-opacity="0.8"/>
+      <!-- Calendar Badge Strip at Bottom -->
+      <rect x="225" y="342" width="75" height="34" rx="8" fill="#FFE4E6"/>
+      <text x="262" y="365" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#E11D48" text-anchor="middle">OCT 24</text>
+      <!-- Heart/Star Tag on Card -->
+      <circle cx="360" cy="359" r="10" fill="#F43F5E"/>
+      <path d="M 360 354 L 362 358 L 366 358 L 363 361 L 364 365 L 360 363 L 356 365 L 357 361 L 354 358 L 358 358 Z" fill="#FFFFFF"/>
+    </g>
+
+    <!-- Golden Highlight Star (Representative Photo Star) -->
+    <g transform="translate(195, 125)">
+      <circle cx="28" cy="28" r="36" fill="#F59E0B" fill-opacity="0.35"/>
+      <polygon points="28,2 36,18 54,21 41,34 44,52 28,43 12,52 15,34 2,21 20,18" 
+               fill="url(#goldStar2)" stroke="#FFFFFF" stroke-width="2.5"/>
+      <polygon points="28,10 33,20 44,22 36,30 38,41 28,35 18,41 20,30 12,22 23,20" 
+               fill="#FEF08A" fill-opacity="0.7"/>
+      <circle cx="23" cy="18" r="3.5" fill="#FFFFFF"/>
+    </g>
+
+    <!-- Floating Sparkles -->
+    <path d="M 375 140 Q 385 140 385 130 Q 385 140 395 140 Q 385 140 385 150 Q 385 140 375 140 Z" fill="#FFFFFF"/>
+    <circle cx="385" cy="140" r="2" fill="#FEF08A"/>
+    <circle cx="120" cy="330" r="4" fill="#FFFFFF" fill-opacity="0.8"/>
+    <circle cx="410" cy="310" r="5" fill="#FFFFFF" fill-opacity="0.7"/>
+
+    <!-- Glossy Dome Reflection Crescent -->
+    <path d="M 52,190 C 80,100 160,42 256,42 C 352,42 432,100 460,190 C 390,140 310,120 256,120 C 202,120 122,140 52,190 Z" 
+          fill="url(#glossGrad2)"/>
+    <ellipse cx="256" cy="72" rx="140" ry="24" fill="#FFFFFF" fill-opacity="0.4"/>
+  </g>
+</svg>
