@@ -66,6 +66,7 @@ class MainActivity : AppCompatActivity() {
             val account = GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 .getResult(ApiException::class.java)
             if (account?.account != null) {
+                DriveSession.clearSession()
                 runSync()
             } else {
                 swipeRefresh.isRefreshing = false
@@ -85,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestScopes(Scope(DriveScopes.DRIVE_FILE))
+            .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
             .build()
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
@@ -155,7 +156,10 @@ class MainActivity : AppCompatActivity() {
         // Debug: bỏ qua — chỉ tự sync ngầm nếu máy đã từng đăng nhập sẵn, không ép đăng nhập,
         // để chạy/test thoải mái trên máy ảo chưa cấu hình OAuth hoặc không có Play Services.
         if (BuildConfig.DEBUG) {
-            if (GoogleSignIn.getLastSignedInAccount(this)?.account != null) runSync()
+            val account = GoogleSignIn.getLastSignedInAccount(this)
+            if (account?.account != null && GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_APPDATA))) {
+                runSync()
+            }
         } else {
             ensureSignedInThenSync()
         }
@@ -213,7 +217,8 @@ class MainActivity : AppCompatActivity() {
 
     /** Gọi khi người dùng kéo-để-làm-mới (hoặc tự động ở bản release lúc mở app). */
     private fun ensureSignedInThenSync() {
-        if (GoogleSignIn.getLastSignedInAccount(this)?.account != null) {
+        val account = GoogleSignIn.getLastSignedInAccount(this)
+        if (account?.account != null && GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_APPDATA))) {
             runSync()
             return
         }

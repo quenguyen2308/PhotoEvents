@@ -24,9 +24,10 @@ thiết bị cùng tài khoản Google.
 - **Lưu trữ cục bộ:** Room — 2 bảng `events` (1-nhiều) `event_images`, quan hệ qua `@Relation`
   (`EventWithImages`), khoá ngoại `ON DELETE CASCADE`.
 - **Đồng bộ:** `SyncManager` — merge kiểu *last-write-wins* theo `updatedAt`, ghi toàn bộ
-  metadata (sự kiện + ảnh, trừ đường dẫn cache cục bộ) vào 1 file `metadata.json` trong folder
-  riêng `PhotoEventsApp` trên Google Drive (scope `drive.file` — app chỉ thấy file do chính nó tạo).
-  Ảnh được resize thành thumbnail rồi upload riêng từng file.
+  metadata (sự kiện + ảnh, trừ đường dẫn cache cục bộ) vào 1 file `metadata.json` trong thư mục
+  ẩn bảo mật `appDataFolder` trên Google Drive (scope `drive.appdata` — thư mục chuyên dụng riêng của app,
+  ẩn hoàn toàn khỏi giao diện Google Drive giúp bảo mật và tránh bị người dùng xóa nhầm).
+  Ảnh được resize thành thumbnail rồi upload riêng từng file vào `appDataFolder`.
 - **Chạy ngầm, không chặn UI:** mọi lượt sync chạy trong `SyncScope` (coroutine scope sống theo
   cả app, không bị huỷ khi 1 Activity đóng ngay sau khi trigger) + `Mutex` (chống 2 lượt sync
   chồng nhau) + `NonCancellable` bên trong `SyncManager.sync()`.
@@ -100,15 +101,14 @@ cp keystore.properties.example keystore.properties   # rồi điền mật khẩ
 4. Mỗi keystore (debug / release riêng) cần một Client ID riêng với đúng SHA-1 của keystore đó —
    lệch SHA-1 hoặc package name là nguyên nhân phổ biến nhất của lỗi đăng nhập mã `10` (`DEVELOPER_ERROR`).
 
-Không cần tạo Web Client ID — app chỉ dùng scope `drive.file` qua `GoogleSignInAccount`, không lấy ID token.
+Không cần tạo Web Client ID — app chỉ dùng scope `drive.appdata` qua `GoogleSignInAccount`, không lấy ID token.
 
 ## Giới hạn / lưu ý
 
 - `AppDatabase` dùng `fallbackToDestructiveMigration()` — mỗi lần đổi schema (thêm field mới),
   dữ liệu cục bộ **chưa đồng bộ** trên máy đang chạy bản cũ sẽ mất khi cài bản mới. Nhớ đồng bộ
   trước khi cập nhật, hoặc tự viết `Migration` cụ thể nếu cần giữ dữ liệu khi lên production.
-- Đổi tên folder Drive (`APP_FOLDER_NAME` trong `DriveServiceHelper.kt`) hoặc đổi package name /
-  keystore sẽ khiến app mất kết nối với dữ liệu đã đồng bộ trước đó / cần tạo lại OAuth Client ID.
+- Đổi package name / keystore sẽ khiến app mất kết nối với dữ liệu đã đồng bộ trước đó / cần tạo lại OAuth Client ID.
 - Xoá mềm (soft-delete): sự kiện/ảnh bị xoá chỉ đánh dấu `deleted = true`, file thật trên Drive
   được dọn ở lượt sync kế tiếp — cần có mạng và đã đăng nhập thì việc xoá mới thực sự lan ra Drive
   và các thiết bị khác.

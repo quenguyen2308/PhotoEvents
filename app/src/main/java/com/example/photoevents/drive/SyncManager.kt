@@ -46,6 +46,21 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
     }
 
     private suspend fun doSync(): SyncResult {
+        val prefs = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+        if (!prefs.getBoolean(PREF_MIGRATED_TO_APPDATA, false)) {
+            // Khi chuyển sang appDataFolder an toàn, các fileId cũ trên My Drive không còn nằm trong appDataFolder.
+            // Reset driveFileId cho các ảnh local có sẵn file trên máy để được tự động upload vào appDataFolder ẩn mới.
+            val allImages = imageDao.getAllIncludingDeleted()
+            val resetImages = allImages.map { img ->
+                val hasLocalFile = img.localImagePath?.let { path -> File(path).exists() } == true
+                if (hasLocalFile && img.driveFileId != null) {
+                    img.copy(driveFileId = null, driveThumbnailLink = null)
+                } else img
+            }
+            imageDao.upsertAll(resetImages)
+            prefs.edit().putBoolean(PREF_MIGRATED_TO_APPDATA, true).apply()
+        }
+
         val remoteJson = drive.downloadMetadataJson()
         val remotePayload = if (remoteJson != null) {
             gson.fromJson(remoteJson, SyncPayload::class.java)
@@ -177,6 +192,12 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         for (item in local) {
             val existing = byId[idOf(item)]
             if (existing == null || updatedAtOf(item) >= updatedAtOf(existing)) {
+                if (item is EventImage && existing is EventImage) {
+                    if (item.driveFileId == null && existing.driveFileId != null) {
+                        item.driveFileId = existing.driveFileId
+                        item.driveThumbnailLink = existing.driveThumbnailLink
+                    }
+                }
                 byId[idOf(item)] = item
             }
         }
@@ -185,5 +206,6 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
 
     companion object {
         private val syncMutex = Mutex()
+        private const val PREF_MIGRATED_TO_APPDATA = "migrated_to_appdata_v1"
     }
 }

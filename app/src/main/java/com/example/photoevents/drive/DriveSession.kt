@@ -2,6 +2,8 @@ package com.example.photoevents.drive
 
 import android.content.Context
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.Scope
+import com.google.api.services.drive.DriveScopes
 
 /**
  * Quản lý phiên làm việc với Google Drive.
@@ -15,6 +17,9 @@ object DriveSession {
     @Synchronized
     fun getHelper(context: Context): DriveServiceHelper? {
         val account = GoogleSignIn.getLastSignedInAccount(context) ?: return null
+        if (!GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_APPDATA))) {
+            return null
+        }
         val googleAccount = account.account ?: return null
         val key = account.email ?: account.id ?: "default_account"
 
