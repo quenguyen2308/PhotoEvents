@@ -26,6 +26,7 @@ import com.example.photoevents.data.AppDatabase
 import com.example.photoevents.drive.DriveSession
 import com.example.photoevents.drive.SyncManager
 import com.example.photoevents.ui.EventsAdapter
+import com.example.photoevents.ui.FocusAdjustBottomSheet
 import com.example.photoevents.ui.SortOption
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -97,7 +98,20 @@ class MainActivity : AppCompatActivity() {
                         .putExtra(EXTRA_EVENT_ID, item.event.id)
                 )
             },
-            onSelectionChanged = { count -> updateSelectionHeader(count) }
+            onSelectionChanged = { count -> updateSelectionHeader(count) },
+            onAdjustFocus = { image, aspectRatio ->
+                FocusAdjustBottomSheet.show(
+                    supportFragmentManager,
+                    image,
+                    aspectRatio
+                ) { newFocusX, newFocusY ->
+                    lifecycleScope.launch {
+                        val db = AppDatabase.get(this@MainActivity)
+                        db.eventImageDao().updateFocus(image.id, newFocusX, newFocusY)
+                        runSync()
+                    }
+                }
+            }
         )
 
         recyclerView = findViewById(R.id.recyclerView)

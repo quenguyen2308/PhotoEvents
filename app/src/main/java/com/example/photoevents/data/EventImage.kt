@@ -36,6 +36,8 @@ data class EventImage(
     @Expose var driveThumbnailLink: String? = null,
     var localImagePath: String? = null,
     @Expose var position: Int = 0,
+    @Expose var focusX: Float = 0.5f,
+    @Expose var focusY: Float = 0.25f,
     @Expose var createdAt: Long = System.currentTimeMillis(),
     @Expose var updatedAt: Long = System.currentTimeMillis(),
     @Expose var deleted: Boolean = false

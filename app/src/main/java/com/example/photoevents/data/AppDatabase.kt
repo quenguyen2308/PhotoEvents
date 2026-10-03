@@ -4,8 +4,17 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Event::class, EventImage::class], version = 5, exportSchema = false)
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE event_images ADD COLUMN focusX REAL NOT NULL DEFAULT 0.5")
+        db.execSQL("ALTER TABLE event_images ADD COLUMN focusY REAL NOT NULL DEFAULT 0.25")
+    }
+}
+
+@Database(entities = [Event::class, EventImage::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
     abstract fun eventImageDao(): EventImageDao
@@ -20,8 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "photo_events.db"
                 )
-                    // Dự án mới, chưa có dữ liệu thật cần giữ khi đổi schema -> cho phép migrate
-                    // kiểu huỷ-và-tạo-lại. Nếu app đã phát hành, thay bằng Migration cụ thể.
+                    .addMigrations(MIGRATION_5_6)
                     .fallbackToDestructiveMigration()
                     .build().also { INSTANCE = it }
             }

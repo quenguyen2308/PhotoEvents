@@ -26,7 +26,8 @@ import com.example.photoevents.data.EventImage
  */
 class ImagesAdapter(
     private val onDelete: (EventImage) -> Unit,
-    private val onToggleCover: (EventImage) -> Unit
+    private val onToggleCover: (EventImage) -> Unit,
+    private val onAdjustFocus: (EventImage) -> Unit
 ) : RecyclerView.Adapter<ImagesAdapter.VH>() {
 
     private val items = mutableListOf<EventImage>()
@@ -64,6 +65,7 @@ class ImagesAdapter(
         val img: ImageView = view.findViewById(R.id.imgThumb)
         val btnCover: ImageButton = view.findViewById(R.id.btnCover)
         val btnDelete: ImageButton = view.findViewById(R.id.btnDelete)
+        val btnFocus: ImageButton = view.findViewById(R.id.btnFocus)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -74,7 +76,10 @@ class ImagesAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val image = items[position]
         val src: Any? = image.localImagePath ?: image.driveThumbnailLink
-        Glide.with(holder.img).load(src).centerCrop().into(holder.img)
+        Glide.with(holder.img)
+            .load(src)
+            .transform(FocusCropTransformation(image.focusX, image.focusY))
+            .into(holder.img)
 
         val isCover = image.id == coverImageId
         val context = holder.itemView.context
@@ -104,5 +109,7 @@ class ImagesAdapter(
         holder.btnCover.contentDescription = if (isCover) "Đang là ảnh đại diện" else "Đặt làm ảnh đại diện"
         holder.btnCover.setOnClickListener { onToggleCover(image) }
         holder.btnDelete.setOnClickListener { onDelete(image) }
+        holder.btnFocus.setOnClickListener { onAdjustFocus(image) }
+        holder.card.setOnClickListener { onAdjustFocus(image) }
     }
 }

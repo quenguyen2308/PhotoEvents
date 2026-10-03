@@ -19,6 +19,7 @@ import com.example.photoevents.data.normalizeToMidnight
 import com.example.photoevents.drive.DriveSession
 import com.example.photoevents.drive.SyncManager
 import com.example.photoevents.drive.SyncScope
+import com.example.photoevents.ui.FocusAdjustBottomSheet
 import com.example.photoevents.ui.ImageDragCallback
 import com.example.photoevents.ui.ImagesAdapter
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +53,8 @@ class EventDetailActivity : AppCompatActivity() {
 
         adapter = ImagesAdapter(
             onDelete = { image -> confirmDeleteImage(image) },
-            onToggleCover = { image -> toggleCover(image) }
+            onToggleCover = { image -> toggleCover(image) },
+            onAdjustFocus = { image -> showFocusAdjuster(image) }
         )
         findViewById<RecyclerView>(R.id.recyclerImages).apply {
             layoutManager = GridLayoutManager(this@EventDetailActivity, 3)
@@ -225,6 +227,22 @@ class EventDetailActivity : AppCompatActivity() {
         val helper = DriveSession.getHelper(this) ?: return
         SyncScope.scope.launch {
             runCatching { SyncManager(applicationContext, helper).sync() }
+        }
+    }
+
+    private fun showFocusAdjuster(image: EventImage) {
+        val isCover = image.id == explicitCoverId || (explicitCoverId == null && adapter.currentList().firstOrNull()?.id == image.id)
+        val aspectRatio = if (isCover) 1.0f else 1.33f
+        FocusAdjustBottomSheet.show(
+            supportFragmentManager,
+            image,
+            aspectRatio
+        ) { newFocusX, newFocusY ->
+            lifecycleScope.launch {
+                val db = AppDatabase.get(this@EventDetailActivity)
+                db.eventImageDao().updateFocus(image.id, newFocusX, newFocusY)
+                triggerSync()
+            }
         }
     }
 }

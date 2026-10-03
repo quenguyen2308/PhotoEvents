@@ -138,6 +138,21 @@
                 android:visibility="gone"
                 tools:text="8 ảnh" />
 
+            <!-- Nút chỉnh tiêu điểm ảnh nhanh trên Bento -->
+            <ImageButton
+                android:id="@+id/btnAdjustFocus"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="12dp"
+                android:background="@drawable/bg_circle_button"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_crop"
+                app:tint="#FFFFFF"
+                android:contentDescription="Chỉnh tiêu điểm ảnh Bento"
+                android:visibility="gone" />
+
         </FrameLayout>
 
         <!-- Thân thẻ: Tiêu đề, ghi chú và nút mở rộng ảnh -->

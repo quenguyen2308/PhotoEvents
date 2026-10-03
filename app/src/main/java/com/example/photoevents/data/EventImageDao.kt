@@ -21,6 +21,10 @@ interface EventImageDao {
     @Query("SELECT * FROM event_images WHERE id = :id")
     suspend fun getById(id: String): EventImage?
 
+    /** Cập nhật toạ độ tiêu điểm (focus) cho ảnh. */
+    @Query("UPDATE event_images SET focusX = :focusX, focusY = :focusY, updatedAt = :now WHERE id = :id")
+    suspend fun updateFocus(id: String, focusX: Float, focusY: Float, now: Long = System.currentTimeMillis())
+
     /** Xoá 1 ảnh cụ thể — chỉ đánh dấu deleted, việc xoá file thật trên Drive xảy ra khi sync. */
     @Query("UPDATE event_images SET deleted = 1, updatedAt = :now WHERE id = :id")
     suspend fun softDelete(id: String, now: Long = System.currentTimeMillis())

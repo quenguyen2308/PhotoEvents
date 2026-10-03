@@ -50,6 +50,20 @@
             app:tint="#FFFFFF"
             android:contentDescription="Xoá ảnh này" />
 
+        <!-- Nút chỉnh tiêu điểm / vùng nhìn Bento -->
+        <ImageButton
+            android:id="@+id/btnFocus"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="6dp"
+            android:background="@drawable/bg_circle_button"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_crop"
+            app:tint="#FFFFFF"
+            android:contentDescription="Chỉnh tiêu điểm Bento" />
+
     </FrameLayout>
 
 </com.google.android.material.card.MaterialCardView>
