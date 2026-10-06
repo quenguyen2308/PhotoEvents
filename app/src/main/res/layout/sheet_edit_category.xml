@@ -17,26 +17,30 @@
         android:layout_marginBottom="16dp"
         android:background="@drawable/bg_bottom_sheet_handle" />
 
-    <!-- Tiêu đề Header -->
+    <!-- Header Tiêu đề -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingHorizontal="20dp"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="18dp">
 
         <FrameLayout
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:id="@+id/frameEditCategoryPreviewIcon"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:background="@drawable/bg_category_icon_circle"
             android:layout_marginEnd="12dp">
+
             <TextView
+                android:id="@+id/txtEditCategoryPreviewIcon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="✏️"
-                android:textSize="18sp" />
+                android:textSize="20sp"
+                tools:text="🌸" />
+
         </FrameLayout>
 
         <LinearLayout
@@ -46,25 +50,27 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/txtEditCategoryHeaderTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Sửa thông tin sự kiện"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@color/sakura_text_primary" />
+                android:textColor="@color/sakura_text_primary"
+                tools:text="Thêm danh mục mới" />
 
             <TextView
+                android:id="@+id/txtEditCategoryHeaderSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Cập nhật tên, ghi chú và danh mục phân loại"
                 android:textSize="12sp"
-                android:textColor="@color/sakura_text_secondary" />
+                android:textColor="@color/sakura_text_secondary"
+                tools:text="Tất cả sự kiện sẽ được gán theo danh mục này" />
 
         </LinearLayout>
 
         <ImageButton
-            android:id="@+id/btnCloseEditSheet"
+            android:id="@+id/btnCloseEditCategorySheet"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:background="?attr/selectableItemBackgroundBorderless"
@@ -80,86 +86,58 @@
         android:orientation="vertical"
         android:paddingHorizontal="20dp">
 
+        <!-- Ô nhập tên danh mục -->
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/layoutEditTitle"
+            android:id="@+id/layoutEditCategoryName"
             style="@style/TextInputStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Tên sự kiện *"
-            app:expandedHintEnabled="true">
+            android:hint="Tên danh mục"
+            app:endIconMode="clear_text">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edtEditTitle"
+                android:id="@+id/edtEditCategoryName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textCapSentences"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:textSize="15sp"
                 android:textColor="@color/sakura_text_primary" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/layoutEditNote"
-            style="@style/TextInputStyle"
-            android:layout_width="match_parent"
+        <!-- Thanh chọn nhanh Emoji biểu tượng -->
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="Ghi chú kỷ niệm (tuỳ chọn)">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edtEditNote"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="top|start"
-                android:inputType="textMultiLine|textCapSentences"
-                android:minLines="2"
-                android:maxLines="4"
-                android:textSize="14sp"
-                android:textColor="@color/sakura_text_primary" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/layoutEditCategory"
-            style="@style/DropdownInputStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="🌸 Chọn danh mục phân loại">
-
-            <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                android:id="@+id/edtEditCategory"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="none"
-                android:popupBackground="@drawable/bg_dropdown_popup"
-                android:dropDownVerticalOffset="6dp"
-                android:textSize="14sp" />
-
-        </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="6dp"
+            android:text="Gợi ý chọn nhanh biểu tượng Emoji:"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/sakura_text_secondary" />
 
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
             android:scrollbars="none"
             android:overScrollMode="never">
 
             <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupEditCategory"
+                android:id="@+id/chipGroupEmojiSuggestions"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:singleLine="true" />
 
         </HorizontalScrollView>
 
+        <!-- Nút hành động Lưu / Thêm danh mục -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSaveEditEvent"
+            android:id="@+id/btnSubmitCategory"
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="20dp"
-            android:text="✨ Lưu thay đổi"
+            android:text="🌸 Lưu danh mục"
             android:textSize="15sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"

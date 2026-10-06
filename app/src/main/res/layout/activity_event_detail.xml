@@ -98,24 +98,47 @@
 
                     </LinearLayout>
 
-                    <!-- Chip ngày diễn ra có thể nhấn để đổi -->
-                    <TextView
-                        android:id="@+id/txtEventDate"
+                    <!-- Chip ngày diễn ra và danh mục phân loại -->
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@drawable/bg_floating_date_badge"
-                        android:drawableStart="@drawable/ic_calendar"
-                        android:drawablePadding="6dp"
-                        app:drawableTint="?attr/colorPrimary"
-                        android:gravity="center_vertical"
-                        android:textSize="12sp"
-                        android:textColor="@color/badge_date_text"
-                        android:textStyle="bold"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:contentDescription="Đổi ngày diễn ra"
-                        tools:text="30/09/2026 · Đổi ngày" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/txtEventDate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_floating_date_badge"
+                            android:drawableStart="@drawable/ic_calendar"
+                            android:drawablePadding="6dp"
+                            app:drawableTint="?attr/colorPrimary"
+                            android:gravity="center_vertical"
+                            android:textSize="12sp"
+                            android:textColor="@color/badge_date_text"
+                            android:textStyle="bold"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:contentDescription="Đổi ngày diễn ra"
+                            tools:text="30/09/2026 · Đổi ngày" />
+
+                        <TextView
+                            android:id="@+id/txtCategory"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/bg_category_badge"
+                            android:gravity="center_vertical"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:textStyle="bold"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:contentDescription="Đổi danh mục sự kiện"
+                            tools:text="✈️ Du lịch" />
+
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/txtNote"

@@ -24,7 +24,8 @@ data class Event(
     @Expose var updatedAt: Long = System.currentTimeMillis(),
     @Expose var coverImageId: String? = null, // ảnh đại diện do người dùng chọn; null = dùng ảnh đầu tiên
     @Expose var eventDate: Long = normalizeToMidnight(System.currentTimeMillis()), // ngày diễn ra sự kiện (không giờ/phút/giây) — mặc định hôm nay lúc tạo, có thể đổi lại
-    @Expose var deleted: Boolean = false
+    @Expose var deleted: Boolean = false,
+    @Expose var category: String = "" // danh mục phân loại sự kiện (ví dụ: Du lịch, Kỷ niệm, Gia đình, ...)
 )
 
 /** Đưa 1 mốc thời gian về 00:00:00.000 cùng ngày (giờ hệ thống của máy), để "ngày diễn ra" không lẫn giờ/phút/giây khi lưu/so sánh. */

@@ -78,6 +78,7 @@ class EventsAdapter(
         val imageCount: TextView = view.findViewById(R.id.txtImageCount)
         val title: TextView = view.findViewById(R.id.txtTitle)
         val date: TextView = view.findViewById(R.id.txtEventDate)
+        val category: TextView = view.findViewById(R.id.txtCategory)
         val note: TextView = view.findViewById(R.id.txtNote)
         val btnExpand: ImageButton = view.findViewById(R.id.btnExpand)
         val scrollImages: HorizontalScrollView = view.findViewById(R.id.scrollImages)
@@ -106,6 +107,15 @@ class EventsAdapter(
 
         holder.title.text = event.title
         holder.date.text = dateFormat.format(event.eventDate)
+
+        val cat = event.category.trim()
+        if (cat.isNotEmpty()) {
+            holder.category.visibility = View.VISIBLE
+            holder.category.text = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
+        } else {
+            holder.category.visibility = View.GONE
+        }
+
         holder.note.text = event.note
         holder.note.visibility = if (event.note.isBlank()) View.GONE else View.VISIBLE
 

@@ -50,4 +50,74 @@
         <item name="boxStrokeWidthFocused">2dp</item>
         <item name="hintTextColor">?attr/colorPrimary</item>
     </style>
+
+    <style name="DropdownInputStyle" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxCornerRadiusTopStart">18dp</item>
+        <item name="boxCornerRadiusTopEnd">18dp</item>
+        <item name="boxCornerRadiusBottomStart">18dp</item>
+        <item name="boxCornerRadiusBottomEnd">18dp</item>
+        <item name="boxStrokeColor">?attr/colorPrimary</item>
+        <item name="boxStrokeWidth">1.2dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="hintTextColor">?attr/colorPrimary</item>
+    </style>
+
+    <!-- Dialog Shapes & Styles -->
+    <style name="ShapeAppearance.PhotoEvents.Dialog" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <style name="Widget.PhotoEvents.Button.Dialog.Positive" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/colorPrimary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="Widget.PhotoEvents.Button.Dialog.Negative" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/sakura_text_secondary</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="Widget.PhotoEvents.Dialog.Title" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textColor">@color/sakura_text_primary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">19sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Widget.PhotoEvents.Dialog.Body" parent="MaterialAlertDialog.Material3.Body.Text">
+        <item name="android:textColor">@color/sakura_text_secondary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+
+    <style name="ThemeOverlay.PhotoEvents.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.PhotoEvents.Dialog</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.PhotoEvents.Button.Dialog.Positive</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.PhotoEvents.Button.Dialog.Negative</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/Widget.PhotoEvents.Dialog.Title</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/Widget.PhotoEvents.Dialog.Body</item>
+    </style>
+
+    <!-- Bottom Sheet Dialog Styles -->
+    <style name="Theme.PhotoEvents.BottomSheetDialog" parent="Theme.Material3.DayNight.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.PhotoEvents.BottomSheet</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/surface</item>
+    </style>
+
+    <style name="Widget.PhotoEvents.BottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">@color/surface</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.PhotoEvents.BottomSheet</item>
+    </style>
+
+    <style name="ShapeAppearance.PhotoEvents.BottomSheet" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">28dp</item>
+        <item name="cornerSizeTopRight">28dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
 </resources>

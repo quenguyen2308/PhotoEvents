@@ -31,6 +31,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+const val EXTRA_CATEGORY = "extra_category"
+private const val ACTION_ADD_NEW = "➕ Thêm danh mục mới..."
+
 /**
  * Cho phép chọn NHIỀU ảnh cùng lúc (tối đa 10) bằng Photo Picker hệ thống.
  * Ảnh được copy vào bộ nhớ riêng của app ngay khi chọn (Uri từ picker chỉ có quyền đọc tạm thời).
@@ -50,18 +53,55 @@ class AddEventActivity : AppCompatActivity() {
         ActivityResultContracts.PickMultipleVisualMedia(10)
     ) { uris -> if (uris.isNotEmpty()) copyAndPreview(uris) }
 
+    private var lastSelectedCategory: String = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_event)
 
         val edtTitle = findViewById<EditText>(R.id.edtTitle)
         val edtNote = findViewById<EditText>(R.id.edtNote)
+        val edtCategory = findViewById<com.google.android.material.textfield.MaterialAutoCompleteTextView>(R.id.edtCategory)
+        val chipGroupCategory = findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupCategory)
         previewContainer = findViewById(R.id.previewContainer)
         btnSave = findViewById(R.id.btnSave)
         txtEventDate = findViewById(R.id.txtEventDate)
         txtPickedCount = findViewById(R.id.txtPickedCount)
         txtEventDate.text = formatDate(selectedDate)
         updatePickedCount()
+
+        // Thiết lập danh mục mặc định hoặc từ intent
+        val initialCategory = intent.getStringExtra(EXTRA_CATEGORY)?.takeIf { it.isNotBlank() }
+            ?: com.example.photoevents.data.CategoryHelper.DEFAULT_CATEGORY
+        lastSelectedCategory = com.example.photoevents.data.CategoryHelper.formatStandard(initialCategory)
+
+        // Cấu hình Dropdown Menu cho Category
+        val categoryList = getCategoriesForDropdown()
+        if (!categoryList.contains(lastSelectedCategory) && categoryList.isNotEmpty()) {
+            categoryList.add(categoryList.size - 1, lastSelectedCategory)
+        }
+        val dropdownAdapter = com.example.photoevents.ui.CategoryDropdownAdapter(
+            this,
+            categoryList
+        )
+        edtCategory.setAdapter(dropdownAdapter)
+        edtCategory.setText(lastSelectedCategory, false)
+
+        edtCategory.setOnItemClickListener { parent, _, position, _ ->
+            val selected = parent.getItemAtPosition(position).toString()
+            if (selected == ACTION_ADD_NEW) {
+                edtCategory.setText(lastSelectedCategory, false)
+                showAddNewCategoryDialog(edtCategory, categoryList, dropdownAdapter, chipGroupCategory) { newCat ->
+                    lastSelectedCategory = newCat
+                }
+            } else {
+                lastSelectedCategory = selected
+                updateChipSelection(chipGroupCategory, selected)
+            }
+        }
+
+        // Tạo danh sách chip danh mục gợi ý
+        setupCategoryChips(chipGroupCategory, edtCategory, lastSelectedCategory)
 
         findViewById<android.view.View>(R.id.btnBack)?.setOnClickListener { finish() }
 
@@ -82,10 +122,19 @@ class AddEventActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            val category = edtCategory.text.toString().trim().ifBlank {
+                com.example.photoevents.data.CategoryHelper.DEFAULT_CATEGORY
+            }
+
             isSaving = true
             btnSave.isEnabled = false
 
-            val event = Event(title = title, note = edtNote.text.toString().trim(), eventDate = selectedDate)
+            val event = Event(
+                title = title,
+                note = edtNote.text.toString().trim(),
+                eventDate = selectedDate,
+                category = category
+            )
             lifecycleScope.launch {
                 val db = AppDatabase.get(this@AddEventActivity)
                 db.eventDao().upsert(event)
@@ -104,6 +153,130 @@ class AddEventActivity : AppCompatActivity() {
                 finish()
             }
         }
+    }
+
+    private fun setupCategoryChips(
+        chipGroup: com.google.android.material.chip.ChipGroup,
+        edtCategory: com.google.android.material.textfield.MaterialAutoCompleteTextView,
+        selectedCategory: String
+    ) {
+        val presets = com.example.photoevents.data.CategoryHelper.PRESET_CATEGORIES
+        chipGroup.removeAllViews()
+        for (cat in presets) {
+            val chip = com.google.android.material.chip.Chip(this).apply {
+                text = cat
+                isCheckable = true
+                isChecked = com.example.photoevents.data.CategoryHelper.matches(cat, selectedCategory)
+                setChipBackgroundColorResource(
+                    if (isChecked) R.color.badge_pink_bg else R.color.surface
+                )
+                setOnClickListener {
+                    edtCategory.setText(cat, false)
+                    lastSelectedCategory = cat
+                    updateChipSelection(chipGroup, cat)
+                }
+            }
+            chipGroup.addView(chip)
+        }
+    }
+
+    private fun updateChipSelection(
+        chipGroup: com.google.android.material.chip.ChipGroup,
+        selectedCategory: String
+    ) {
+        for (i in 0 until chipGroup.childCount) {
+            (chipGroup.getChildAt(i) as? com.google.android.material.chip.Chip)?.let { c ->
+                c.isChecked = com.example.photoevents.data.CategoryHelper.matches(c.text.toString(), selectedCategory)
+                c.setChipBackgroundColorResource(
+                    if (c.isChecked) R.color.badge_pink_bg else R.color.surface
+                )
+            }
+        }
+    }
+
+    private fun getCategoriesForDropdown(): MutableList<String> {
+        val list = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
+        list.add(ACTION_ADD_NEW)
+        return list
+    }
+
+    private fun showAddNewCategoryDialog(
+        edtCategory: com.google.android.material.textfield.MaterialAutoCompleteTextView,
+        categoryList: MutableList<String>,
+        adapter: android.widget.ArrayAdapter<String>,
+        chipGroup: com.google.android.material.chip.ChipGroup,
+        onCreated: (String) -> Unit
+    ) {
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.sheet_edit_category, null)
+        sheet.setContentView(view)
+
+        val txtPreview = view.findViewById<android.widget.TextView>(R.id.txtEditCategoryPreviewIcon)
+        val txtTitle = view.findViewById<android.widget.TextView>(R.id.txtEditCategoryHeaderTitle)
+        val txtSub = view.findViewById<android.widget.TextView>(R.id.txtEditCategoryHeaderSubtitle)
+        val edtName = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.edtEditCategoryName)
+        val chipGroupSuggestions = view.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupEmojiSuggestions)
+        val btnSubmit = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSubmitCategory)
+
+        txtTitle?.text = "🌸 Thêm danh mục mới"
+        txtSub?.text = "Nhập tên danh mục và chọn biểu tượng emoji gợi nhớ"
+        btnSubmit?.text = "🌸 Thêm danh mục"
+
+        val emojis = listOf("💖", "✈️", "👨‍👩‍👧", "🎉", "🎂", "☕", "🌿", "💼", "🏕️", "🎬", "🍜", "🏋️", "🛍️", "🐾", "🎨", "🎵")
+        chipGroupSuggestions?.removeAllViews()
+        for (emoji in emojis) {
+            val chip = com.google.android.material.chip.Chip(this).apply {
+                text = emoji
+                isCheckable = false
+                textSize = 15f
+                setChipBackgroundColorResource(R.color.badge_pink_bg)
+                setOnClickListener {
+                    val currentText = edtName?.text?.toString()?.trim().orEmpty()
+                    val (_, cleanName) = com.example.photoevents.data.CategoryHelper.extractIconAndName(currentText)
+                    val newName = if (cleanName == "Chung" || cleanName.isEmpty()) emoji else "$emoji $cleanName"
+                    edtName?.setText(newName)
+                    edtName?.setSelection(newName.length)
+                    txtPreview?.text = emoji
+                }
+            }
+            chipGroupSuggestions?.addView(chip)
+        }
+
+        edtName?.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val (icon, _) = com.example.photoevents.data.CategoryHelper.extractIconAndName(s?.toString())
+                txtPreview?.text = icon
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        view.findViewById<android.view.View>(R.id.btnCloseEditCategorySheet)?.setOnClickListener { sheet.dismiss() }
+
+        btnSubmit?.setOnClickListener {
+            val nameText = edtName?.text?.toString()?.trim().orEmpty()
+            if (nameText.isNotBlank()) {
+                val formatted = com.example.photoevents.data.CategoryHelper.formatStandard(nameText)
+                val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+                val current = prefs.getStringSet("custom_categories", emptySet())?.toMutableSet() ?: mutableSetOf()
+                current.add(formatted)
+                prefs.edit().putStringSet("custom_categories", current).apply()
+
+                val index = (categoryList.size - 1).coerceAtLeast(0)
+                categoryList.add(index, formatted)
+                adapter.notifyDataSetChanged()
+
+                edtCategory.setText(formatted, false)
+                onCreated(formatted)
+                setupCategoryChips(chipGroup, edtCategory, formatted)
+                Toast.makeText(this, "Đã chọn danh mục $formatted", Toast.LENGTH_SHORT).show()
+                sheet.dismiss()
+            } else {
+                Toast.makeText(this, "Nhập tên danh mục", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        sheet.show()
     }
 
     private fun showDatePicker() {

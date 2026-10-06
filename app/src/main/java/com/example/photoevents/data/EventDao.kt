@@ -47,5 +47,13 @@ interface EventDao {
     /** Sửa tiêu đề và ghi chú sự kiện. */
     @Query("UPDATE events SET title = :title, note = :note, updatedAt = :now WHERE id = :id")
     suspend fun updateEventInfo(id: String, title: String, note: String, now: Long = System.currentTimeMillis())
+
+    /** Sửa tiêu đề, ghi chú và danh mục sự kiện. */
+    @Query("UPDATE events SET title = :title, note = :note, category = :category, updatedAt = :now WHERE id = :id")
+    suspend fun updateEventInfo(id: String, title: String, note: String, category: String, now: Long = System.currentTimeMillis())
+
+    /** Đổi danh mục sự kiện. */
+    @Query("UPDATE events SET category = :category, updatedAt = :now WHERE id = :id")
+    suspend fun setCategory(id: String, category: String, now: Long = System.currentTimeMillis())
 }
 

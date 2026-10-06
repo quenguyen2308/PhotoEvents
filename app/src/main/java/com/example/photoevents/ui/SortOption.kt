@@ -5,15 +5,15 @@ import java.text.Collator
 import java.util.Locale
 
 /** Các kiểu sắp xếp danh sách sự kiện trên màn hình chính. */
-enum class SortOption(val label: String) {
-    EVENT_DATE_NEWEST("Ngày diễn ra (mới nhất)"),
-    EVENT_DATE_OLDEST("Ngày diễn ra (cũ nhất)"),
-    NEWEST("Mới nhất"),
-    OLDEST("Cũ nhất"),
-    RECENTLY_UPDATED("Cập nhật gần đây"),
-    TITLE_ASC("Tên A → Z"),
-    TITLE_DESC("Tên Z → A"),
-    MOST_IMAGES("Nhiều ảnh nhất");
+enum class SortOption(val label: String, val shortLabel: String) {
+    EVENT_DATE_NEWEST("Ngày diễn ra (mới nhất)", "Ngày diễn ra"),
+    EVENT_DATE_OLDEST("Ngày diễn ra (cũ nhất)", "Ngày cũ nhất"),
+    NEWEST("Mới nhất", "Mới nhất"),
+    OLDEST("Cũ nhất", "Cũ nhất"),
+    RECENTLY_UPDATED("Cập nhật gần đây", "Mới cập nhật"),
+    TITLE_ASC("Tên A → Z", "Tên A → Z"),
+    TITLE_DESC("Tên Z → A", "Tên Z → A"),
+    MOST_IMAGES("Nhiều ảnh nhất", "Nhiều ảnh");
 
     fun sort(list: List<EventWithImages>): List<EventWithImages> {
         // Collator tiếng Việt để xếp đúng thứ tự có dấu (Ă, Â, Đ, Ê, Ô, Ơ, Ư...)

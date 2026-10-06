@@ -21,29 +21,30 @@
             android:gravity="center_vertical"
             android:paddingStart="20dp"
             android:paddingEnd="16dp"
-            android:paddingTop="16dp"
+            android:paddingTop="14dp"
             android:paddingBottom="8dp">
 
-            <!-- Icon 🌸 pill + Tiêu đề -->
+            <!-- Bên trái: Logo + Tên App + Mô tả -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:layout_marginEnd="12dp">
 
                 <!-- Sakura icon box -->
                 <FrameLayout
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
                     android:background="@drawable/bg_sakura_icon_box"
-                    android:layout_marginEnd="10dp">
+                    android:layout_marginEnd="12dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:text="🌸"
-                        android:textSize="18sp" />
+                        android:textSize="20sp" />
                 </FrameLayout>
 
                 <LinearLayout
@@ -51,61 +52,59 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <LinearLayout
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Photo Events"
-                            android:textSize="20sp"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-black"
-                            android:textColor="?attr/colorOnSurface" />
-
-                        <!-- Blossom badge -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="🌸 Blossom"
-                            android:textSize="9sp"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorPrimary"
-                            android:background="@drawable/bg_floating_date_badge"
-                            android:gravity="center_vertical" />
-
-                    </LinearLayout>
+                        android:text="Photo Events"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-black"
+                        android:textColor="@color/sakura_text_primary" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
                         android:text="Nhật ký &amp; Kỷ niệm ảnh"
                         android:textSize="12sp"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+                        android:textColor="@color/sakura_text_secondary" />
 
                 </LinearLayout>
 
             </LinearLayout>
 
-            <!-- Nút sắp xếp -->
+            <!-- Bên phải: Nút sắp xếp dạng Sakura Pill Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSort"
-                style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="38dp"
+                android:minHeight="38dp"
+                android:minWidth="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="0dp"
+                android:paddingBottom="0dp"
                 android:text="Mới nhất"
-                android:textSize="13sp"
-                android:textColor="?attr/colorOnSurface"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@color/sakura_text_primary"
+                app:backgroundTint="@color/surface"
+                android:backgroundTint="@color/surface"
+                app:strokeColor="@color/sakura_border_soft"
+                app:strokeWidth="1.2dp"
+                app:cornerRadius="100dp"
+                app:elevation="1dp"
+                app:rippleColor="#33FF6584"
                 app:icon="@drawable/ic_sort"
-                app:iconSize="16dp"
-                app:iconTint="?attr/colorPrimary"
-                app:strokeColor="?attr/colorOutline"
-                app:strokeWidth="1dp"
-                app:cornerRadius="100dp" />
+                app:iconSize="15dp"
+                app:iconTint="@color/sakura_pink"
+                app:iconPadding="6dp"
+                app:iconGravity="textStart"
+                android:maxLines="1"
+                android:ellipsize="end" />
 
         </LinearLayout>
 
@@ -155,6 +154,26 @@
                 android:contentDescription="Xoá các sự kiện đã chọn" />
 
         </LinearLayout>
+
+        <!-- Danh sách Category Card View PIN cố định ở đầu trang -->
+        <FrameLayout
+            android:id="@+id/layoutCategoriesPinned"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="2dp"
+            android:paddingBottom="6dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerCategories"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="12dp"
+                android:orientation="horizontal"
+                android:overScrollMode="never" />
+
+        </FrameLayout>
 
         <!-- SwipeRefresh + RecyclerView -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout

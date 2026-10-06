@@ -196,22 +196,45 @@
 
             </LinearLayout>
 
-            <!-- Ngày diễn ra sự kiện - bên dưới tiêu đề -->
-            <TextView
-                android:id="@+id/txtEventDate"
+            <!-- Ngày diễn ra sự kiện & Danh mục phân loại -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:background="@drawable/bg_floating_date_badge"
-                android:drawableStart="@drawable/ic_calendar"
-                android:drawablePadding="6dp"
-                app:drawableTint="?attr/colorPrimary"
-                android:gravity="center_vertical"
-                android:textColor="@color/badge_date_text"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                tools:text="30/09/2026" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/txtEventDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_floating_date_badge"
+                    android:drawableStart="@drawable/ic_calendar"
+                    android:drawablePadding="6dp"
+                    app:drawableTint="?attr/colorPrimary"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/badge_date_text"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    tools:text="30/09/2026" />
+
+                <TextView
+                    android:id="@+id/txtCategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_category_badge"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/sakura_pink"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:text="✈️ Du lịch" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/txtNote"

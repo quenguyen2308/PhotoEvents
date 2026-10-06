@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardCategory"
+    android:layout_width="wrap_content"
+    android:layout_height="60dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginVertical="2dp"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="1dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/sakura_border_soft"
+    app:cardBackgroundColor="@color/surface"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="14dp">
+
+        <!-- Icon box tròn đựng Emoji / Icon -->
+        <FrameLayout
+            android:id="@+id/frameIcon"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_category_icon_circle"
+            android:layout_marginEnd="9dp">
+
+            <TextView
+                android:id="@+id/txtCategoryIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="18sp"
+                tools:text="🌸" />
+
+        </FrameLayout>
+
+        <!-- Tiêu đề danh mục và số lượng sự kiện -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtCategoryName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/on_surface"
+                tools:text="Tất cả" />
+
+            <TextView
+                android:id="@+id/txtCategoryCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:textSize="11sp"
+                android:textColor="@color/on_surface_variant"
+                tools:text="12 sự kiện" />
+
+        </LinearLayout>
+
+        <!-- Nút sửa nhanh tên danh mục (chỉ hiện khi card đang được chọn) -->
+        <ImageButton
+            android:id="@+id/btnEditCategory"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_edit"
+            app:tint="#FFFFFF"
+            android:padding="5dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="Sửa tên danh mục"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

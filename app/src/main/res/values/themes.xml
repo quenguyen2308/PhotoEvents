@@ -18,5 +18,10 @@
         <item name="android:colorBackground">@color/warm_bg</item>
         <item name="android:statusBarColor">@color/warm_bg</item>
         <item name="android:windowLightStatusBar">true</item>
+
+        <!-- BottomSheet & Dialog Styles -->
+        <item name="bottomSheetDialogTheme">@style/Theme.PhotoEvents.BottomSheetDialog</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.PhotoEvents.MaterialAlertDialog</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.PhotoEvents.MaterialAlertDialog</item>
     </style>
 </resources>

@@ -47,6 +47,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var adapter: EventsAdapter
+    private lateinit var categoryAdapter: com.example.photoevents.ui.CategoriesAdapter
+    private lateinit var recyclerCategories: RecyclerView
     private lateinit var recyclerView: RecyclerView
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var btnSort: MaterialButton
@@ -57,6 +59,8 @@ class MainActivity : AppCompatActivity() {
     // Kiểu sắp xếp chỉ là tuỳ chọn hiển thị trên máy này — lưu SharedPreferences, không đồng bộ Drive.
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
     private val sortFlow = MutableStateFlow(SortOption.NEWEST)
+    private val selectedCategoryFlow = MutableStateFlow(com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID)
+    private val customCategoriesFlow = MutableStateFlow<Set<String>>(emptySet())
     private var scrollToTopOnNextList = false
     private lateinit var backPressedCallback: OnBackPressedCallback
 
@@ -114,6 +118,34 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
+        // Thiết lập Category Card View ghim ở đầu trang
+        categoryAdapter = com.example.photoevents.ui.CategoriesAdapter(
+            onCategoryClick = { categoryItem ->
+                if (selectedCategoryFlow.value != categoryItem.id) {
+                    selectedCategoryFlow.value = categoryItem.id
+                    categoryAdapter.selectedCategoryId = categoryItem.id
+                    scrollToTopOnNextList = true
+                }
+            },
+            onAddCategoryClick = {
+                showAddCategoryDialog()
+            },
+            onCategoryLongClick = { categoryItem ->
+                showCategoryOptionsDialog(categoryItem)
+            },
+            onEditCategoryClick = { categoryItem ->
+                showEditCategoryDialog(categoryItem)
+            }
+        )
+
+        recyclerCategories = findViewById(R.id.recyclerCategories)
+        recyclerCategories.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        recyclerCategories.adapter = categoryAdapter
+
+        // Khôi phục custom categories từ SharedPreferences
+        val savedCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
+        customCategoriesFlow.value = savedCustom
+
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
@@ -139,31 +171,49 @@ class MainActivity : AppCompatActivity() {
         }.also { callback -> backPressedCallback = callback })
 
         findViewById<View>(R.id.fabAdd).setOnClickListener {
-            startActivity(Intent(this, AddEventActivity::class.java))
+            val intent = Intent(this, AddEventActivity::class.java)
+            val currentCat = selectedCategoryFlow.value
+            if (currentCat != com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID) {
+                intent.putExtra(EXTRA_CATEGORY, currentCat)
+            }
+            startActivity(intent)
         }
 
         // Khôi phục kiểu sắp xếp đã chọn lần trước
         sortFlow.value = SortOption.fromName(prefs.getString(PREF_SORT, null))
         btnSort = findViewById(R.id.btnSort)
-        btnSort.text = sortFlow.value.label
+        btnSort.text = sortFlow.value.shortLabel
         btnSort.setOnClickListener { showSortDialog() }
 
-        // Kết hợp dữ liệu Room + kiểu sắp xếp: đổi 1 trong 2 đều tự cập nhật danh sách
+        // Kết hợp dữ liệu Room + kiểu sắp xếp + danh mục lọc
         lifecycleScope.launch {
             combine(
                 AppDatabase.get(this@MainActivity).eventDao().observeAllWithImages(),
-                sortFlow
-            ) { events, sort -> sort.sort(events) }
-                .collect { sorted ->
-                    adapter.submitList(sorted) {
-                        if (scrollToTopOnNextList) {
-                            recyclerView.scrollToPosition(0)
-                            scrollToTopOnNextList = false
-                        }
-                    }
-                    findViewById<android.view.View>(R.id.txtEmpty).visibility =
-                        if (sorted.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+                sortFlow,
+                selectedCategoryFlow,
+                customCategoriesFlow
+            ) { events, sort, selectedCat, customCats ->
+                val categoryItems = buildCategoryItems(events, customCats)
+                val filtered = if (selectedCat == com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID) {
+                    events
+                } else {
+                    events.filter { com.example.photoevents.data.CategoryHelper.matches(it.event.category, selectedCat) }
                 }
+                val sorted = sort.sort(filtered)
+                Triple(categoryItems, sorted, selectedCat)
+            }.collect { (catItems, sorted, selectedCat) ->
+                categoryAdapter.selectedCategoryId = selectedCat
+                categoryAdapter.submitList(catItems)
+
+                adapter.submitList(sorted) {
+                    if (scrollToTopOnNextList) {
+                        recyclerView.scrollToPosition(0)
+                        scrollToTopOnNextList = false
+                    }
+                }
+                findViewById<android.view.View>(R.id.txtEmpty).visibility =
+                    if (sorted.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+            }
         }
 
         // Release: bắt buộc đăng nhập Google ngay khi mở app (như hành vi gốc).
@@ -180,22 +230,65 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSortDialog() {
-        val options = SortOption.values()
-        val labels = options.map { it.label }.toTypedArray()
-        AlertDialog.Builder(this)
-            .setTitle("Sắp xếp theo")
-            .setSingleChoiceItems(labels, options.indexOf(sortFlow.value)) { dialog, which ->
-                val chosen = options[which]
-                if (chosen != sortFlow.value) {
-                    scrollToTopOnNextList = true
-                    sortFlow.value = chosen
-                    prefs.edit().putString(PREF_SORT, chosen.name).apply()
-                    btnSort.text = chosen.label
-                }
-                dialog.dismiss()
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val sheetView = layoutInflater.inflate(R.layout.sheet_sort_events, null)
+        sheet.setContentView(sheetView)
+
+        val container = sheetView.findViewById<android.widget.LinearLayout>(R.id.containerSortOptions)
+        sheetView.findViewById<android.view.View>(R.id.btnCloseSortSheet)?.setOnClickListener { sheet.dismiss() }
+
+        val sortIcons = mapOf(
+            SortOption.EVENT_DATE_NEWEST to "📅",
+            SortOption.EVENT_DATE_OLDEST to "🗓️",
+            SortOption.NEWEST to "⏱️",
+            SortOption.OLDEST to "⏳",
+            SortOption.RECENTLY_UPDATED to "🔄",
+            SortOption.TITLE_ASC to "🔤",
+            SortOption.TITLE_DESC to "🔠",
+            SortOption.MOST_IMAGES to "🖼️"
+        )
+
+        val currentSort = sortFlow.value
+        for (option in SortOption.values()) {
+            val itemView = layoutInflater.inflate(R.layout.item_sort_option, container, false)
+            val card = itemView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardSortOption)
+            val txtIcon = itemView.findViewById<android.widget.TextView>(R.id.txtSortIcon)
+            val txtLabel = itemView.findViewById<android.widget.TextView>(R.id.txtSortLabel)
+            val imgChecked = itemView.findViewById<android.widget.ImageView>(R.id.imgSortChecked)
+
+            txtIcon.text = sortIcons[option] ?: "🌸"
+            txtLabel.text = option.label
+
+            val isSelected = option == currentSort
+            if (isSelected) {
+                card.setCardBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.badge_pink_bg))
+                card.strokeColor = androidx.core.content.ContextCompat.getColor(this, R.color.colorPrimary)
+                card.strokeWidth = (1.5f * resources.displayMetrics.density).toInt()
+                txtLabel.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.colorPrimary))
+                txtLabel.typeface = android.graphics.Typeface.DEFAULT_BOLD
+                imgChecked.visibility = android.view.View.VISIBLE
+            } else {
+                card.setCardBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.surface))
+                card.strokeColor = androidx.core.content.ContextCompat.getColor(this, R.color.sakura_border_soft)
+                card.strokeWidth = (1f * resources.displayMetrics.density).toInt()
+                txtLabel.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.sakura_text_primary))
+                txtLabel.typeface = android.graphics.Typeface.DEFAULT
+                imgChecked.visibility = android.view.View.GONE
             }
-            .setNegativeButton("Đóng", null)
-            .show()
+
+            card.setOnClickListener {
+                if (option != sortFlow.value) {
+                    scrollToTopOnNextList = true
+                    sortFlow.value = option
+                    prefs.edit().putString(PREF_SORT, option.name).apply()
+                    btnSort.text = option.shortLabel
+                }
+                sheet.dismiss()
+            }
+            container.addView(itemView)
+        }
+
+        sheet.show()
     }
 
     private fun updateSelectionHeader(count: Int) {
@@ -209,12 +302,23 @@ class MainActivity : AppCompatActivity() {
     private fun confirmDeleteSelected() {
         val ids = adapter.selectedEventIds()
         if (ids.isEmpty()) return
-        AlertDialog.Builder(this)
-            .setTitle("Xoá sự kiện")
-            .setMessage("Xoá ${ids.size} sự kiện đã chọn? Toàn bộ ảnh trong đó cũng sẽ bị xoá.")
-            .setPositiveButton("Xoá") { _, _ -> deleteSelected(ids) }
-            .setNegativeButton("Huỷ", null)
-            .show()
+
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.sheet_confirm_delete, null)
+        sheet.setContentView(view)
+
+        view.findViewById<android.widget.TextView>(R.id.txtDeleteSheetTitle)?.text =
+            "Xoá ${ids.size} sự kiện đã chọn?"
+        view.findViewById<android.widget.TextView>(R.id.txtDeleteSheetMessage)?.text =
+            "Toàn bộ ${ids.size} sự kiện và toàn bộ ảnh bên trong sẽ bị xoá khỏi máy và đồng bộ lên Google Drive."
+
+        view.findViewById<android.view.View>(R.id.btnCancelDelete)?.setOnClickListener { sheet.dismiss() }
+        view.findViewById<android.view.View>(R.id.btnConfirmDelete)?.setOnClickListener {
+            sheet.dismiss()
+            deleteSelected(ids)
+        }
+
+        sheet.show()
     }
 
     private fun deleteSelected(ids: Set<String>) {
@@ -273,7 +377,309 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getRenamedPresetsMap(): Map<String, String> {
+        val set = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet()) ?: emptySet()
+        val map = mutableMapOf<String, String>()
+        for (entry in set) {
+            val parts = entry.split("|", limit = 2)
+            if (parts.size == 2) {
+                map[parts[0].lowercase()] = parts[1]
+            }
+        }
+        return map
+    }
+
+    private fun buildCategoryItems(
+        events: List<com.example.photoevents.data.EventWithImages>,
+        customCategories: Set<String>
+    ): List<com.example.photoevents.data.CategoryItem> {
+        val renamedPresets = getRenamedPresetsMap()
+        val categoriesSet = linkedSetOf<String>()
+
+        // 1. Thêm preset chuẩn (hoặc tên đã đổi nếu người dùng đã đổi tên preset)
+        for (preset in com.example.photoevents.data.CategoryHelper.PRESET_CATEGORIES) {
+            val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(preset)
+            val actual = renamedPresets[clean.lowercase()] ?: preset
+            categoriesSet.add(actual)
+        }
+
+        // 2. Thêm custom categories do người dùng tạo
+        categoriesSet.addAll(customCategories)
+
+        // 3. Thêm các categories thực tế đang có trong events
+        events.forEach { item ->
+            val cat = item.event.category.trim()
+            if (cat.isNotEmpty()) {
+                categoriesSet.add(com.example.photoevents.data.CategoryHelper.formatStandard(cat))
+            }
+        }
+
+        val items = mutableListOf<com.example.photoevents.data.CategoryItem>()
+        // "Tất cả" luôn đứng đầu
+        items.add(
+            com.example.photoevents.data.CategoryItem(
+                id = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID,
+                name = "Tất cả",
+                icon = "🌸",
+                count = events.size,
+                isAll = true
+            )
+        )
+
+        for (rawCat in categoriesSet) {
+            val (icon, name) = com.example.photoevents.data.CategoryHelper.extractIconAndName(rawCat)
+            val count = events.count { item ->
+                com.example.photoevents.data.CategoryHelper.matches(item.event.category, name)
+            }
+            items.add(
+                com.example.photoevents.data.CategoryItem(
+                    id = name,
+                    name = name,
+                    icon = icon,
+                    count = count
+                )
+            )
+        }
+
+        // Nút "+" Thêm mục ở cuối danh sách
+        items.add(
+            com.example.photoevents.data.CategoryItem(
+                id = "ACTION_ADD",
+                name = "Thêm mục",
+                icon = "➕",
+                isAddAction = true
+            )
+        )
+
+        return items
+    }
+
+    private fun showAddCategoryDialog() {
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.sheet_edit_category, null)
+        sheet.setContentView(view)
+
+        val txtPreview = view.findViewById<android.widget.TextView>(R.id.txtEditCategoryPreviewIcon)
+        val txtTitle = view.findViewById<android.widget.TextView>(R.id.txtEditCategoryHeaderTitle)
+        val txtSub = view.findViewById<android.widget.TextView>(R.id.txtEditCategoryHeaderSubtitle)
+        val edtName = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.edtEditCategoryName)
+        val chipGroup = view.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupEmojiSuggestions)
+        val btnSubmit = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSubmitCategory)
+
+        txtTitle?.text = "🌸 Thêm danh mục mới"
+        txtSub?.text = "Nhập tên danh mục và chọn biểu tượng emoji gợi nhớ"
+        btnSubmit?.text = "🌸 Thêm danh mục"
+
+        val emojis = listOf("💖", "✈️", "👨‍👩‍👧", "🎉", "🎂", "☕", "🌿", "💼", "🏕️", "🎬", "🍜", "🏋️", "🛍️", "🐾", "🎨", "🎵")
+        chipGroup?.removeAllViews()
+        for (emoji in emojis) {
+            val chip = com.google.android.material.chip.Chip(this).apply {
+                text = emoji
+                isCheckable = false
+                textSize = 15f
+                setChipBackgroundColorResource(R.color.badge_pink_bg)
+                setOnClickListener {
+                    val currentText = edtName?.text?.toString()?.trim().orEmpty()
+                    val (_, cleanName) = com.example.photoevents.data.CategoryHelper.extractIconAndName(currentText)
+                    val newName = if (cleanName == "Chung" || cleanName.isEmpty()) emoji else "$emoji $cleanName"
+                    edtName?.setText(newName)
+                    edtName?.setSelection(newName.length)
+                    txtPreview?.text = emoji
+                }
+            }
+            chipGroup?.addView(chip)
+        }
+
+        edtName?.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val (icon, _) = com.example.photoevents.data.CategoryHelper.extractIconAndName(s?.toString())
+                txtPreview?.text = icon
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        view.findViewById<android.view.View>(R.id.btnCloseEditCategorySheet)?.setOnClickListener { sheet.dismiss() }
+
+        btnSubmit?.setOnClickListener {
+            val text = edtName?.text?.toString()?.trim().orEmpty()
+            if (text.isBlank()) {
+                Toast.makeText(this, "Nhập tên danh mục", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val formatted = com.example.photoevents.data.CategoryHelper.formatStandard(text)
+            val (_, cleanName) = com.example.photoevents.data.CategoryHelper.extractIconAndName(formatted)
+            val current = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+            current.add(formatted)
+            prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, current).apply()
+            customCategoriesFlow.value = current
+            selectedCategoryFlow.value = cleanName
+            Toast.makeText(this, "Đã thêm danh mục $cleanName", Toast.LENGTH_SHORT).show()
+            sheet.dismiss()
+        }
+
+        sheet.show()
+    }
+
+    private fun showCategoryOptionsDialog(categoryItem: com.example.photoevents.data.CategoryItem) {
+        val customCats = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
+        val isCustom = customCats.any { com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.id) }
+
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.sheet_category_options, null)
+        sheet.setContentView(view)
+
+        view.findViewById<android.widget.TextView>(R.id.txtCategorySheetIcon)?.text = categoryItem.icon
+        view.findViewById<android.widget.TextView>(R.id.txtCategorySheetTitle)?.text = categoryItem.name
+        view.findViewById<android.widget.TextView>(R.id.txtCategorySheetCount)?.text =
+            if (categoryItem.count == 1) "1 sự kiện trong danh mục này" else "${categoryItem.count} sự kiện trong danh mục này"
+
+        view.findViewById<android.view.View>(R.id.btnCloseCategorySheet)?.setOnClickListener { sheet.dismiss() }
+
+        view.findViewById<android.view.View>(R.id.cardRenameCategory)?.setOnClickListener {
+            sheet.dismiss()
+            showEditCategoryDialog(categoryItem)
+        }
+
+        view.findViewById<android.view.View>(R.id.cardCreateEventForCategory)?.setOnClickListener {
+            sheet.dismiss()
+            val intent = Intent(this, AddEventActivity::class.java).apply {
+                putExtra(EXTRA_CATEGORY, categoryItem.name)
+            }
+            startActivity(intent)
+        }
+
+        val cardDelete = view.findViewById<android.view.View>(R.id.cardDeleteCustomCategory)
+        if (isCustom) {
+            cardDelete?.visibility = android.view.View.VISIBLE
+            cardDelete?.setOnClickListener {
+                sheet.dismiss()
+                val current = customCats.filterNot { com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.id) }.toSet()
+                prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, current).apply()
+                val renamedPresets = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet())?.toMutableSet() ?: mutableSetOf()
+                renamedPresets.removeAll { it.startsWith("${categoryItem.name.lowercase()}|") }
+                prefs.edit().putStringSet(PREF_RENAMED_PRESETS, renamedPresets).apply()
+
+                customCategoriesFlow.value = current
+                if (selectedCategoryFlow.value == categoryItem.id) {
+                    selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
+                }
+                Toast.makeText(this, "Đã xoá danh mục ${categoryItem.name}", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            cardDelete?.visibility = android.view.View.GONE
+        }
+
+        sheet.show()
+    }
+
+    private fun showEditCategoryDialog(categoryItem: com.example.photoevents.data.CategoryItem) {
+        val currentDisplay = "${categoryItem.icon} ${categoryItem.name}"
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.sheet_edit_category, null)
+        sheet.setContentView(view)
+
+        val txtPreview = view.findViewById<android.widget.TextView>(R.id.txtEditCategoryPreviewIcon)
+        val txtTitle = view.findViewById<android.widget.TextView>(R.id.txtEditCategoryHeaderTitle)
+        val txtSub = view.findViewById<android.widget.TextView>(R.id.txtEditCategoryHeaderSubtitle)
+        val edtName = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.edtEditCategoryName)
+        val chipGroup = view.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupEmojiSuggestions)
+        val btnSubmit = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSubmitCategory)
+
+        txtPreview?.text = categoryItem.icon
+        txtTitle?.text = "✏️ Đổi tên danh mục"
+        txtSub?.text = "Tất cả sự kiện trong danh mục này sẽ tự động cập nhật sang tên mới"
+        btnSubmit?.text = "✨ Lưu thay đổi"
+        edtName?.setText(currentDisplay)
+        edtName?.setSelection(currentDisplay.length)
+
+        val emojis = listOf("💖", "✈️", "👨‍👩‍👧", "🎉", "🎂", "☕", "🌿", "💼", "🏕️", "🎬", "🍜", "🏋️", "🛍️", "🐾", "🎨", "🎵")
+        chipGroup?.removeAllViews()
+        for (emoji in emojis) {
+            val chip = com.google.android.material.chip.Chip(this).apply {
+                text = emoji
+                isCheckable = false
+                textSize = 15f
+                setChipBackgroundColorResource(R.color.badge_pink_bg)
+                setOnClickListener {
+                    val currentText = edtName?.text?.toString()?.trim().orEmpty()
+                    val (_, cleanName) = com.example.photoevents.data.CategoryHelper.extractIconAndName(currentText)
+                    val newName = "$emoji $cleanName"
+                    edtName?.setText(newName)
+                    edtName?.setSelection(newName.length)
+                    txtPreview?.text = emoji
+                }
+            }
+            chipGroup?.addView(chip)
+        }
+
+        edtName?.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val (icon, _) = com.example.photoevents.data.CategoryHelper.extractIconAndName(s?.toString())
+                txtPreview?.text = icon
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        view.findViewById<android.view.View>(R.id.btnCloseEditCategorySheet)?.setOnClickListener { sheet.dismiss() }
+
+        btnSubmit?.setOnClickListener {
+            val text = edtName?.text?.toString()?.trim().orEmpty()
+            if (text.isBlank()) {
+                Toast.makeText(this, "Tên danh mục không được để trống", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val newFormatted = com.example.photoevents.data.CategoryHelper.formatStandard(text)
+            val (_, newCleanName) = com.example.photoevents.data.CategoryHelper.extractIconAndName(newFormatted)
+
+            if (newFormatted == currentDisplay) {
+                sheet.dismiss()
+                return@setOnClickListener
+            }
+
+            lifecycleScope.launch {
+                val db = AppDatabase.get(this@MainActivity)
+                val allEvents = db.eventDao().getAllIncludingDeleted()
+                val now = System.currentTimeMillis()
+                val matchedEvents = allEvents.filter {
+                    com.example.photoevents.data.CategoryHelper.matches(it.category, categoryItem.id) ||
+                            com.example.photoevents.data.CategoryHelper.matches(it.category, categoryItem.name)
+                }
+                if (matchedEvents.isNotEmpty()) {
+                    val updated = matchedEvents.map { it.copy(category = newFormatted, updatedAt = now) }
+                    db.eventDao().upsertAll(updated)
+                }
+
+                val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+                currentCustom.removeAll {
+                    com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.id) ||
+                            com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.name)
+                }
+                currentCustom.add(newFormatted)
+                prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, currentCustom).apply()
+
+                val renamedPresets = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet())?.toMutableSet() ?: mutableSetOf()
+                renamedPresets.removeAll { it.startsWith("${categoryItem.name.lowercase()}|") }
+                renamedPresets.add("${categoryItem.name.lowercase()}|$newFormatted")
+                prefs.edit().putStringSet(PREF_RENAMED_PRESETS, renamedPresets).apply()
+
+                customCategoriesFlow.value = currentCustom
+                selectedCategoryFlow.value = newCleanName
+                categoryAdapter.selectedCategoryId = newCleanName
+
+                Toast.makeText(this@MainActivity, "Đã đổi tên thành $newFormatted", Toast.LENGTH_SHORT).show()
+                runSync()
+            }
+            sheet.dismiss()
+        }
+
+        sheet.show()
+    }
     companion object {
         private const val PREF_SORT = "sort_option"
+        private const val PREF_CUSTOM_CATEGORIES = "custom_categories"
+        private const val PREF_RENAMED_PRESETS = "renamed_presets"
     }
 }
