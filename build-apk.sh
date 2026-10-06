@@ -21,7 +21,7 @@ if ! java -version >/dev/null 2>&1; then
     exit 1
 fi
 
-BUILD_TYPE="${1:-debug}"
+BUILD_TYPE="${1:-release}"
 
 if [[ "$BUILD_TYPE" != "debug" && "$BUILD_TYPE" != "release" ]]; then
     echo "Usage: ./build-apk.sh [debug|release]"
