@@ -229,8 +229,10 @@ class CategoryManagementActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 val db = AppDatabase.get(this@CategoryManagementActivity)
-                CategoryHelper.renameCategory(this@CategoryManagementActivity, item.name, text, db)
-                Toast.makeText(this@CategoryManagementActivity, "Đã đổi tên thành $newFormatted", Toast.LENGTH_SHORT).show()
+                CategoryHelper.renameCategory(this@CategoryManagementActivity, item.raw, text, db)
+                val isOnlyIconChanged = CategoryHelper.matches(item.name, text)
+                val toastMsg = if (isOnlyIconChanged) "Đã cập nhật biểu tượng $newFormatted" else "Đã đổi tên thành $newFormatted"
+                Toast.makeText(this@CategoryManagementActivity, toastMsg, Toast.LENGTH_SHORT).show()
                 sheet.dismiss()
                 loadCategories()
                 runSync()

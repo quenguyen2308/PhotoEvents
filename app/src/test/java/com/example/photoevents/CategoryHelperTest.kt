@@ -76,4 +76,27 @@ class CategoryHelperTest {
         assertEquals("☕ Hẹn hò", CategoryHelper.formatStandard("hẹn hò"))
         assertEquals("🌸 Chung", CategoryHelper.formatStandard("chung"))
     }
+
+    @Test
+    fun testDeduplicateCategories() {
+        val listWithDuplicates = listOf("🏷️ DaNgoai", "🏕️ DaNgoai", "✈️ Du lịch", "🌲 DaNgoai")
+        val deduplicated = CategoryHelper.deduplicateCategories(listWithDuplicates)
+        assertEquals(2, deduplicated.size)
+        assertEquals("🏷️ DaNgoai", deduplicated[0])
+        assertEquals("✈️ Du lịch", deduplicated[1])
+    }
+
+    @Test
+    fun testChangeIconOnlyMatching() {
+        val oldCat = "🏷️ DaNgoai"
+        val newCat = "🏕️ DaNgoai"
+        assertTrue(CategoryHelper.matches(oldCat, newCat))
+        assertTrue(CategoryHelper.matches(newCat, oldCat))
+        assertTrue(CategoryHelper.matches(newCat, "DaNgoai"))
+        val (oldIcon, oldName) = CategoryHelper.extractIconAndName(oldCat)
+        val (newIcon, newName) = CategoryHelper.extractIconAndName(newCat)
+        assertEquals("🏷️", oldIcon)
+        assertEquals("🏕️", newIcon)
+        assertEquals(oldName, newName)
+    }
 }

@@ -82,7 +82,10 @@ class AddEventActivity : AppCompatActivity() {
 
         // Cấu hình Dropdown Menu cho Category
         val categoryList = getCategoriesForDropdown()
-        if (lastSelectedCategory.isNotBlank() && !categoryList.contains(lastSelectedCategory) && categoryList.isNotEmpty()) {
+        val matchingCat = categoryList.firstOrNull { com.example.photoevents.data.CategoryHelper.matches(it, lastSelectedCategory) }
+        if (matchingCat != null) {
+            lastSelectedCategory = matchingCat
+        } else if (lastSelectedCategory.isNotBlank() && categoryList.isNotEmpty()) {
             val insertIdx = (categoryList.size - 2).coerceAtLeast(0)
             categoryList.add(insertIdx, lastSelectedCategory)
         }
@@ -184,7 +187,10 @@ class AddEventActivity : AppCompatActivity() {
         }
 
         val categoryList = getCategoriesForDropdown()
-        if (lastSelectedCategory.isNotBlank() && !categoryList.contains(lastSelectedCategory) && categoryList.isNotEmpty()) {
+        val matchingCat = categoryList.firstOrNull { com.example.photoevents.data.CategoryHelper.matches(it, lastSelectedCategory) }
+        if (matchingCat != null) {
+            lastSelectedCategory = matchingCat
+        } else if (lastSelectedCategory.isNotBlank() && categoryList.isNotEmpty()) {
             val insertIdx = (categoryList.size - 2).coerceAtLeast(0)
             categoryList.add(insertIdx, lastSelectedCategory)
         }

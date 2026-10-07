@@ -131,8 +131,10 @@ class EventDetailActivity : AppCompatActivity() {
 
         // Dropdown menu cho Category
         val categoryList = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
-        if (formattedInitial.isNotBlank() && !categoryList.contains(formattedInitial) && categoryList.isNotEmpty()) {
-            categoryList.add(formattedInitial)
+        val matchingInitial = categoryList.firstOrNull { com.example.photoevents.data.CategoryHelper.matches(it, formattedInitial) }
+        val effectiveInitial = matchingInitial ?: formattedInitial
+        if (effectiveInitial.isNotBlank() && !categoryList.contains(effectiveInitial) && categoryList.isNotEmpty()) {
+            categoryList.add(effectiveInitial)
         }
         categoryList.add("➕ Thêm danh mục mới...")
         categoryList.add("⚙️ Quản lý danh mục...")
@@ -141,7 +143,7 @@ class EventDetailActivity : AppCompatActivity() {
             categoryList
         )
         edtCategory.setAdapter(dropdownAdapter)
-        edtCategory.setText(formattedInitial, false)
+        edtCategory.setText(effectiveInitial, false)
 
         edtCategory.setOnItemClickListener { parent, _, position, _ ->
             val selected = parent.getItemAtPosition(position).toString()

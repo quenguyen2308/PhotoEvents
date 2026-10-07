@@ -411,22 +411,24 @@ class MainActivity : AppCompatActivity() {
         customCategories: Set<String>
     ): List<com.example.photoevents.data.CategoryItem> {
         val deletedSet = com.example.photoevents.data.CategoryHelper.getDeletedCategories(this)
-        val categoriesSet = linkedSetOf<String>()
+        val categoriesMap = linkedMapOf<String, String>()
 
-        // 1. Thêm custom categories do người dùng tạo (trừ khi đã bị xoá)
+        // 1. Thêm custom categories do người dùng tạo (ưu tiên icon trong customCategories)
         for (custom in customCategories) {
             val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(custom)
-            if (deletedSet.contains(clean.lowercase())) continue
-            categoriesSet.add(com.example.photoevents.data.CategoryHelper.formatStandard(custom))
+            if (clean.isNotBlank() && !deletedSet.contains(clean.lowercase())) {
+                categoriesMap[clean.lowercase()] = com.example.photoevents.data.CategoryHelper.formatStandard(custom)
+            }
         }
 
-        // 2. Thêm các categories thực tế đang có trong events (trừ khi đã bị xoá)
+        // 2. Thêm các categories thực tế đang có trong events (nếu chưa có trong customCategories)
         events.forEach { item ->
             val cat = item.event.category.trim()
             if (cat.isNotEmpty()) {
                 val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
-                if (!deletedSet.contains(clean.lowercase())) {
-                    categoriesSet.add(com.example.photoevents.data.CategoryHelper.formatStandard(cat))
+                val key = clean.lowercase()
+                if (clean.isNotBlank() && !deletedSet.contains(key) && !categoriesMap.containsKey(key)) {
+                    categoriesMap[key] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
                 }
             }
         }
@@ -449,8 +451,8 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        for (rawCat in categoriesSet) {
-            val (icon, name) = com.example.photoevents.data.CategoryHelper.extractIconAndName(rawCat)
+        for (formattedCat in categoriesMap.values) {
+            val (icon, name) = com.example.photoevents.data.CategoryHelper.extractIconAndName(formattedCat)
             val count = events.count { item ->
                 com.example.photoevents.data.CategoryHelper.matches(item.event.category, name)
             }
@@ -697,6 +699,7 @@ class MainActivity : AppCompatActivity() {
                 customCategoriesFlow.value = currentCustom
                 selectedCategoryFlow.value = newCleanName
                 categoryAdapter.selectedCategoryId = newCleanName
+                categoryRevisionFlow.value += 1
 
                 Toast.makeText(this@MainActivity, "Đã đổi tên thành $newFormatted", Toast.LENGTH_SHORT).show()
                 runSync()

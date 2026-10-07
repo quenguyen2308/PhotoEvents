@@ -85,14 +85,31 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         val eventCategories = mergedEvents.map { it.category.trim() }.filter { it.isNotEmpty() }
         val deletedCategories = com.example.photoevents.data.CategoryHelper.getDeletedCategories(context)
 
-        val mergedCategoriesSet = linkedSetOf<String>()
-        for (cat in localCategories + remoteCategories + eventCategories) {
+        val mergedMap = linkedMapOf<String, String>()
+        // 1. Ưu tiên localCategories trước (giữ icon mới nhất mà người dùng vừa chọn ở máy này)
+        for (cat in localCategories) {
             val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
-            if (!deletedCategories.contains(clean.lowercase())) {
-                mergedCategoriesSet.add(com.example.photoevents.data.CategoryHelper.formatStandard(cat))
+            if (clean.isNotBlank() && !deletedCategories.contains(clean.lowercase())) {
+                mergedMap[clean.lowercase()] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
             }
         }
-        com.example.photoevents.data.CategoryHelper.saveCustomCategories(context, mergedCategoriesSet)
+        // 2. Bổ sung từ remote Drive nếu local chưa có danh mục này
+        for (cat in remoteCategories) {
+            val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
+            val key = clean.lowercase()
+            if (clean.isNotBlank() && !deletedCategories.contains(key) && !mergedMap.containsKey(key)) {
+                mergedMap[key] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
+            }
+        }
+        // 3. Bổ sung từ các sự kiện nếu chưa có danh mục này
+        for (cat in eventCategories) {
+            val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
+            val key = clean.lowercase()
+            if (clean.isNotBlank() && !deletedCategories.contains(key) && !mergedMap.containsKey(key)) {
+                mergedMap[key] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
+            }
+        }
+        com.example.photoevents.data.CategoryHelper.saveCustomCategories(context, mergedMap.values)
 
         // 1) Xoá file Drive cho ảnh đã bị đánh dấu deleted nhưng vẫn còn driveFileId (chạy song song)
         val imagesToDeleteOnDrive = mergedImages.filter { it.deleted && it.driveFileId != null }
@@ -180,7 +197,7 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         }
 
         // 4) Chỉ tải lên metadata.json nếu thực sự có thay đổi so với remote
-        val newPayload = SyncPayload(mergedEvents, afterDownload, mergedCategoriesSet.toList())
+        val newPayload = SyncPayload(mergedEvents, afterDownload, mergedMap.values.toList())
         val newJson = gson.toJson(newPayload)
         val hasChanges = remoteJson == null ||
                 imagesToDeleteOnDrive.isNotEmpty() ||
