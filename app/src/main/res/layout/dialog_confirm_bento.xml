@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="6dp">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="10dp"
+        app:strokeColor="#2EFF6584"
+        app:strokeWidth="1dp"
+        app:cardBackgroundColor="#FFFFFF">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingVertical="24dp"
+            android:paddingHorizontal="22dp">
+
+            <!-- Vòng tròn kép chứa icon chính -->
+            <FrameLayout
+                android:id="@+id/layoutBentoIconOuter"
+                android:layout_width="62dp"
+                android:layout_height="62dp"
+                android:background="@drawable/bg_bento_icon_outer"
+                android:layout_marginBottom="16dp">
+
+                <FrameLayout
+                    android:id="@+id/layoutBentoIcon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_bento_icon_danger">
+
+                    <ImageView
+                        android:id="@+id/imgBentoIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_delete"
+                        app:tint="#E11D48" />
+
+                </FrameLayout>
+
+            </FrameLayout>
+
+            <!-- Tiêu đề Dialog -->
+            <TextView
+                android:id="@+id/txtBentoTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/sakura_text_primary"
+                tools:text="Xoá danh mục 'DaNgoai'?" />
+
+            <!-- Nội dung mô tả -->
+            <TextView
+                android:id="@+id/txtBentoMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:textSize="13.5sp"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@color/sakura_text_secondary"
+                tools:text="Bạn có chắc chắn muốn xoá vĩnh viễn danh mục này không?" />
+
+            <!-- Thẻ tác động (Impact Card viền nét đứt) -->
+            <LinearLayout
+                android:id="@+id/layoutBentoImpact"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_bento_impact_card"
+                android:paddingVertical="11dp"
+                android:paddingHorizontal="14dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/imgBentoImpactIcon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_info"
+                    app:tint="#E11D48" />
+
+                <TextView
+                    android:id="@+id/txtBentoImpact"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    android:textSize="12.5sp"
+                    android:lineSpacingExtra="2.5dp"
+                    android:textColor="#9F1239"
+                    tools:text="Có 3 sự kiện sẽ được tự động chuyển sang 🌸 Chung." />
+
+            </LinearLayout>
+
+            <!-- Cặp nút thao tác chuẩn Bento Pill -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="22dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@android:id/button2"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="10dp"
+                    android:text="Huỷ bỏ"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#4B5563"
+                    android:background="@drawable/bg_btn_bento_tonal"
+                    app:backgroundTint="@null"
+                    app:cornerRadius="100dp"
+                    android:stateListAnimator="@null" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@android:id/button1"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1.2"
+                    android:text="Xoá danh mục"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_btn_bento_danger"
+                    app:backgroundTint="@null"
+                    app:cornerRadius="100dp"
+                    android:stateListAnimator="@null" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</FrameLayout>

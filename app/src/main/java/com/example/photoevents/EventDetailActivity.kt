@@ -21,6 +21,7 @@ import com.example.photoevents.data.normalizeToMidnight
 import com.example.photoevents.drive.DriveSession
 import com.example.photoevents.drive.SyncManager
 import com.example.photoevents.drive.SyncScope
+import com.example.photoevents.ui.BentoDialogHelper
 import com.example.photoevents.ui.FocusAdjustBottomSheet
 import com.example.photoevents.ui.ImageDragCallback
 import com.example.photoevents.ui.ImagesAdapter
@@ -331,21 +332,18 @@ class EventDetailActivity : AppCompatActivity() {
     }
 
     private fun confirmDeleteImage(image: EventImage) {
-        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.sheet_confirm_delete, null)
-        sheet.setContentView(view)
-
-        view.findViewById<android.widget.TextView>(R.id.txtDeleteSheetTitle)?.text = "Xoá ảnh này?"
-        view.findViewById<android.widget.TextView>(R.id.txtDeleteSheetMessage)?.text =
-            "Ảnh này sẽ bị xoá khỏi sự kiện và đồng bộ lên Google Drive."
-
-        view.findViewById<android.view.View>(R.id.btnCancelDelete)?.setOnClickListener { sheet.dismiss() }
-        view.findViewById<android.view.View>(R.id.btnConfirmDelete)?.setOnClickListener {
-            sheet.dismiss()
+        BentoDialogHelper.showConfirmDialog(
+            context = this,
+            title = "Xoá ảnh này?",
+            message = "Bạn có chắc chắn muốn xoá ảnh khỏi sự kiện này không?",
+            impactText = "Ảnh này sẽ bị xoá khỏi sự kiện và đồng bộ lên Google Drive.",
+            confirmText = "Xoá ảnh",
+            cancelText = "Huỷ bỏ",
+            iconRes = R.drawable.ic_delete,
+            isDanger = true
+        ) {
             deleteImage(image)
         }
-
-        sheet.show()
     }
 
     private fun deleteImage(image: EventImage) {

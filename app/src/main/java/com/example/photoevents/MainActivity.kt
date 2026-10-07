@@ -25,6 +25,7 @@ import com.google.api.services.drive.DriveScopes
 import com.example.photoevents.data.AppDatabase
 import com.example.photoevents.drive.DriveSession
 import com.example.photoevents.drive.SyncManager
+import com.example.photoevents.ui.BentoDialogHelper
 import com.example.photoevents.ui.EventsAdapter
 import com.example.photoevents.ui.FocusAdjustBottomSheet
 import com.example.photoevents.ui.SortOption
@@ -322,22 +323,19 @@ class MainActivity : AppCompatActivity() {
         val ids = adapter.selectedEventIds()
         if (ids.isEmpty()) return
 
-        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.sheet_confirm_delete, null)
-        sheet.setContentView(view)
-
-        view.findViewById<android.widget.TextView>(R.id.txtDeleteSheetTitle)?.text =
-            "Xoá ${ids.size} sự kiện đã chọn?"
-        view.findViewById<android.widget.TextView>(R.id.txtDeleteSheetMessage)?.text =
-            "Toàn bộ ${ids.size} sự kiện và toàn bộ ảnh bên trong sẽ bị xoá khỏi máy và đồng bộ lên Google Drive."
-
-        view.findViewById<android.view.View>(R.id.btnCancelDelete)?.setOnClickListener { sheet.dismiss() }
-        view.findViewById<android.view.View>(R.id.btnConfirmDelete)?.setOnClickListener {
-            sheet.dismiss()
+        val count = ids.size
+        BentoDialogHelper.showConfirmDialog(
+            context = this,
+            title = "Xoá $count sự kiện đã chọn?",
+            message = "Bạn có chắc chắn muốn xoá các sự kiện đã chọn không?",
+            impactText = "Toàn bộ $count sự kiện và các ảnh bên trong sẽ bị xoá khỏi máy và đồng bộ lên Google Drive.",
+            confirmText = "Xoá sự kiện",
+            cancelText = "Huỷ bỏ",
+            iconRes = R.drawable.ic_delete,
+            isDanger = true
+        ) {
             deleteSelected(ids)
         }
-
-        sheet.show()
     }
 
     private fun deleteSelected(ids: Set<String>) {
@@ -582,35 +580,40 @@ class MainActivity : AppCompatActivity() {
             val fallback = available.firstOrNull { !com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.name) } ?: "🌸 Chung"
             val fallbackFormatted = com.example.photoevents.data.CategoryHelper.formatStandard(fallback)
 
-            val message = if (categoryItem.count > 0) {
-                "Danh mục này hiện có ${categoryItem.count} sự kiện.\n\nKhi xoá, toàn bộ ${categoryItem.count} sự kiện này sẽ được chuyển sang danh mục '$fallbackFormatted'.\n\nBạn có chắc chắn muốn xoá danh mục này?"
+            val message = "Bạn có chắc chắn muốn xoá vĩnh viễn danh mục này không?"
+            val impactText = if (categoryItem.count > 0) {
+                "Có ${categoryItem.count} sự kiện sẽ được tự động chuyển sang $fallbackFormatted an toàn."
             } else {
-                "Bạn có chắc chắn muốn xoá danh mục '${categoryItem.name}' không?"
+                null
             }
 
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                .setTitle("Xoá danh mục '${categoryItem.name}'?")
-                .setMessage(message)
-                .setPositiveButton("Xoá danh mục") { _, _ ->
-                    lifecycleScope.launch {
-                        val db = AppDatabase.get(this@MainActivity)
-                        val updatedCount = com.example.photoevents.data.CategoryHelper.deleteCategory(
-                            this@MainActivity,
-                            categoryItem.name,
-                            db
-                        )
-                        val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
-                        customCategoriesFlow.value = currentCustom
-                        if (com.example.photoevents.data.CategoryHelper.matches(selectedCategoryFlow.value, categoryItem.name)) {
-                            selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
-                        }
-                        val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện sang $fallbackFormatted)" else ""
-                        Toast.makeText(this@MainActivity, "Đã xoá danh mục ${categoryItem.name}$note", Toast.LENGTH_SHORT).show()
-                        runSync()
+            BentoDialogHelper.showConfirmDialog(
+                context = this,
+                title = "Xoá danh mục '${categoryItem.name}'?",
+                message = message,
+                impactText = impactText,
+                confirmText = "Xoá danh mục",
+                cancelText = "Huỷ bỏ",
+                iconRes = R.drawable.ic_delete,
+                isDanger = true
+            ) {
+                lifecycleScope.launch {
+                    val db = AppDatabase.get(this@MainActivity)
+                    val updatedCount = com.example.photoevents.data.CategoryHelper.deleteCategory(
+                        this@MainActivity,
+                        categoryItem.name,
+                        db
+                    )
+                    val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
+                    customCategoriesFlow.value = currentCustom
+                    if (com.example.photoevents.data.CategoryHelper.matches(selectedCategoryFlow.value, categoryItem.name)) {
+                        selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
                     }
+                    val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện sang $fallbackFormatted)" else ""
+                    Toast.makeText(this@MainActivity, "Đã xoá danh mục ${categoryItem.name}$note", Toast.LENGTH_SHORT).show()
+                    runSync()
                 }
-                .setNegativeButton("Huỷ", null)
-                .show()
+            }
         }
 
         sheet.show()

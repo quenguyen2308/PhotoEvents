@@ -22,6 +22,7 @@ import com.example.photoevents.data.CategoryHelper
 import com.example.photoevents.drive.DriveSession
 import com.example.photoevents.drive.SyncManager
 import com.example.photoevents.drive.SyncScope
+import com.example.photoevents.ui.BentoDialogHelper
 import com.example.photoevents.ui.CategoryManagementAdapter
 import com.example.photoevents.ui.CategoryManagementItem
 import kotlinx.coroutines.Dispatchers
@@ -244,40 +245,49 @@ class CategoryManagementActivity : AppCompatActivity() {
         val fallback = available.firstOrNull { !CategoryHelper.matches(it, item.name) } ?: "🌸 Chung"
         val fallbackFormatted = CategoryHelper.formatStandard(fallback)
 
-        val message = if (item.count > 0) {
-            "Danh mục này hiện có ${item.count} sự kiện.\n\nKhi xoá, toàn bộ ${item.count} sự kiện này sẽ được chuyển sang danh mục '$fallbackFormatted'.\n\nBạn có chắc chắn muốn xoá danh mục này?"
+        val message = "Bạn có chắc chắn muốn xoá vĩnh viễn danh mục này không?"
+        val impactText = if (item.count > 0) {
+            "Có ${item.count} sự kiện sẽ được tự động chuyển sang $fallbackFormatted an toàn."
         } else {
-            "Bạn có chắc chắn muốn xoá danh mục '${item.name}' không?"
+            null
         }
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Xoá danh mục '${item.name}'?")
-            .setMessage(message)
-            .setPositiveButton("Xoá danh mục") { _, _ ->
-                lifecycleScope.launch {
-                    val db = AppDatabase.get(this@CategoryManagementActivity)
-                    val updatedCount = CategoryHelper.deleteCategory(this@CategoryManagementActivity, item.name, db)
-                    val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện sang $fallbackFormatted)" else ""
-                    Toast.makeText(this@CategoryManagementActivity, "Đã xoá danh mục ${item.name}$note", Toast.LENGTH_SHORT).show()
-                    loadCategories()
-                    runSync()
-                }
+        BentoDialogHelper.showConfirmDialog(
+            context = this,
+            title = "Xoá danh mục '${item.name}'?",
+            message = message,
+            impactText = impactText,
+            confirmText = "Xoá danh mục",
+            cancelText = "Huỷ bỏ",
+            iconRes = R.drawable.ic_delete,
+            isDanger = true
+        ) {
+            lifecycleScope.launch {
+                val db = AppDatabase.get(this@CategoryManagementActivity)
+                val updatedCount = CategoryHelper.deleteCategory(this@CategoryManagementActivity, item.name, db)
+                val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện sang $fallbackFormatted)" else ""
+                Toast.makeText(this@CategoryManagementActivity, "Đã xoá danh mục ${item.name}$note", Toast.LENGTH_SHORT).show()
+                loadCategories()
+                runSync()
             }
-            .setNegativeButton("Huỷ", null)
-            .show()
+        }
     }
 
     private fun showRestoreConfirmDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Khôi phục danh mục gốc?")
-            .setMessage("Tất cả các danh mục mặc định ban đầu (Kỷ niệm, Du lịch, Gia đình, ...) sẽ được khôi phục lại.\n\nCác danh mục tuỳ chỉnh bạn đã tạo vẫn được giữ nguyên.")
-            .setPositiveButton("Khôi phục") { _, _ ->
-                CategoryHelper.restoreDefaultPresets(this)
-                Toast.makeText(this, "Đã khôi phục các danh mục mặc định", Toast.LENGTH_SHORT).show()
-                loadCategories()
-            }
-            .setNegativeButton("Huỷ", null)
-            .show()
+        BentoDialogHelper.showConfirmDialog(
+            context = this,
+            title = "Khôi phục danh mục gốc?",
+            message = "Tất cả các danh mục mặc định ban đầu (Kỷ niệm, Du lịch, Gia đình, ...) sẽ được khôi phục lại.",
+            impactText = "Các danh mục tuỳ chỉnh bạn đã tạo vẫn được giữ nguyên an toàn.",
+            confirmText = "Khôi phục",
+            cancelText = "Huỷ bỏ",
+            iconRes = R.drawable.ic_restore,
+            isDanger = false
+        ) {
+            CategoryHelper.restoreDefaultPresets(this)
+            Toast.makeText(this, "Đã khôi phục các danh mục mặc định", Toast.LENGTH_SHORT).show()
+            loadCategories()
+        }
     }
 
     private fun runSync() {
