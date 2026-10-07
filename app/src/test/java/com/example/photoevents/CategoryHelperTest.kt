@@ -99,4 +99,29 @@ class CategoryHelperTest {
         assertEquals("🏕️", newIcon)
         assertEquals(oldName, newName)
     }
+
+    @Test
+    fun testExtractIconWithoutSpace() {
+        val (icon, name) = CategoryHelper.extractIconAndName("🏕️DaNgoai")
+        assertEquals("🏕️", icon)
+        assertEquals("DaNgoai", name)
+    }
+
+    @Test
+    fun testExtractIconTrailing() {
+        val (icon, name) = CategoryHelper.extractIconAndName("DaNgoai 🏕️")
+        assertEquals("🏕️", icon)
+        assertEquals("DaNgoai", name)
+
+        val (icon2, name2) = CategoryHelper.extractIconAndName("DaNgoai🏕️")
+        assertEquals("🏕️", icon2)
+        assertEquals("DaNgoai", name2)
+    }
+
+    @Test
+    fun testFormatStandardWithVariousEmojiFormats() {
+        assertEquals("🏕️ DaNgoai", CategoryHelper.formatStandard("🏕️DaNgoai"))
+        assertEquals("🏕️ DaNgoai", CategoryHelper.formatStandard("DaNgoai 🏕️"))
+        assertEquals("🏕️ DaNgoai", CategoryHelper.formatStandard("DaNgoai🏕️"))
+    }
 }

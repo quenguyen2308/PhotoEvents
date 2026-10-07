@@ -25,6 +25,7 @@ import com.example.photoevents.drive.SyncScope
 import com.example.photoevents.ui.BentoDialogHelper
 import com.example.photoevents.ui.CategoryManagementAdapter
 import com.example.photoevents.ui.CategoryManagementItem
+import com.example.photoevents.ui.EmojiPickerHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -54,7 +55,8 @@ class CategoryManagementActivity : AppCompatActivity() {
 
         adapter = CategoryManagementAdapter(
             onEditClick = { item -> showEditCategoryDialog(item) },
-            onDeleteClick = { item -> showDeleteConfirmDialog(item) }
+            onDeleteClick = { item -> showDeleteConfirmDialog(item) },
+            onIconClick = { item -> showChangeEmojiDialog(item) }
         )
 
         recyclerCategories.layoutManager = LinearLayoutManager(this)
@@ -66,6 +68,28 @@ class CategoryManagementActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         loadCategories()
+    }
+
+    private fun showChangeEmojiDialog(item: CategoryManagementItem) {
+        EmojiPickerHelper.showEmojiPicker(
+            context = this,
+            categoryName = item.name,
+            currentEmoji = item.icon
+        ) { newEmoji ->
+            if (newEmoji == item.icon) return@showEmojiPicker
+            lifecycleScope.launch {
+                val db = AppDatabase.get(this@CategoryManagementActivity)
+                CategoryHelper.updateCategoryIcon(
+                    this@CategoryManagementActivity,
+                    item.raw,
+                    newEmoji,
+                    db
+                )
+                Toast.makeText(this@CategoryManagementActivity, "Đã đổi biểu tượng sang $newEmoji", Toast.LENGTH_SHORT).show()
+                loadCategories()
+                runSync()
+            }
+        }
     }
 
     private fun loadCategories() {
@@ -104,6 +128,7 @@ class CategoryManagementActivity : AppCompatActivity() {
         val view = layoutInflater.inflate(R.layout.sheet_edit_category, null)
         sheet.setContentView(view)
 
+        val framePreview = view.findViewById<View>(R.id.frameEditCategoryPreviewIcon)
         val txtPreview = view.findViewById<TextView>(R.id.txtEditCategoryPreviewIcon)
         val txtTitle = view.findViewById<TextView>(R.id.txtEditCategoryHeaderTitle)
         val txtSub = view.findViewById<TextView>(R.id.txtEditCategoryHeaderSubtitle)
@@ -111,10 +136,21 @@ class CategoryManagementActivity : AppCompatActivity() {
         val chipGroupSuggestions = view.findViewById<ChipGroup>(R.id.chipGroupEmojiSuggestions)
         val btnSubmit = view.findViewById<MaterialButton>(R.id.btnSubmitCategory)
 
-        txtPreview?.text = "🏷️"
+        var selectedEmoji = "🏷️"
+        txtPreview?.text = selectedEmoji
         txtTitle?.text = "🌸 Thêm danh mục mới"
         txtSub?.text = "Nhập tên danh mục và chọn biểu tượng emoji gợi nhớ"
         btnSubmit?.text = "🌸 Thêm danh mục"
+
+        val openPicker = {
+            val currentName = edtName?.text?.toString()?.trim().orEmpty().ifEmpty { "Mới" }
+            EmojiPickerHelper.showEmojiPicker(this, currentName, selectedEmoji) { emoji ->
+                selectedEmoji = emoji
+                txtPreview?.text = emoji
+            }
+        }
+
+        framePreview?.setOnClickListener { openPicker() }
 
         val emojis = listOf("💖", "✈️", "👨‍👩‍👧", "🎉", "🎂", "☕", "🌿", "💼", "🏕️", "🎬", "🍜", "🏋️", "🛍️", "🐾", "🎨", "🎵")
         chipGroupSuggestions?.removeAllViews()
@@ -125,22 +161,29 @@ class CategoryManagementActivity : AppCompatActivity() {
                 textSize = 15f
                 setChipBackgroundColorResource(R.color.badge_pink_bg)
                 setOnClickListener {
-                    val currentText = edtName?.text?.toString()?.trim().orEmpty()
-                    val (_, cleanName) = CategoryHelper.extractIconAndName(currentText)
-                    val newName = if (cleanName == "Chung" || cleanName.isEmpty()) emoji else "$emoji $cleanName"
-                    edtName?.setText(newName)
-                    edtName?.setSelection(newName.length)
+                    selectedEmoji = emoji
                     txtPreview?.text = emoji
                 }
             }
             chipGroupSuggestions?.addView(chip)
         }
+        val moreChip = Chip(this).apply {
+            text = "➕ Khác"
+            isCheckable = false
+            textSize = 13f
+            setChipBackgroundColorResource(R.color.badge_pink_bg)
+            setOnClickListener { openPicker() }
+        }
+        chipGroupSuggestions?.addView(moreChip)
 
         edtName?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val (icon, _) = CategoryHelper.extractIconAndName(s?.toString())
-                txtPreview?.text = icon
+                if (icon != "🏷️" && icon != "🌸") {
+                    selectedEmoji = icon
+                    txtPreview?.text = icon
+                }
             }
             override fun afterTextChanged(s: Editable?) {}
         })
@@ -153,8 +196,9 @@ class CategoryManagementActivity : AppCompatActivity() {
                 Toast.makeText(this, "Nhập tên danh mục", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val formatted = CategoryHelper.addCategory(this, text)
-            val (_, cleanName) = CategoryHelper.extractIconAndName(formatted)
+            val (typedIcon, cleanName) = CategoryHelper.extractIconAndName(text)
+            val finalIcon = if (typedIcon != "🏷️" && typedIcon != "🌸") typedIcon else selectedEmoji
+            CategoryHelper.addCategory(this, "$finalIcon $cleanName")
             Toast.makeText(this, "Đã thêm danh mục $cleanName", Toast.LENGTH_SHORT).show()
             sheet.dismiss()
             loadCategories()
@@ -169,6 +213,7 @@ class CategoryManagementActivity : AppCompatActivity() {
         val view = layoutInflater.inflate(R.layout.sheet_edit_category, null)
         sheet.setContentView(view)
 
+        val framePreview = view.findViewById<View>(R.id.frameEditCategoryPreviewIcon)
         val txtPreview = view.findViewById<TextView>(R.id.txtEditCategoryPreviewIcon)
         val txtTitle = view.findViewById<TextView>(R.id.txtEditCategoryHeaderTitle)
         val txtSub = view.findViewById<TextView>(R.id.txtEditCategoryHeaderSubtitle)
@@ -176,12 +221,23 @@ class CategoryManagementActivity : AppCompatActivity() {
         val chipGroup = view.findViewById<ChipGroup>(R.id.chipGroupEmojiSuggestions)
         val btnSubmit = view.findViewById<MaterialButton>(R.id.btnSubmitCategory)
 
-        txtPreview?.text = item.icon
-        txtTitle?.text = "✏️ Đổi tên danh mục"
-        txtSub?.text = "Tất cả sự kiện trong danh mục này sẽ tự động cập nhật sang tên mới"
+        var selectedEmoji = item.icon
+        txtPreview?.text = selectedEmoji
+        txtTitle?.text = "✏️ Đổi tên & Biểu tượng"
+        txtSub?.text = "Tất cả sự kiện trong danh mục này sẽ tự động cập nhật an toàn"
         btnSubmit?.text = "✨ Lưu thay đổi"
-        edtName?.setText(currentDisplay)
-        edtName?.setSelection(currentDisplay.length)
+        edtName?.setText(item.name)
+        edtName?.setSelection(item.name.length)
+
+        val openPicker = {
+            val currentName = edtName?.text?.toString()?.trim().orEmpty().ifEmpty { item.name }
+            EmojiPickerHelper.showEmojiPicker(this, currentName, selectedEmoji) { emoji ->
+                selectedEmoji = emoji
+                txtPreview?.text = emoji
+            }
+        }
+
+        framePreview?.setOnClickListener { openPicker() }
 
         val emojis = listOf("💖", "✈️", "👨‍👩‍👧", "🎉", "🎂", "☕", "🌿", "💼", "🏕️", "🎬", "🍜", "🏋️", "🛍️", "🐾", "🎨", "🎵")
         chipGroup?.removeAllViews()
@@ -192,22 +248,29 @@ class CategoryManagementActivity : AppCompatActivity() {
                 textSize = 15f
                 setChipBackgroundColorResource(R.color.badge_pink_bg)
                 setOnClickListener {
-                    val currentText = edtName?.text?.toString()?.trim().orEmpty()
-                    val (_, cleanName) = CategoryHelper.extractIconAndName(currentText)
-                    val newName = "$emoji $cleanName"
-                    edtName?.setText(newName)
-                    edtName?.setSelection(newName.length)
+                    selectedEmoji = emoji
                     txtPreview?.text = emoji
                 }
             }
             chipGroup?.addView(chip)
         }
+        val moreChip = Chip(this).apply {
+            text = "➕ Khác"
+            isCheckable = false
+            textSize = 13f
+            setChipBackgroundColorResource(R.color.badge_pink_bg)
+            setOnClickListener { openPicker() }
+        }
+        chipGroup?.addView(moreChip)
 
         edtName?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val (icon, _) = CategoryHelper.extractIconAndName(s?.toString())
-                txtPreview?.text = icon
+                if (icon != "🏷️" && icon != "🌸") {
+                    selectedEmoji = icon
+                    txtPreview?.text = icon
+                }
             }
             override fun afterTextChanged(s: Editable?) {}
         })
@@ -221,7 +284,10 @@ class CategoryManagementActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val newFormatted = CategoryHelper.formatStandard(text)
+            val (typedIcon, cleanName) = CategoryHelper.extractIconAndName(text)
+            val finalIcon = if (typedIcon != "🏷️" && typedIcon != "🌸") typedIcon else selectedEmoji
+            val newFormatted = "$finalIcon $cleanName"
+
             if (newFormatted == currentDisplay) {
                 sheet.dismiss()
                 return@setOnClickListener
@@ -229,9 +295,9 @@ class CategoryManagementActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 val db = AppDatabase.get(this@CategoryManagementActivity)
-                CategoryHelper.renameCategory(this@CategoryManagementActivity, item.raw, text, db)
-                val isOnlyIconChanged = CategoryHelper.matches(item.name, text)
-                val toastMsg = if (isOnlyIconChanged) "Đã cập nhật biểu tượng $newFormatted" else "Đã đổi tên thành $newFormatted"
+                CategoryHelper.renameCategory(this@CategoryManagementActivity, item.raw, newFormatted, db)
+                val isOnlyIconChanged = CategoryHelper.matches(item.name, cleanName)
+                val toastMsg = if (isOnlyIconChanged) "Đã đổi biểu tượng sang $finalIcon" else "Đã đổi tên thành $newFormatted"
                 Toast.makeText(this@CategoryManagementActivity, toastMsg, Toast.LENGTH_SHORT).show()
                 sheet.dismiss()
                 loadCategories()

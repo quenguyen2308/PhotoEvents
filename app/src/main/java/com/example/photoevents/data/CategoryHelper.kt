@@ -55,22 +55,43 @@ object CategoryHelper {
         val trimmed = rawCategory?.trim().orEmpty()
         if (trimmed.isEmpty()) return Pair("🌸", "Chung")
 
-        // Kiểm tra xem chuỗi có định dạng "[Icon] [Tên]" không (phần icon không chứa chữ cái hoặc số)
+        // 1. Kiểm tra xem chuỗi có định dạng "[Icon] [Tên]" không (phần icon không chứa chữ cái hoặc số)
         val spaceIndex = trimmed.indexOf(' ')
         if (spaceIndex > 0) {
             val potentialIcon = trimmed.substring(0, spaceIndex).trim()
             val potentialName = trimmed.substring(spaceIndex + 1).trim()
             if (potentialIcon.isNotEmpty() && potentialIcon.none { it.isLetterOrDigit() } && potentialName.isNotEmpty()) {
+                val cleanName = potentialName.trimEnd { !it.isLetterOrDigit() && !it.isWhitespace() }
+                return Pair(potentialIcon, if (cleanName.isNotEmpty()) cleanName else potentialName)
+            }
+        }
+
+        // 2. Kiểm tra tiền tố Emoji ở đầu không có dấu cách (ví dụ "🏕️DaNgoai")
+        val firstLetterIndex = trimmed.indexOfFirst { it.isLetterOrDigit() }
+        if (firstLetterIndex > 0) {
+            val potentialIcon = trimmed.substring(0, firstLetterIndex).trim()
+            val potentialName = trimmed.substring(firstLetterIndex).trim().trimEnd { !it.isLetterOrDigit() && !it.isWhitespace() }
+            if (potentialIcon.isNotEmpty() && potentialName.isNotEmpty()) {
                 return Pair(potentialIcon, potentialName)
             }
         }
 
-        // Nếu toàn bộ chuỗi chỉ gồm ký tự emoji / biểu tượng
+        // 3. Kiểm tra hậu tố Emoji ở cuối (ví dụ "DaNgoai 🏕️" hoặc "DaNgoai🏕️")
+        val lastLetterIndex = trimmed.indexOfLast { it.isLetterOrDigit() }
+        if (lastLetterIndex in 0 until trimmed.length - 1) {
+            val potentialName = trimmed.substring(0, lastLetterIndex + 1).trim()
+            val potentialIcon = trimmed.substring(lastLetterIndex + 1).trim()
+            if (potentialIcon.isNotEmpty() && potentialName.isNotEmpty()) {
+                return Pair(potentialIcon, potentialName)
+            }
+        }
+
+        // 4. Nếu toàn bộ chuỗi chỉ gồm ký tự emoji / biểu tượng
         if (trimmed.none { it.isLetterOrDigit() }) {
             return Pair(trimmed, "Chung")
         }
 
-        // Nếu không có emoji phía trước, kiểm tra xem có khớp danh mục mặc định không
+        // 5. Nếu không có emoji phía trước, kiểm tra xem có khớp danh mục mặc định không
         for (preset in PRESET_CATEGORIES) {
             val spaceIdx = preset.indexOf(' ')
             if (spaceIdx > 0) {
@@ -82,7 +103,7 @@ object CategoryHelper {
             }
         }
 
-        // Tìm trong bảng tra cứu tên thông dụng
+        // 6. Tìm trong bảng tra cứu tên thông dụng
         val mappedIcon = NAME_TO_ICON_MAP[trimmed.lowercase()]
         return if (mappedIcon != null) {
             val capitalized = trimmed.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
@@ -322,6 +343,21 @@ object CategoryHelper {
         }
 
         return newFormatted
+    }
+
+    /**
+     * Đổi biểu tượng Emoji của một danh mục mà giữ nguyên tên danh mục.
+     * Cập nhật SharedPreferences và Room DB.
+     */
+    suspend fun updateCategoryIcon(
+        context: Context,
+        category: String,
+        newIcon: String,
+        db: AppDatabase? = null
+    ): String {
+        val (_, cleanName) = extractIconAndName(category)
+        val newFormatted = "$newIcon $cleanName"
+        return renameCategory(context, category, newFormatted, db)
     }
 
     /**

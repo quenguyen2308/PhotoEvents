@@ -21,10 +21,12 @@ data class CategoryManagementItem(
 
 class CategoryManagementAdapter(
     private val onEditClick: (CategoryManagementItem) -> Unit,
-    private val onDeleteClick: (CategoryManagementItem) -> Unit
+    private val onDeleteClick: (CategoryManagementItem) -> Unit,
+    private val onIconClick: (CategoryManagementItem) -> Unit = {}
 ) : ListAdapter<CategoryManagementItem, CategoryManagementAdapter.VH>(DIFF) {
 
     class VH(view: View) : RecyclerView.ViewHolder(view) {
+        val frameIcon: View = view.findViewById(R.id.frameManageIcon)
         val txtIcon: TextView = view.findViewById(R.id.txtManageCategoryIcon)
         val txtName: TextView = view.findViewById(R.id.txtManageCategoryName)
         val txtBadge: TextView = view.findViewById(R.id.txtManageCategoryBadge)
@@ -60,6 +62,8 @@ class CategoryManagementAdapter(
             holder.txtBadge.setBackgroundResource(R.drawable.bg_count_badge)
         }
 
+        holder.frameIcon.setOnClickListener { onIconClick(item) }
+        holder.txtIcon.setOnClickListener { onIconClick(item) }
         holder.btnEdit.setOnClickListener { onEditClick(item) }
         holder.btnDelete.setOnClickListener { onDeleteClick(item) }
         holder.itemView.setOnClickListener { onEditClick(item) }

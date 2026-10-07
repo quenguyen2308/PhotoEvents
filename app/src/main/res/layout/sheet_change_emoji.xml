@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet_surface"
+    android:paddingBottom="24dp">
+
+    <!-- Thanh kéo Bottom Sheet -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_bottom_sheet_handle" />
+
+    <!-- Header Thông tin và Preview Icon -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:layout_marginBottom="16dp">
+
+        <FrameLayout
+            android:id="@+id/frameEmojiPickerPreview"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_category_icon_circle"
+            android:layout_marginEnd="14dp">
+
+            <TextView
+                android:id="@+id/txtEmojiPickerPreview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="26sp"
+                tools:text="💖" />
+
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtEmojiPickerTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/sakura_text_primary"
+                android:text="🌸 Chọn biểu tượng Emoji" />
+
+            <TextView
+                android:id="@+id/txtEmojiPickerSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="12sp"
+                android:textColor="@color/sakura_text_secondary"
+                tools:text="Chọn biểu tượng mới cho danh mục 'DaNgoai'" />
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnCloseEmojiSheet"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close"
+            app:tint="@color/sakura_text_secondary"
+            android:contentDescription="Đóng" />
+
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:overScrollMode="never"
+        android:paddingHorizontal="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Ô nhập Emoji tuỳ chỉnh từ bàn phím -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/sakura_border_soft"
+                app:cardBackgroundColor="@color/surface">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="6dp"
+                    android:paddingVertical="4dp">
+
+                    <EditText
+                        android:id="@+id/edtCustomEmojiInput"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:hint="Nhập emoji từ bàn phím (vd: 🏄, 🍕)..."
+                        android:textSize="14sp"
+                        android:textColor="@color/sakura_text_primary"
+                        android:textColorHint="@color/sakura_text_secondary"
+                        android:maxLines="1"
+                        android:inputType="text" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnApplyCustomEmoji"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:text="Áp dụng"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colorPrimary" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Nhóm 1: Phổ biến & Kỷ niệm -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💖 Phổ biến &amp; Kỷ niệm"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@color/sakura_text_secondary"
+                android:layout_marginBottom="6dp" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupEmojiPopular"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:singleLine="false" />
+
+            <!-- Nhóm 2: Ẩm thực & Hoạt động -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🍜 Ẩm thực &amp; Hoạt động"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@color/sakura_text_secondary"
+                android:layout_marginBottom="6dp" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupEmojiActivities"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:singleLine="false" />
+
+            <!-- Nhóm 3: Thiên nhiên & Đời sống -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌿 Thiên nhiên &amp; Đời sống"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@color/sakura_text_secondary"
+                android:layout_marginBottom="6dp" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupEmojiLife"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                app:singleLine="false" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>
