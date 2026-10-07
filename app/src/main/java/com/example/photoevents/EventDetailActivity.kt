@@ -276,10 +276,10 @@ class EventDetailActivity : AppCompatActivity() {
         edtName?.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val (icon, _) = com.example.photoevents.data.CategoryHelper.extractIconAndName(s?.toString())
-                if (icon != "🏷️" && icon != "🌸") {
-                    selectedEmoji = icon
-                    txtPreview?.text = icon
+                val (explicitIcon, _) = com.example.photoevents.data.CategoryHelper.extractExplicitEmojiAndCleanName(s?.toString())
+                if (explicitIcon != null) {
+                    selectedEmoji = explicitIcon
+                    txtPreview?.text = explicitIcon
                 }
             }
             override fun afterTextChanged(s: android.text.Editable?) {}
@@ -290,8 +290,12 @@ class EventDetailActivity : AppCompatActivity() {
         btnSubmit?.setOnClickListener {
             val nameText = edtName?.text?.toString()?.trim().orEmpty()
             if (nameText.isNotBlank()) {
-                val (typedIcon, cleanName) = com.example.photoevents.data.CategoryHelper.extractIconAndName(nameText)
-                val finalIcon = if (typedIcon != "🏷️" && typedIcon != "🌸") typedIcon else selectedEmoji
+                val (explicitIcon, cleanName) = com.example.photoevents.data.CategoryHelper.extractExplicitEmojiAndCleanName(nameText)
+                val finalIcon = explicitIcon ?: if (selectedEmoji.isNotBlank() && selectedEmoji != "🏷️") {
+                    selectedEmoji
+                } else {
+                    com.example.photoevents.data.CategoryHelper.extractIconAndName(nameText).first
+                }
                 val formatted = com.example.photoevents.data.CategoryHelper.addCategory(this, "$finalIcon $cleanName")
                 val index = (categoryList.size - 2).coerceAtLeast(0)
                 categoryList.add(index, formatted)

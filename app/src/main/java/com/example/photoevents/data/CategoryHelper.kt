@@ -117,8 +117,13 @@ object CategoryHelper {
      * Định dạng danh mục chuẩn có emoji kèm theo, ví dụ "✈️ Du lịch"
      */
     fun formatStandard(rawCategory: String?): String {
-        val (icon, name) = extractIconAndName(rawCategory)
-        return "$icon $name"
+        val (explicitIcon, cleanName) = extractExplicitEmojiAndCleanName(rawCategory)
+        return if (explicitIcon != null && cleanName.isNotBlank()) {
+            "$explicitIcon $cleanName"
+        } else {
+            val (icon, name) = extractIconAndName(rawCategory)
+            "$icon $name"
+        }
     }
 
     /**
@@ -156,6 +161,54 @@ object CategoryHelper {
             val (_, pName) = extractIconAndName(it)
             pName.equals(name, ignoreCase = true)
         }
+    }
+
+    /**
+     * Tách emoji rõ ràng (nếu người dùng thực sự nhập emoji vào chuỗi) và tên danh mục sạch.
+     * Khác với extractIconAndName, hàm này KHÔNG tự động gán icon mặc định hay tra cứu NAME_TO_ICON_MAP.
+     * Trả về Pair(explicitEmoji?, cleanName).
+     */
+    fun extractExplicitEmojiAndCleanName(rawCategory: String?): Pair<String?, String> {
+        val trimmed = rawCategory?.trim().orEmpty()
+        if (trimmed.isEmpty()) return Pair(null, "")
+
+        // 1. Dạng "[Emoji] [Tên]"
+        val spaceIndex = trimmed.indexOf(' ')
+        if (spaceIndex > 0) {
+            val potentialIcon = trimmed.substring(0, spaceIndex).trim()
+            val potentialName = trimmed.substring(spaceIndex + 1).trim()
+            if (potentialIcon.isNotEmpty() && potentialIcon.none { it.isLetterOrDigit() } && potentialName.isNotEmpty()) {
+                val cleanName = potentialName.trimEnd { !it.isLetterOrDigit() && !it.isWhitespace() }
+                return Pair(potentialIcon, if (cleanName.isNotEmpty()) cleanName else potentialName)
+            }
+        }
+
+        // 2. Dạng "[Emoji][Tên]" (không dấu cách)
+        val firstLetterIndex = trimmed.indexOfFirst { it.isLetterOrDigit() }
+        if (firstLetterIndex > 0) {
+            val potentialIcon = trimmed.substring(0, firstLetterIndex).trim()
+            val potentialName = trimmed.substring(firstLetterIndex).trim().trimEnd { !it.isLetterOrDigit() && !it.isWhitespace() }
+            if (potentialIcon.isNotEmpty() && potentialName.isNotEmpty()) {
+                return Pair(potentialIcon, potentialName)
+            }
+        }
+
+        // 3. Dạng "[Tên] [Emoji]" hoặc "[Tên][Emoji]"
+        val lastLetterIndex = trimmed.indexOfLast { it.isLetterOrDigit() }
+        if (lastLetterIndex in 0 until trimmed.length - 1) {
+            val potentialName = trimmed.substring(0, lastLetterIndex + 1).trim()
+            val potentialIcon = trimmed.substring(lastLetterIndex + 1).trim()
+            if (potentialIcon.isNotEmpty() && potentialName.isNotEmpty()) {
+                return Pair(potentialIcon, potentialName)
+            }
+        }
+
+        // 4. Nếu toàn bộ chuỗi chỉ gồm ký tự emoji / biểu tượng
+        if (trimmed.none { it.isLetterOrDigit() }) {
+            return Pair(trimmed, "")
+        }
+
+        return Pair(null, trimmed)
     }
 
     /**
@@ -219,7 +272,7 @@ object CategoryHelper {
                 map[key] = formatStandard(trimmed)
             }
         }
-        prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, map.values.toSet()).apply()
+        prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, map.values.toSet()).commit()
     }
 
     /**
@@ -244,6 +297,7 @@ object CategoryHelper {
             if (trimmed.isEmpty()) continue
             val (_, clean) = extractIconAndName(trimmed)
             if (clean.isBlank() || deletedSet.contains(clean.lowercase())) continue
+            if (clean.equals("Chung", ignoreCase = true) && trimmed.isEmpty()) continue
             val key = clean.lowercase()
             if (!map.containsKey(key)) {
                 map[key] = formatStandard(trimmed)
@@ -251,7 +305,7 @@ object CategoryHelper {
             }
         }
         if (changed) {
-            prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, map.values.toSet()).apply()
+            prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, map.values.toSet()).commit()
         }
     }
 
@@ -260,8 +314,9 @@ object CategoryHelper {
      * Nếu trước đó từng bị xoá, sẽ khôi phục lại khỏi danh sách đã xoá.
      */
     fun addCategory(context: Context, rawCategory: String): String {
-        val formatted = formatStandard(rawCategory)
-        val (_, cleanName) = extractIconAndName(formatted)
+        val (explicitIcon, cleanName) = extractExplicitEmojiAndCleanName(rawCategory)
+        val finalIcon = explicitIcon ?: extractIconAndName(rawCategory).first
+        val formatted = "$finalIcon $cleanName"
         val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
 
         // 1. Xoá khỏi danh sách đã xoá nếu có
@@ -273,13 +328,16 @@ object CategoryHelper {
                 deleted.remove(pClean.lowercase())
             }
         }
-        prefs.edit().putStringSet(PREF_DELETED_CATEGORIES, deleted).apply()
 
         // 2. Thêm vào custom_categories (xoá bất kỳ bản cũ trùng tên cleanName)
         val custom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
         custom.removeAll { matches(it, cleanName) }
         custom.add(formatted)
-        saveCustomCategories(context, custom)
+
+        prefs.edit()
+            .putStringSet(PREF_DELETED_CATEGORIES, deleted)
+            .putStringSet(PREF_CUSTOM_CATEGORIES, custom)
+            .commit()
 
         return formatted
     }
@@ -298,16 +356,21 @@ object CategoryHelper {
         val (_, newClean) = extractIconAndName(newFormatted)
         val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
 
-        // Bỏ newClean khỏi danh sách đã xoá (nếu có)
         val deleted = prefs.getStringSet(PREF_DELETED_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+        // Bỏ newClean khỏi danh sách đã xoá (nếu có)
         deleted.removeAll { it.equals(newClean, ignoreCase = true) }
-        prefs.edit().putStringSet(PREF_DELETED_CATEGORIES, deleted).apply()
 
-        // 1. Cập nhật custom_categories: Xoá TẤT CẢ các mục khớp với oldClean hoặc newClean (tránh còn sót icon cũ)
+        // NẾU ĐỔI TÊN (oldClean != newClean):
+        // BẮT BUỘC thêm oldClean vào deleted_categories để Drive Sync và events cũ không tái sinh danh mục cũ!
+        val isNameChanged = !oldClean.equals(newClean, ignoreCase = true)
+        if (isNameChanged && oldClean.isNotBlank()) {
+            deleted.add(oldClean.lowercase())
+        }
+
+        // 1. Cập nhật custom_categories: Xoá TẤT CẢ các mục khớp với oldClean hoặc newClean
         val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
         currentCustom.removeAll { matches(it, oldClean) || matches(it, newClean) }
         currentCustom.add(newFormatted)
-        saveCustomCategories(context, currentCustom)
 
         // 2. Cập nhật renamed_presets
         val renamedPresets = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet())?.toMutableSet() ?: mutableSetOf()
@@ -328,8 +391,14 @@ object CategoryHelper {
         if (matchedPresetClean != null) {
             renamedPresets.removeAll { it.startsWith("$matchedPresetClean|") }
             renamedPresets.add("$matchedPresetClean|$newFormatted")
-            prefs.edit().putStringSet(PREF_RENAMED_PRESETS, renamedPresets).apply()
         }
+
+        // Lưu đồng bộ tất cả vào SharedPreferences
+        prefs.edit()
+            .putStringSet(PREF_DELETED_CATEGORIES, deleted)
+            .putStringSet(PREF_CUSTOM_CATEGORIES, currentCustom)
+            .putStringSet(PREF_RENAMED_PRESETS, renamedPresets)
+            .commit()
 
         // 3. Cập nhật tất cả sự kiện trong DB
         if (db != null) {
@@ -376,19 +445,19 @@ object CategoryHelper {
 
         // 1. Thêm vào deleted_categories
         val deleted = prefs.getStringSet(PREF_DELETED_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
-        deleted.add(clean.lowercase())
+        if (clean.isNotBlank()) {
+            deleted.add(clean.lowercase())
+        }
         for (preset in PRESET_CATEGORIES) {
             val (_, pClean) = extractIconAndName(preset)
             if (matches(preset, clean)) {
                 deleted.add(pClean.lowercase())
             }
         }
-        prefs.edit().putStringSet(PREF_DELETED_CATEGORIES, deleted).apply()
 
         // 2. Xoá khỏi custom_categories
         val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
         currentCustom.removeAll { matches(it, clean) }
-        prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, currentCustom).apply()
 
         // 3. Xoá khỏi renamed_presets
         val renamedPresets = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet())?.toMutableSet() ?: mutableSetOf()
@@ -399,7 +468,13 @@ object CategoryHelper {
                 renamedPresets.removeAll { it.startsWith("${pClean.lowercase()}|") }
             }
         }
-        prefs.edit().putStringSet(PREF_RENAMED_PRESETS, renamedPresets).apply()
+
+        // Ghi đồng bộ tất cả vào SharedPreferences cùng lúc
+        prefs.edit()
+            .putStringSet(PREF_DELETED_CATEGORIES, deleted)
+            .putStringSet(PREF_CUSTOM_CATEGORIES, currentCustom)
+            .putStringSet(PREF_RENAMED_PRESETS, renamedPresets)
+            .commit()
 
         // 4. Tìm danh mục thay thế cho các sự kiện bị mồ côi
         val available = getAvailableCategories(context)
@@ -431,8 +506,10 @@ object CategoryHelper {
             val (_, pClean) = extractIconAndName(preset)
             deleted.remove(pClean.lowercase())
         }
-        prefs.edit().putStringSet(PREF_DELETED_CATEGORIES, deleted).apply()
-        prefs.edit().remove(PREF_RENAMED_PRESETS).apply()
+        prefs.edit()
+            .putStringSet(PREF_DELETED_CATEGORIES, deleted)
+            .remove(PREF_RENAMED_PRESETS)
+            .commit()
     }
 
     /**

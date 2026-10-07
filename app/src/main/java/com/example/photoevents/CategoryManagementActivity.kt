@@ -81,7 +81,7 @@ class CategoryManagementActivity : AppCompatActivity() {
                 val db = AppDatabase.get(this@CategoryManagementActivity)
                 CategoryHelper.updateCategoryIcon(
                     this@CategoryManagementActivity,
-                    item.raw,
+                    item.name,
                     newEmoji,
                     db
                 )
@@ -179,10 +179,10 @@ class CategoryManagementActivity : AppCompatActivity() {
         edtName?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val (icon, _) = CategoryHelper.extractIconAndName(s?.toString())
-                if (icon != "🏷️" && icon != "🌸") {
-                    selectedEmoji = icon
-                    txtPreview?.text = icon
+                val (explicitIcon, _) = CategoryHelper.extractExplicitEmojiAndCleanName(s?.toString())
+                if (explicitIcon != null) {
+                    selectedEmoji = explicitIcon
+                    txtPreview?.text = explicitIcon
                 }
             }
             override fun afterTextChanged(s: Editable?) {}
@@ -196,12 +196,17 @@ class CategoryManagementActivity : AppCompatActivity() {
                 Toast.makeText(this, "Nhập tên danh mục", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val (typedIcon, cleanName) = CategoryHelper.extractIconAndName(text)
-            val finalIcon = if (typedIcon != "🏷️" && typedIcon != "🌸") typedIcon else selectedEmoji
+            val (explicitIcon, cleanName) = CategoryHelper.extractExplicitEmojiAndCleanName(text)
+            val finalIcon = explicitIcon ?: if (selectedEmoji.isNotBlank() && selectedEmoji != "🏷️") {
+                selectedEmoji
+            } else {
+                CategoryHelper.extractIconAndName(text).first
+            }
             CategoryHelper.addCategory(this, "$finalIcon $cleanName")
             Toast.makeText(this, "Đã thêm danh mục $cleanName", Toast.LENGTH_SHORT).show()
             sheet.dismiss()
             loadCategories()
+            runSync()
         }
 
         sheet.show()
@@ -266,10 +271,10 @@ class CategoryManagementActivity : AppCompatActivity() {
         edtName?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val (icon, _) = CategoryHelper.extractIconAndName(s?.toString())
-                if (icon != "🏷️" && icon != "🌸") {
-                    selectedEmoji = icon
-                    txtPreview?.text = icon
+                val (explicitIcon, _) = CategoryHelper.extractExplicitEmojiAndCleanName(s?.toString())
+                if (explicitIcon != null) {
+                    selectedEmoji = explicitIcon
+                    txtPreview?.text = explicitIcon
                 }
             }
             override fun afterTextChanged(s: Editable?) {}
@@ -284,8 +289,12 @@ class CategoryManagementActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val (typedIcon, cleanName) = CategoryHelper.extractIconAndName(text)
-            val finalIcon = if (typedIcon != "🏷️" && typedIcon != "🌸") typedIcon else selectedEmoji
+            val (explicitIcon, cleanName) = CategoryHelper.extractExplicitEmojiAndCleanName(text)
+            val finalIcon = explicitIcon ?: if (selectedEmoji.isNotBlank() && selectedEmoji != "🏷️") {
+                selectedEmoji
+            } else {
+                CategoryHelper.extractIconAndName(text).first
+            }
             val newFormatted = "$finalIcon $cleanName"
 
             if (newFormatted == currentDisplay) {
@@ -295,7 +304,7 @@ class CategoryManagementActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 val db = AppDatabase.get(this@CategoryManagementActivity)
-                CategoryHelper.renameCategory(this@CategoryManagementActivity, item.raw, newFormatted, db)
+                CategoryHelper.renameCategory(this@CategoryManagementActivity, item.name, newFormatted, db)
                 val isOnlyIconChanged = CategoryHelper.matches(item.name, cleanName)
                 val toastMsg = if (isOnlyIconChanged) "Đã đổi biểu tượng sang $finalIcon" else "Đã đổi tên thành $newFormatted"
                 Toast.makeText(this@CategoryManagementActivity, toastMsg, Toast.LENGTH_SHORT).show()

@@ -341,6 +341,36 @@ def main():
         "details": f"Danh mục 'DuLichMoi' cập nhật thành công: {renamed_node is not None}."
     })
 
+    # TC-05b: Change Category Emoji via EmojiPickerHelper
+    print("Executing TC-05b: Change Category Emoji via EmojiPickerHelper...")
+    t0 = time.time()
+    root = dump_ui()
+    icon_nodes = find_nodes(root, resource_id="txtManageCategoryIcon")
+    if icon_nodes:
+        tap(*icon_nodes[-1]["center"])
+    time.sleep(1.5)
+    root = dump_ui()
+    img_picker = capture_screenshot("tc07b_emoji_picker_sheet.png", "CategoryManagementActivity")
+    picker_title = find_node(root, resource_id="txtEmojiPickerTitle")
+    beach_chip = find_node(root, text="🏖️")
+    if beach_chip:
+        tap(*beach_chip["center"])
+    time.sleep(2)
+    root = dump_ui()
+    img_emoji_changed = capture_screenshot("tc07c_emoji_changed_success.png", "CategoryManagementActivity")
+    updated_icons = [n["text"] for n in find_nodes(root, resource_id="txtManageCategoryIcon")]
+    has_beach = any("🏖️" in ic for ic in updated_icons)
+    tc05b_pass = picker_title is not None and has_beach
+    test_results.append({
+        "id": "UI-05b",
+        "title": "Bộ chọn đổi biểu tượng Emoji chuyên dụng (EmojiPickerHelper)",
+        "description": "Bấm trực tiếp vào vòng tròn biểu tượng emoji của danh mục trong màn hình Quản lý danh mục để mở Bottom Sheet EmojiPicker. Chọn emoji '🏖️' và kiểm tra biểu tượng được cập nhật ngay lập tức.",
+        "status": "PASS" if tc05b_pass else "FAIL",
+        "duration": f"{round(time.time() - t0, 2)}s",
+        "screenshot": img_emoji_changed,
+        "details": f"Mở thành công Emoji Picker: {picker_title is not None}, Đổi biểu tượng sang '🏖️': {has_beach}."
+    })
+
     # TC-06: AddEventActivity Category dropdown
     print("Executing TC-06: Check AddEventActivity Dropdown & Chips...")
     t0 = time.time()
@@ -414,12 +444,13 @@ def main():
     img_tc07_dialog = capture_screenshot("tc09_delete_confirm_dialog.png", "CategoryManagementActivity")
     
     # Confirm delete
-    btn_confirm = find_node(root, resource_id="android:id/button1")
+    btn_confirm = find_node(root, resource_id="btnBentoConfirm")
+    if not btn_confirm:
+        btn_confirm = find_node(root, resource_id="android:id/button1")
     if not btn_confirm:
         for node_info in find_nodes(root, text="Xoá danh mục"):
-            if node_info["node"].attrib.get("class") == "android.widget.Button":
-                btn_confirm = node_info
-                break
+            btn_confirm = node_info
+            break
     if btn_confirm:
         tap(*btn_confirm["center"])
     time.sleep(2)
@@ -450,7 +481,7 @@ def main():
     has_custom_cats = "custom_categories" in db_check
     with open("app/src/main/java/com/example/photoevents/drive/SyncManager.kt", "r") as f:
         sync_code = f.read()
-    sync_has_categories = "val categories: List<String>?" in sync_code and "mergedCategoriesSet" in sync_code
+    sync_has_categories = "val categories: List<String>?" in sync_code and ("mergedMap" in sync_code or "mergedCategoriesSet" in sync_code)
 
     img_tc08 = capture_screenshot("tc11_sync_verification.png", "CategoryManagementActivity")
     tc08_pass = has_custom_cats and sync_has_categories

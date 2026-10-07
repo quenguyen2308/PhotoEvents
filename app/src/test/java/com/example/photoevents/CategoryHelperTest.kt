@@ -124,4 +124,39 @@ class CategoryHelperTest {
         assertEquals("🏕️ DaNgoai", CategoryHelper.formatStandard("DaNgoai 🏕️"))
         assertEquals("🏕️ DaNgoai", CategoryHelper.formatStandard("DaNgoai🏕️"))
     }
+
+    @Test
+    fun testExtractExplicitEmojiAndCleanName() {
+        // Có emoji tường minh
+        val (emoji1, name1) = CategoryHelper.extractExplicitEmojiAndCleanName("🏕️ DaNgoai")
+        assertEquals("🏕️", emoji1)
+        assertEquals("DaNgoai", name1)
+
+        val (emoji2, name2) = CategoryHelper.extractExplicitEmojiAndCleanName("🏕️DaNgoai")
+        assertEquals("🏕️", emoji2)
+        assertEquals("DaNgoai", name2)
+
+        val (emoji3, name3) = CategoryHelper.extractExplicitEmojiAndCleanName("DaNgoai 🏕️")
+        assertEquals("🏕️", emoji3)
+        assertEquals("DaNgoai", name3)
+
+        // Tên thông thường (kể cả có trong NAME_TO_ICON_MAP) KHÔNG bị tự gắn emoji
+        val (emoji4, name4) = CategoryHelper.extractExplicitEmojiAndCleanName("Du lịch")
+        assertEquals(null, emoji4)
+        assertEquals("Du lịch", name4)
+
+        val (emoji5, name5) = CategoryHelper.extractExplicitEmojiAndCleanName("Kỷ niệm")
+        assertEquals(null, emoji5)
+        assertEquals("Kỷ niệm", name5)
+
+        val (emoji6, name6) = CategoryHelper.extractExplicitEmojiAndCleanName("")
+        assertEquals(null, emoji6)
+        assertEquals("", name6)
+    }
+
+    @Test
+    fun testFormatStandardPreservesPickedEmoji() {
+        assertEquals("🏖️ Du lịch", CategoryHelper.formatStandard("🏖️ Du lịch"))
+        assertEquals("☕ Da Ngoai", CategoryHelper.formatStandard("☕ Da Ngoai"))
+    }
 }

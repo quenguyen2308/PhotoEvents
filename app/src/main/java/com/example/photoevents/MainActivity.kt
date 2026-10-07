@@ -536,10 +536,10 @@ class MainActivity : AppCompatActivity() {
         edtName?.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val (icon, _) = com.example.photoevents.data.CategoryHelper.extractIconAndName(s?.toString())
-                if (icon != "🏷️" && icon != "🌸") {
-                    selectedEmoji = icon
-                    txtPreview?.text = icon
+                val (explicitIcon, _) = com.example.photoevents.data.CategoryHelper.extractExplicitEmojiAndCleanName(s?.toString())
+                if (explicitIcon != null) {
+                    selectedEmoji = explicitIcon
+                    txtPreview?.text = explicitIcon
                 }
             }
             override fun afterTextChanged(s: android.text.Editable?) {}
@@ -553,14 +553,21 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Nhập tên danh mục", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val (typedIcon, cleanName) = com.example.photoevents.data.CategoryHelper.extractIconAndName(text)
-            val finalIcon = if (typedIcon != "🏷️" && typedIcon != "🌸") typedIcon else selectedEmoji
+            val (explicitIcon, cleanName) = com.example.photoevents.data.CategoryHelper.extractExplicitEmojiAndCleanName(text)
+            val finalIcon = explicitIcon ?: if (selectedEmoji.isNotBlank() && selectedEmoji != "🏷️") {
+                selectedEmoji
+            } else {
+                com.example.photoevents.data.CategoryHelper.extractIconAndName(text).first
+            }
             com.example.photoevents.data.CategoryHelper.addCategory(this, "$finalIcon $cleanName")
             val current = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
-            customCategoriesFlow.value = current
+            customCategoriesFlow.value = current.toSet()
             selectedCategoryFlow.value = cleanName
+            categoryAdapter.selectedCategoryId = cleanName
+            categoryRevisionFlow.value += 1
             Toast.makeText(this, "Đã thêm danh mục $cleanName", Toast.LENGTH_SHORT).show()
             sheet.dismiss()
+            runSync()
         }
 
         sheet.show()
@@ -595,13 +602,13 @@ class MainActivity : AppCompatActivity() {
                     val db = AppDatabase.get(this@MainActivity)
                     val updatedFormatted = com.example.photoevents.data.CategoryHelper.updateCategoryIcon(
                         this@MainActivity,
-                        categoryItem.id,
+                        categoryItem.name,
                         newEmoji,
                         db
                     )
                     val (_, cleanName) = com.example.photoevents.data.CategoryHelper.extractIconAndName(updatedFormatted)
                     val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
-                    customCategoriesFlow.value = currentCustom
+                    customCategoriesFlow.value = currentCustom.toSet()
                     selectedCategoryFlow.value = cleanName
                     categoryAdapter.selectedCategoryId = cleanName
                     categoryRevisionFlow.value += 1
@@ -656,10 +663,12 @@ class MainActivity : AppCompatActivity() {
                         db
                     )
                     val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
-                    customCategoriesFlow.value = currentCustom
+                    customCategoriesFlow.value = currentCustom.toSet()
                     if (com.example.photoevents.data.CategoryHelper.matches(selectedCategoryFlow.value, categoryItem.name)) {
                         selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
+                        categoryAdapter.selectedCategoryId = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
                     }
+                    categoryRevisionFlow.value += 1
                     val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện sang $fallbackFormatted)" else ""
                     Toast.makeText(this@MainActivity, "Đã xoá danh mục ${categoryItem.name}$note", Toast.LENGTH_SHORT).show()
                     runSync()
@@ -729,10 +738,10 @@ class MainActivity : AppCompatActivity() {
         edtName?.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val (icon, _) = com.example.photoevents.data.CategoryHelper.extractIconAndName(s?.toString())
-                if (icon != "🏷️" && icon != "🌸") {
-                    selectedEmoji = icon
-                    txtPreview?.text = icon
+                val (explicitIcon, _) = com.example.photoevents.data.CategoryHelper.extractExplicitEmojiAndCleanName(s?.toString())
+                if (explicitIcon != null) {
+                    selectedEmoji = explicitIcon
+                    txtPreview?.text = explicitIcon
                 }
             }
             override fun afterTextChanged(s: android.text.Editable?) {}
@@ -747,8 +756,12 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val (typedIcon, cleanName) = com.example.photoevents.data.CategoryHelper.extractIconAndName(text)
-            val finalIcon = if (typedIcon != "🏷️" && typedIcon != "🌸") typedIcon else selectedEmoji
+            val (explicitIcon, cleanName) = com.example.photoevents.data.CategoryHelper.extractExplicitEmojiAndCleanName(text)
+            val finalIcon = explicitIcon ?: if (selectedEmoji.isNotBlank() && selectedEmoji != "🏷️") {
+                selectedEmoji
+            } else {
+                com.example.photoevents.data.CategoryHelper.extractIconAndName(text).first
+            }
             val newFormatted = "$finalIcon $cleanName"
 
             if (newFormatted == currentDisplay) {
@@ -760,12 +773,12 @@ class MainActivity : AppCompatActivity() {
                 val db = AppDatabase.get(this@MainActivity)
                 com.example.photoevents.data.CategoryHelper.renameCategory(
                     this@MainActivity,
-                    categoryItem.id,
+                    categoryItem.name,
                     newFormatted,
                     db
                 )
                 val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
-                customCategoriesFlow.value = currentCustom
+                customCategoriesFlow.value = currentCustom.toSet()
                 selectedCategoryFlow.value = cleanName
                 categoryAdapter.selectedCategoryId = cleanName
                 categoryRevisionFlow.value += 1
