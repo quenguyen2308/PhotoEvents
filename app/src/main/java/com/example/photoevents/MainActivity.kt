@@ -175,7 +175,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.fabAdd).setOnClickListener {
             val intent = Intent(this, AddEventActivity::class.java)
             val currentCat = selectedCategoryFlow.value
-            if (currentCat != com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID) {
+            if (currentCat != com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID &&
+                currentCat != com.example.photoevents.data.CategoryHelper.UNCATEGORIZED_CATEGORY_ID) {
                 intent.putExtra(EXTRA_CATEGORY, currentCat)
             }
             startActivity(intent)
@@ -378,6 +379,15 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val result = SyncManager(this@MainActivity, helper).sync()
+                val updatedCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
+                customCategoriesFlow.value = updatedCustom
+                val deletedSet = com.example.photoevents.data.CategoryHelper.getDeletedCategories(this@MainActivity)
+                val currentClean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(selectedCategoryFlow.value)
+                if (deletedSet.contains(currentClean.lowercase())) {
+                    selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
+                }
+                categoryRevisionFlow.value++
+
                 if (result.downloadFailed > 0) {
                     Toast.makeText(
                         this@MainActivity,
@@ -416,7 +426,7 @@ class MainActivity : AppCompatActivity() {
         // 1. Thêm custom categories do người dùng tạo (ưu tiên icon trong customCategories)
         for (custom in customCategories) {
             val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(custom)
-            if (clean.isNotBlank() && !deletedSet.contains(clean.lowercase())) {
+            if (clean.isNotBlank() && !com.example.photoevents.data.CategoryHelper.isUncategorized(clean) && !deletedSet.contains(clean.lowercase())) {
                 categoriesMap[clean.lowercase()] = com.example.photoevents.data.CategoryHelper.formatStandard(custom)
             }
         }
@@ -424,10 +434,10 @@ class MainActivity : AppCompatActivity() {
         // 2. Thêm các categories thực tế đang có trong events (nếu chưa có trong customCategories)
         events.forEach { item ->
             val cat = item.event.category.trim()
-            if (cat.isNotEmpty()) {
+            if (cat.isNotEmpty() && !com.example.photoevents.data.CategoryHelper.isUncategorized(cat)) {
                 val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
                 val key = clean.lowercase()
-                if (clean.isNotBlank() && !deletedSet.contains(key) && !categoriesMap.containsKey(key)) {
+                if (clean.isNotBlank() && !com.example.photoevents.data.CategoryHelper.isUncategorized(clean) && !deletedSet.contains(key) && !categoriesMap.containsKey(key)) {
                     categoriesMap[key] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
                 }
             }
@@ -448,6 +458,18 @@ class MainActivity : AppCompatActivity() {
                 icon = "🌸",
                 count = events.size,
                 isAll = true
+            )
+        )
+
+        // "Chưa gán" luôn đứng thứ 2
+        val uncategorizedCount = events.count { com.example.photoevents.data.CategoryHelper.isUncategorized(it.event.category) }
+        items.add(
+            com.example.photoevents.data.CategoryItem(
+                id = com.example.photoevents.data.CategoryHelper.UNCATEGORIZED_CATEGORY_ID,
+                name = com.example.photoevents.data.CategoryHelper.UNCATEGORIZED_NAME,
+                icon = com.example.photoevents.data.CategoryHelper.UNCATEGORIZED_ICON,
+                count = uncategorizedCount,
+                isUncategorized = true
             )
         )
 
@@ -574,6 +596,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showCategoryOptionsDialog(categoryItem: com.example.photoevents.data.CategoryItem) {
+        if (categoryItem.isAll || categoryItem.isUncategorized || categoryItem.isAddAction) return
+
         val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.sheet_category_options, null)
         sheet.setContentView(view)
@@ -634,13 +658,10 @@ class MainActivity : AppCompatActivity() {
         val cardDelete = view.findViewById<android.view.View>(R.id.cardDeleteCategory)
         cardDelete?.setOnClickListener {
             sheet.dismiss()
-            val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
-            val fallback = available.firstOrNull { !com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.name) } ?: "🌸 Chung"
-            val fallbackFormatted = com.example.photoevents.data.CategoryHelper.formatStandard(fallback)
 
             val message = "Bạn có chắc chắn muốn xoá vĩnh viễn danh mục này không?"
             val impactText = if (categoryItem.count > 0) {
-                "Có ${categoryItem.count} sự kiện sẽ được tự động chuyển sang $fallbackFormatted an toàn."
+                "Có ${categoryItem.count} sự kiện sẽ được chuyển về Chưa gán."
             } else {
                 null
             }
@@ -669,7 +690,7 @@ class MainActivity : AppCompatActivity() {
                         categoryAdapter.selectedCategoryId = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
                     }
                     categoryRevisionFlow.value += 1
-                    val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện sang $fallbackFormatted)" else ""
+                    val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện về Chưa gán)" else ""
                     Toast.makeText(this@MainActivity, "Đã xoá danh mục ${categoryItem.name}$note", Toast.LENGTH_SHORT).show()
                     runSync()
                 }

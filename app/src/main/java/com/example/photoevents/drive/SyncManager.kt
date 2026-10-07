@@ -21,7 +21,8 @@ import java.io.File
 private data class SyncPayload(
     @Expose val events: List<Event>? = null,
     @Expose val images: List<EventImage>? = null,
-    @Expose val categories: List<String>? = null
+    @Expose val categories: List<String>? = null,
+    @Expose val categoryRecords: List<com.example.photoevents.data.CategoryRecord>? = null
 )
 
 /** Kết quả 1 lần sync: số ảnh chưa tải về được (sẽ tự thử lại ở lần sync sau) và lỗi đầu tiên gặp phải. */
@@ -75,58 +76,85 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         val mergedEvents = mergeById(localEvents, remoteEvents) { it.id }
         val mergedImages = mergeById(localImages, remoteImages) { it.id }
 
-        // Cập nhật Room sớm: UI lập tức nhận được các sự kiện và metadata ảnh mới mà không phải đợi tải xong toàn bộ file
-        eventDao.upsertAll(mergedEvents)
-        imageDao.upsertAll(mergedImages)
+        // Đồng bộ danh mục 2 chiều giữa local và remote Drive theo CategoryRecord (CRDT Last-Write-Wins)
+        val localRecords = com.example.photoevents.data.CategoryHelper.getCategoryRecords(context)
+        val remoteRecords = remotePayload.categoryRecords ?: remotePayload.categories?.map { cat ->
+            val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
+            com.example.photoevents.data.CategoryRecord(
+                id = clean.lowercase(),
+                name = com.example.photoevents.data.CategoryHelper.formatStandard(cat),
+                updatedAt = 1L,
+                deleted = false
+            )
+        } ?: emptyList()
 
-        // Đồng bộ danh mục 2 chiều giữa local, remote Drive và danh mục trên sự kiện
-        val localCategories = com.example.photoevents.data.CategoryHelper.getAvailableCategories(context)
-        val remoteCategories = remotePayload.categories ?: emptyList()
-        val deletedCategories = com.example.photoevents.data.CategoryHelper.getDeletedCategories(context)
+        val categoryRecordsMap = LinkedHashMap<String, com.example.photoevents.data.CategoryRecord>()
+        for (rec in remoteRecords) {
+            val key = rec.id.trim().lowercase()
+            if (key.isNotBlank() && !com.example.photoevents.data.CategoryHelper.isUncategorized(key)) {
+                categoryRecordsMap[key] = rec
+            }
+        }
+        for (local in localRecords) {
+            val key = local.id.trim().lowercase()
+            if (key.isBlank() || com.example.photoevents.data.CategoryHelper.isUncategorized(key)) continue
+            val existing = categoryRecordsMap[key]
+            if (existing == null || local.updatedAt >= existing.updatedAt) {
+                categoryRecordsMap[key] = local
+            }
+        }
 
-        // Dọn sạch danh mục của sự kiện nếu danh mục đó nằm trong danh sách đã bị xoá
+        // Xử lý danh mục trên sự kiện:
+        // - Nếu danh mục bị xoá (deleted = true):
+        //     + ev.updatedAt > record.updatedAt: sự kiện được gán/sửa SAU khi xoá -> Người dùng cố ý dùng lại -> Tái sinh danh mục!
+        //     + ev.updatedAt <= record.updatedAt: sự kiện tồn tại TRƯỚC khi xoá -> Chuyển sự kiện về Chưa gán ("")
+        // - Nếu sự kiện có danh mục chưa có trong records -> Thêm vào records
         val sanitizedEvents = mergedEvents.map { ev ->
             val cat = ev.category.trim()
-            if (cat.isNotEmpty()) {
+            if (cat.isNotEmpty() && !com.example.photoevents.data.CategoryHelper.isUncategorized(cat)) {
                 val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
-                if (deletedCategories.contains(clean.lowercase())) {
-                    ev.copy(category = "", updatedAt = System.currentTimeMillis())
+                val key = clean.lowercase()
+                val record = categoryRecordsMap[key]
+                if (record != null && record.deleted) {
+                    if (ev.updatedAt > record.updatedAt) {
+                        categoryRecordsMap[key] = com.example.photoevents.data.CategoryRecord(
+                            id = key,
+                            name = com.example.photoevents.data.CategoryHelper.formatStandard(cat),
+                            updatedAt = ev.updatedAt,
+                            deleted = false
+                        )
+                        ev
+                    } else {
+                        ev.copy(category = "", updatedAt = record.updatedAt)
+                    }
                 } else {
+                    if (record == null) {
+                        categoryRecordsMap[key] = com.example.photoevents.data.CategoryRecord(
+                            id = key,
+                            name = com.example.photoevents.data.CategoryHelper.formatStandard(cat),
+                            updatedAt = ev.updatedAt,
+                            deleted = false
+                        )
+                    }
                     ev
                 }
             } else ev
         }
-        if (sanitizedEvents != mergedEvents) {
-            eventDao.upsertAll(sanitizedEvents)
-        }
 
-        val eventCategories = sanitizedEvents.map { it.category.trim() }.filter { it.isNotEmpty() }
+        // Cập nhật Room với dữ liệu đã merge và dọn sạch
+        eventDao.upsertAll(sanitizedEvents)
+        imageDao.upsertAll(mergedImages)
 
-        val mergedMap = linkedMapOf<String, String>()
-        // 1. Ưu tiên localCategories trước (giữ icon mới nhất mà người dùng vừa chọn ở máy này)
-        for (cat in localCategories) {
-            val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
-            if (clean.isNotBlank() && !deletedCategories.contains(clean.lowercase())) {
-                mergedMap[clean.lowercase()] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
-            }
-        }
-        // 2. Bổ sung từ remote Drive nếu local chưa có danh mục này và chưa từng bị xoá
-        for (cat in remoteCategories) {
-            val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
-            val key = clean.lowercase()
-            if (clean.isNotBlank() && !deletedCategories.contains(key) && !mergedMap.containsKey(key)) {
-                mergedMap[key] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
-            }
-        }
-        // 3. Bổ sung từ các sự kiện nếu chưa có danh mục này và chưa từng bị xoá
-        for (cat in eventCategories) {
-            val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
-            val key = clean.lowercase()
-            if (clean.isNotBlank() && !deletedCategories.contains(key) && !mergedMap.containsKey(key)) {
-                mergedMap[key] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
-            }
-        }
-        com.example.photoevents.data.CategoryHelper.saveCustomCategories(context, mergedMap.values)
+        // Lưu CategoryRecords vào SharedPreferences local
+        com.example.photoevents.data.CategoryHelper.saveCategoryRecords(
+            context,
+            categoryRecordsMap.values
+        )
+
+        val finalCategoryRecords = categoryRecordsMap.values.toList()
+        val activeCategories = finalCategoryRecords
+            .filter { !it.deleted && !com.example.photoevents.data.CategoryHelper.isUncategorized(it.name) }
+            .map { it.name }
 
         // 1) Xoá file Drive cho ảnh đã bị đánh dấu deleted nhưng vẫn còn driveFileId (chạy song song)
         val imagesToDeleteOnDrive = mergedImages.filter { it.deleted && it.driveFileId != null }
@@ -214,7 +242,12 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         }
 
         // 4) Chỉ tải lên metadata.json nếu thực sự có thay đổi so với remote
-        val newPayload = SyncPayload(sanitizedEvents, afterDownload, mergedMap.values.toList())
+        val newPayload = SyncPayload(
+            events = sanitizedEvents,
+            images = afterDownload,
+            categories = activeCategories,
+            categoryRecords = finalCategoryRecords
+        )
         val newJson = gson.toJson(newPayload)
         val hasChanges = remoteJson == null ||
                 imagesToDeleteOnDrive.isNotEmpty() ||

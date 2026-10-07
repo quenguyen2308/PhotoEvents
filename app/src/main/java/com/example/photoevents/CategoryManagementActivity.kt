@@ -318,13 +318,9 @@ class CategoryManagementActivity : AppCompatActivity() {
     }
 
     private fun showDeleteConfirmDialog(item: CategoryManagementItem) {
-        val available = CategoryHelper.getAvailableCategories(this)
-        val fallback = available.firstOrNull { !CategoryHelper.matches(it, item.name) } ?: "🌸 Chung"
-        val fallbackFormatted = CategoryHelper.formatStandard(fallback)
-
         val message = "Bạn có chắc chắn muốn xoá vĩnh viễn danh mục này không?"
         val impactText = if (item.count > 0) {
-            "Có ${item.count} sự kiện sẽ được tự động chuyển sang $fallbackFormatted an toàn."
+            "Có ${item.count} sự kiện sẽ được chuyển về Chưa gán."
         } else {
             null
         }
@@ -342,7 +338,7 @@ class CategoryManagementActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 val db = AppDatabase.get(this@CategoryManagementActivity)
                 val updatedCount = CategoryHelper.deleteCategory(this@CategoryManagementActivity, item.name, db)
-                val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện sang $fallbackFormatted)" else ""
+                val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện về Chưa gán)" else ""
                 Toast.makeText(this@CategoryManagementActivity, "Đã xoá danh mục ${item.name}$note", Toast.LENGTH_SHORT).show()
                 loadCategories()
                 runSync()

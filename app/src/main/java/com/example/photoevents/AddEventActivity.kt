@@ -73,19 +73,24 @@ class AddEventActivity : AppCompatActivity() {
         updatePickedCount()
 
         // Thiết lập danh mục ban đầu
-        val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
-        val initialCategory = intent.getStringExtra(EXTRA_CATEGORY)?.takeIf { it.isNotBlank() }
-            ?: available.firstOrNull() ?: ""
+        val rawExtra = intent.getStringExtra(EXTRA_CATEGORY)?.takeIf { it.isNotBlank() }
+        val initialCategory = if (rawExtra != null && !com.example.photoevents.data.CategoryHelper.isUncategorized(rawExtra)) {
+            rawExtra
+        } else {
+            ""
+        }
         lastSelectedCategory = if (initialCategory.isNotBlank()) {
             com.example.photoevents.data.CategoryHelper.formatStandard(initialCategory)
-        } else ""
+        } else {
+            ""
+        }
 
         // Cấu hình Dropdown Menu cho Category
         val categoryList = getCategoriesForDropdown()
         val matchingCat = categoryList.firstOrNull { com.example.photoevents.data.CategoryHelper.matches(it, lastSelectedCategory) }
         if (matchingCat != null) {
             lastSelectedCategory = matchingCat
-        } else if (lastSelectedCategory.isNotBlank() && categoryList.isNotEmpty()) {
+        } else if (lastSelectedCategory.isNotBlank() && !com.example.photoevents.data.CategoryHelper.isUncategorized(lastSelectedCategory) && categoryList.isNotEmpty()) {
             val insertIdx = (categoryList.size - 2).coerceAtLeast(0)
             categoryList.add(insertIdx, lastSelectedCategory)
         }
@@ -138,7 +143,12 @@ class AddEventActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val category = edtCategory.text.toString().trim()
+            val rawCategory = edtCategory.text.toString().trim()
+            val category = if (com.example.photoevents.data.CategoryHelper.isUncategorized(rawCategory)) {
+                ""
+            } else {
+                com.example.photoevents.data.CategoryHelper.formatStandard(rawCategory)
+            }
 
             isSaving = true
             btnSave.isEnabled = false
@@ -180,9 +190,8 @@ class AddEventActivity : AppCompatActivity() {
 
         val deletedSet = com.example.photoevents.data.CategoryHelper.getDeletedCategories(this)
         val (_, cleanSelected) = com.example.photoevents.data.CategoryHelper.extractIconAndName(lastSelectedCategory)
-        val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
         if (deletedSet.contains(cleanSelected.lowercase())) {
-            lastSelectedCategory = available.firstOrNull() ?: ""
+            lastSelectedCategory = ""
             edtCategory.setText(lastSelectedCategory, false)
         }
 
@@ -190,7 +199,7 @@ class AddEventActivity : AppCompatActivity() {
         val matchingCat = categoryList.firstOrNull { com.example.photoevents.data.CategoryHelper.matches(it, lastSelectedCategory) }
         if (matchingCat != null) {
             lastSelectedCategory = matchingCat
-        } else if (lastSelectedCategory.isNotBlank() && categoryList.isNotEmpty()) {
+        } else if (lastSelectedCategory.isNotBlank() && !com.example.photoevents.data.CategoryHelper.isUncategorized(lastSelectedCategory) && categoryList.isNotEmpty()) {
             val insertIdx = (categoryList.size - 2).coerceAtLeast(0)
             categoryList.add(insertIdx, lastSelectedCategory)
         }
@@ -208,19 +217,33 @@ class AddEventActivity : AppCompatActivity() {
         selectedCategory: String
     ) {
         val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
+        val chipOptions = mutableListOf<String>()
+        chipOptions.addAll(available)
+
         chipGroup.removeAllViews()
-        for (cat in available) {
+        for (cat in chipOptions) {
             val chip = com.google.android.material.chip.Chip(this).apply {
                 text = cat
                 isCheckable = true
-                isChecked = com.example.photoevents.data.CategoryHelper.matches(cat, selectedCategory)
+                val matchesSelection = if (com.example.photoevents.data.CategoryHelper.isUncategorized(selectedCategory)) {
+                    false
+                } else {
+                    com.example.photoevents.data.CategoryHelper.matches(cat, selectedCategory)
+                }
+                isChecked = matchesSelection
                 setChipBackgroundColorResource(
                     if (isChecked) R.color.badge_pink_bg else R.color.surface
                 )
                 setOnClickListener {
-                    edtCategory.setText(cat, false)
-                    lastSelectedCategory = cat
-                    updateChipSelection(chipGroup, cat)
+                    val isAlreadySelected = com.example.photoevents.data.CategoryHelper.matches(cat, lastSelectedCategory)
+                    val targetCategory = if (isAlreadySelected) {
+                        ""
+                    } else {
+                        cat
+                    }
+                    edtCategory.setText(targetCategory, false)
+                    lastSelectedCategory = targetCategory
+                    updateChipSelection(chipGroup, targetCategory)
                 }
             }
             chipGroup.addView(chip)
@@ -231,9 +254,11 @@ class AddEventActivity : AppCompatActivity() {
         chipGroup: com.google.android.material.chip.ChipGroup,
         selectedCategory: String
     ) {
+        val isSelectionUncat = com.example.photoevents.data.CategoryHelper.isUncategorized(selectedCategory)
         for (i in 0 until chipGroup.childCount) {
             (chipGroup.getChildAt(i) as? com.google.android.material.chip.Chip)?.let { c ->
-                c.isChecked = com.example.photoevents.data.CategoryHelper.matches(c.text.toString(), selectedCategory)
+                val chipText = c.text.toString()
+                c.isChecked = !isSelectionUncat && com.example.photoevents.data.CategoryHelper.matches(chipText, selectedCategory)
                 c.setChipBackgroundColorResource(
                     if (c.isChecked) R.color.badge_pink_bg else R.color.surface
                 )
@@ -242,7 +267,8 @@ class AddEventActivity : AppCompatActivity() {
     }
 
     private fun getCategoriesForDropdown(): MutableList<String> {
-        val list = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
+        val list = mutableListOf("")
+        list.addAll(com.example.photoevents.data.CategoryHelper.getAvailableCategories(this))
         list.add(ACTION_ADD_NEW)
         list.add(ACTION_MANAGE)
         return list

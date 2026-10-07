@@ -125,15 +125,20 @@ class EventDetailActivity : AppCompatActivity() {
         edtTitle.setText(currentTitle)
         edtNote.setText(currentNote)
         val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
-        val initialCat = currentCategory.ifBlank { available.firstOrNull() ?: "" }
-        val formattedInitial = if (initialCat.isNotBlank()) com.example.photoevents.data.CategoryHelper.formatStandard(initialCat) else ""
+        val isCurrentUncat = com.example.photoevents.data.CategoryHelper.isUncategorized(currentCategory)
+        val effectiveInitial = if (isCurrentUncat) {
+            ""
+        } else {
+            val formatted = com.example.photoevents.data.CategoryHelper.formatStandard(currentCategory)
+            val matching = available.firstOrNull { com.example.photoevents.data.CategoryHelper.matches(it, formatted) }
+            matching ?: formatted
+        }
         edtTitle.setSelection(edtTitle.text?.length ?: 0)
 
         // Dropdown menu cho Category
-        val categoryList = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
-        val matchingInitial = categoryList.firstOrNull { com.example.photoevents.data.CategoryHelper.matches(it, formattedInitial) }
-        val effectiveInitial = matchingInitial ?: formattedInitial
-        if (effectiveInitial.isNotBlank() && !categoryList.contains(effectiveInitial) && categoryList.isNotEmpty()) {
+        val categoryList = mutableListOf("")
+        categoryList.addAll(available)
+        if (!isCurrentUncat && !categoryList.any { com.example.photoevents.data.CategoryHelper.matches(it, effectiveInitial) }) {
             categoryList.add(effectiveInitial)
         }
         categoryList.add("➕ Thêm danh mục mới...")
@@ -145,50 +150,63 @@ class EventDetailActivity : AppCompatActivity() {
         edtCategory.setAdapter(dropdownAdapter)
         edtCategory.setText(effectiveInitial, false)
 
+        val chipOptions = mutableListOf<String>()
+        chipOptions.addAll(available)
+
+        fun updateChips(selected: String) {
+            val isSelUncat = com.example.photoevents.data.CategoryHelper.isUncategorized(selected)
+            for (i in 0 until chipGroupCategory.childCount) {
+                (chipGroupCategory.getChildAt(i) as? com.google.android.material.chip.Chip)?.let { c ->
+                    val chipText = c.text.toString()
+                    c.isChecked = !isSelUncat && com.example.photoevents.data.CategoryHelper.matches(chipText, selected)
+                    c.setChipBackgroundColorResource(
+                        if (c.isChecked) R.color.badge_pink_bg else R.color.surface
+                    )
+                }
+            }
+        }
+
+        var selectedCatInDialog = effectiveInitial
+
         edtCategory.setOnItemClickListener { parent, _, position, _ ->
             val selected = parent.getItemAtPosition(position).toString()
             when (selected) {
                 "➕ Thêm danh mục mới..." -> {
-                    edtCategory.setText(formattedInitial, false)
+                    edtCategory.setText(selectedCatInDialog, false)
                     showAddNewCategoryInDetailDialog(edtCategory, categoryList, dropdownAdapter, chipGroupCategory)
                 }
                 "⚙️ Quản lý danh mục..." -> {
-                    edtCategory.setText(formattedInitial, false)
+                    edtCategory.setText(selectedCatInDialog, false)
                     sheet.dismiss()
                     startActivity(Intent(this, CategoryManagementActivity::class.java))
                 }
                 else -> {
-                    for (i in 0 until chipGroupCategory.childCount) {
-                        (chipGroupCategory.getChildAt(i) as? com.google.android.material.chip.Chip)?.let { c ->
-                            c.isChecked = com.example.photoevents.data.CategoryHelper.matches(c.text.toString(), selected)
-                            c.setChipBackgroundColorResource(
-                                if (c.isChecked) R.color.badge_pink_bg else R.color.surface
-                            )
-                        }
-                    }
+                    selectedCatInDialog = selected
+                    updateChips(selected)
                 }
             }
         }
 
         chipGroupCategory.removeAllViews()
-        for (cat in available) {
+        for (cat in chipOptions) {
             val chip = com.google.android.material.chip.Chip(this).apply {
                 text = cat
                 isCheckable = true
-                isChecked = com.example.photoevents.data.CategoryHelper.matches(cat, initialCat)
+                val matchesSelection = !isCurrentUncat && com.example.photoevents.data.CategoryHelper.matches(cat, effectiveInitial)
+                isChecked = matchesSelection
                 setChipBackgroundColorResource(
                     if (isChecked) R.color.badge_pink_bg else R.color.surface
                 )
                 setOnClickListener {
-                    edtCategory.setText(cat, false)
-                    for (i in 0 until chipGroupCategory.childCount) {
-                        (chipGroupCategory.getChildAt(i) as? com.google.android.material.chip.Chip)?.let { c ->
-                            c.isChecked = (c.text == cat)
-                            c.setChipBackgroundColorResource(
-                                if (c.isChecked) R.color.badge_pink_bg else R.color.surface
-                            )
-                        }
+                    val isAlreadySelected = com.example.photoevents.data.CategoryHelper.matches(cat, selectedCatInDialog)
+                    val targetCategory = if (isAlreadySelected) {
+                        ""
+                    } else {
+                        cat
                     }
+                    selectedCatInDialog = targetCategory
+                    edtCategory.setText(targetCategory, false)
+                    updateChips(targetCategory)
                 }
             }
             chipGroupCategory.addView(chip)
@@ -197,7 +215,12 @@ class EventDetailActivity : AppCompatActivity() {
         btnSave.setOnClickListener {
             val newTitle = edtTitle.text?.toString()?.trim().orEmpty()
             val newNote = edtNote.text?.toString()?.trim().orEmpty()
-            val newCategory = edtCategory.text?.toString()?.trim().orEmpty()
+            val newCategoryRaw = edtCategory.text?.toString()?.trim().orEmpty()
+            val newCategory = if (com.example.photoevents.data.CategoryHelper.isUncategorized(newCategoryRaw)) {
+                ""
+            } else {
+                com.example.photoevents.data.CategoryHelper.formatStandard(newCategoryRaw)
+            }
             if (newTitle.isEmpty()) {
                 layoutTitle.error = "Tên sự kiện không được để trống"
                 return@setOnClickListener

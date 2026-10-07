@@ -61,12 +61,18 @@ class CategoryDropdownAdapter(
             txtName.text = "Thêm danh mục mới..."
             txtName.setTextColor(ContextCompat.getColor(context, R.color.sakura_pink))
             frameIcon.setBackgroundResource(R.drawable.bg_category_icon_circle)
+            frameIcon.visibility = View.VISIBLE
         } else if (item.contains("Quản lý danh mục") || item.startsWith("⚙️")) {
             txtIcon.text = "⚙️"
             txtIcon.textSize = 15f
             txtName.text = "Quản lý danh mục..."
             txtName.setTextColor(ContextCompat.getColor(context, R.color.sakura_text_secondary))
             frameIcon.setBackgroundResource(R.drawable.bg_category_icon_circle)
+            frameIcon.visibility = View.VISIBLE
+        } else if (item.isBlank() || CategoryHelper.isUncategorized(item)) {
+            txtIcon.text = ""
+            frameIcon.visibility = View.INVISIBLE
+            txtName.text = ""
         } else {
             val (icon, name) = CategoryHelper.extractIconAndName(item)
             txtIcon.text = icon
@@ -74,6 +80,7 @@ class CategoryDropdownAdapter(
             txtName.text = name
             txtName.setTextColor(ContextCompat.getColor(context, R.color.sakura_text_primary))
             frameIcon.setBackgroundResource(R.drawable.bg_category_icon_circle)
+            frameIcon.visibility = View.VISIBLE
         }
 
         return view

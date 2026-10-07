@@ -109,7 +109,7 @@ class EventsAdapter(
         holder.date.text = dateFormat.format(event.eventDate)
 
         val cat = event.category.trim()
-        if (cat.isNotEmpty()) {
+        if (cat.isNotEmpty() && !com.example.photoevents.data.CategoryHelper.isUncategorized(cat)) {
             holder.category.visibility = View.VISIBLE
             holder.category.text = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
         } else {

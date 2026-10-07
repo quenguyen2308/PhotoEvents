@@ -92,7 +92,7 @@ class CategoriesAdapter(
             holder.txtName.setTextColor(Color.WHITE)
             holder.txtCount.setTextColor(Color.parseColor("#FFE4EC"))
 
-            if (!item.isAll && !item.isAddAction && onEditCategoryClick != null) {
+            if (!item.isAll && !item.isUncategorized && !item.isAddAction && onEditCategoryClick != null) {
                 holder.btnEdit.visibility = View.VISIBLE
                 holder.btnEdit.setOnClickListener { onEditCategoryClick.invoke(item) }
             } else {
@@ -118,7 +118,7 @@ class CategoriesAdapter(
         }
 
         holder.card.setOnLongClickListener {
-            if (!item.isAll && !item.isAddAction && onCategoryLongClick != null) {
+            if (!item.isAll && !item.isUncategorized && !item.isAddAction && onCategoryLongClick != null) {
                 onCategoryLongClick.invoke(item)
                 true
             } else {
@@ -131,7 +131,7 @@ class CategoriesAdapter(
         val DIFF = object : DiffUtil.ItemCallback<CategoryItem>() {
             override fun areItemsTheSame(a: CategoryItem, b: CategoryItem) = a.id == b.id
             override fun areContentsTheSame(a: CategoryItem, b: CategoryItem) =
-                a.name == b.name && a.icon == b.icon && a.count == b.count && a.isAll == b.isAll
+                a.name == b.name && a.icon == b.icon && a.count == b.count && a.isAll == b.isAll && a.isUncategorized == b.isUncategorized
         }
     }
 }
