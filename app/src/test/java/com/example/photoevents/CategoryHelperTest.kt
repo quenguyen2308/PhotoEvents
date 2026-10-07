@@ -159,4 +159,42 @@ class CategoryHelperTest {
         assertEquals("🏖️ Du lịch", CategoryHelper.formatStandard("🏖️ Du lịch"))
         assertEquals("☕ Da Ngoai", CategoryHelper.formatStandard("☕ Da Ngoai"))
     }
+
+    @Test
+    fun testExtractCleanTextName() {
+        assertEquals("Du lịch", CategoryHelper.extractCleanTextName("🏷️ 🏖️ Du lịch"))
+        assertEquals("Du lịch", CategoryHelper.extractCleanTextName("🏷️ 🏖️Du lịch"))
+        assertEquals("Du lịch", CategoryHelper.extractCleanTextName("🏖️ Du lịch"))
+        assertEquals("Du lịch", CategoryHelper.extractCleanTextName("Du lịch 🏖️"))
+        assertEquals("Du lịch", CategoryHelper.extractCleanTextName("Du lịch"))
+        assertEquals("Chung", CategoryHelper.extractCleanTextName(""))
+        assertEquals("Chung", CategoryHelper.extractCleanTextName("🌸 Chung"))
+    }
+
+    @Test
+    fun testMatchesWithCorruptedOrPrependedEmoji() {
+        assertTrue(CategoryHelper.matches("🏷️ 🏖️ Du lịch", "Du lịch"))
+        assertTrue(CategoryHelper.matches("🏷️ 🏖️ Du lịch", "🏖️ Du lịch"))
+        assertTrue(CategoryHelper.matches("🏷️ 🏖️Du lịch", "Du lịch"))
+        assertTrue(CategoryHelper.matches("Du lịch", "🏷️ 🏖️ Du lịch"))
+        assertTrue(CategoryHelper.matches("🏷️ 🏖️ Du lịch", "✈️ Du lịch"))
+        assertFalse(CategoryHelper.matches("🏷️ 🏖️ Du lịch", "Cắm trại"))
+    }
+
+    @Test
+    fun testExtractIconAndNameWithCorruptedOrPrependedEmoji() {
+        val (icon, name) = CategoryHelper.extractIconAndName("🏷️ 🏖️ Du lịch")
+        assertEquals("🏖️", icon)
+        assertEquals("Du lịch", name)
+
+        val (icon2, name2) = CategoryHelper.extractIconAndName("🏷️ 🏖️Du lịch")
+        assertEquals("🏖️", icon2)
+        assertEquals("Du lịch", name2)
+    }
+
+    @Test
+    fun testFormatStandardRepairsCorruptedEmoji() {
+        assertEquals("🏖️ Du lịch", CategoryHelper.formatStandard("🏷️ 🏖️ Du lịch"))
+        assertEquals("🏖️ Du lịch", CategoryHelper.formatStandard("🏷️ 🏖️Du lịch"))
+    }
 }

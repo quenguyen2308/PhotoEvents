@@ -242,7 +242,7 @@ class MainActivity : AppCompatActivity() {
         val savedCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
         customCategoriesFlow.value = savedCustom
         val deletedSet = com.example.photoevents.data.CategoryHelper.getDeletedCategories(this)
-        val (_, currentClean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(selectedCategoryFlow.value)
+        val currentClean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(selectedCategoryFlow.value)
         if (deletedSet.contains(currentClean.lowercase())) {
             selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
         }
@@ -415,7 +415,7 @@ class MainActivity : AppCompatActivity() {
 
         // 1. Thêm custom categories do người dùng tạo (ưu tiên icon trong customCategories)
         for (custom in customCategories) {
-            val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(custom)
+            val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(custom)
             if (clean.isNotBlank() && !deletedSet.contains(clean.lowercase())) {
                 categoriesMap[clean.lowercase()] = com.example.photoevents.data.CategoryHelper.formatStandard(custom)
             }
@@ -425,7 +425,7 @@ class MainActivity : AppCompatActivity() {
         events.forEach { item ->
             val cat = item.event.category.trim()
             if (cat.isNotEmpty()) {
-                val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
+                val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
                 val key = clean.lowercase()
                 if (clean.isNotBlank() && !deletedSet.contains(key) && !categoriesMap.containsKey(key)) {
                     categoriesMap[key] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)

@@ -88,7 +88,7 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         val sanitizedEvents = mergedEvents.map { ev ->
             val cat = ev.category.trim()
             if (cat.isNotEmpty()) {
-                val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
+                val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
                 if (deletedCategories.contains(clean.lowercase())) {
                     ev.copy(category = "", updatedAt = System.currentTimeMillis())
                 } else {
@@ -105,14 +105,14 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         val mergedMap = linkedMapOf<String, String>()
         // 1. Ưu tiên localCategories trước (giữ icon mới nhất mà người dùng vừa chọn ở máy này)
         for (cat in localCategories) {
-            val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
+            val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
             if (clean.isNotBlank() && !deletedCategories.contains(clean.lowercase())) {
                 mergedMap[clean.lowercase()] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
             }
         }
         // 2. Bổ sung từ remote Drive nếu local chưa có danh mục này và chưa từng bị xoá
         for (cat in remoteCategories) {
-            val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
+            val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
             val key = clean.lowercase()
             if (clean.isNotBlank() && !deletedCategories.contains(key) && !mergedMap.containsKey(key)) {
                 mergedMap[key] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)
@@ -120,7 +120,7 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         }
         // 3. Bổ sung từ các sự kiện nếu chưa có danh mục này và chưa từng bị xoá
         for (cat in eventCategories) {
-            val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
+            val clean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(cat)
             val key = clean.lowercase()
             if (clean.isNotBlank() && !deletedCategories.contains(key) && !mergedMap.containsKey(key)) {
                 mergedMap[key] = com.example.photoevents.data.CategoryHelper.formatStandard(cat)

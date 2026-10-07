@@ -46,84 +46,76 @@ object CategoryHelper {
     )
 
     /**
+     * Trích xuất phần text thuần tuý của tên danh mục (loại bỏ toàn bộ emoji/icon ở đầu, cuối và khoảng trắng dư thừa).
+     * Đóng vai trò là định danh (identity) cốt lõi cho việc so khớp, tìm kiếm, xoá, và đồng bộ danh mục.
+     * Ví dụ:
+     *   "🏷️ 🏖️ Du lịch" -> "Du lịch"
+     *   "🏷️ 🏖️Du lịch"  -> "Du lịch"
+     *   "🏖️ Du lịch"    -> "Du lịch"
+     *   "Du lịch 🏖️"    -> "Du lịch"
+     *   "Du lịch"        -> "Du lịch"
+     *   ""               -> "Chung"
+     */
+    fun extractCleanTextName(category: String?): String {
+        val trimmed = category?.trim().orEmpty()
+        if (trimmed.isEmpty()) return "Chung"
+        val firstLetter = trimmed.indexOfFirst { it.isLetterOrDigit() }
+        val lastLetter = trimmed.indexOfLast { it.isLetterOrDigit() }
+        if (firstLetter != -1 && lastLetter >= firstLetter) {
+            val extracted = trimmed.substring(firstLetter, lastLetter + 1).trim()
+            if (extracted.isNotEmpty()) return extracted
+        }
+        return trimmed
+    }
+
+    /**
      * Tách icon (emoji) và tên danh mục hiển thị từ chuỗi thô.
-     * Ví dụ: "✈️ Du lịch" -> Pair("✈️", "Du lịch")
-     *        "Du lịch" -> Pair("✈️", "Du lịch")
-     *        "" -> Pair("🌸", "Chung")
+     * Tự động làm sạch các trường hợp tên bị dính nhiều emoji hoặc placeholder rác (như "🏷️ 🏖️ Du lịch").
+     * Ví dụ:
+     *   "🏷️ 🏖️ Du lịch" -> Pair("🏖️", "Du lịch")
+     *   "✈️ Du lịch"     -> Pair("✈️", "Du lịch")
+     *   "Du lịch"        -> Pair("✈️", "Du lịch")
+     *   ""               -> Pair("🌸", "Chung")
      */
     fun extractIconAndName(rawCategory: String?): Pair<String, String> {
         val trimmed = rawCategory?.trim().orEmpty()
         if (trimmed.isEmpty()) return Pair("🌸", "Chung")
 
-        // 1. Kiểm tra xem chuỗi có định dạng "[Icon] [Tên]" không (phần icon không chứa chữ cái hoặc số)
-        val spaceIndex = trimmed.indexOf(' ')
-        if (spaceIndex > 0) {
-            val potentialIcon = trimmed.substring(0, spaceIndex).trim()
-            val potentialName = trimmed.substring(spaceIndex + 1).trim()
-            if (potentialIcon.isNotEmpty() && potentialIcon.none { it.isLetterOrDigit() } && potentialName.isNotEmpty()) {
-                val cleanName = potentialName.trimEnd { !it.isLetterOrDigit() && !it.isWhitespace() }
-                return Pair(potentialIcon, if (cleanName.isNotEmpty()) cleanName else potentialName)
-            }
+        val (explicitEmoji, cleanName) = extractExplicitEmojiAndCleanName(trimmed)
+        if (cleanName.isEmpty()) {
+            return Pair(explicitEmoji ?: "🌸", "Chung")
         }
 
-        // 2. Kiểm tra tiền tố Emoji ở đầu không có dấu cách (ví dụ "🏕️DaNgoai")
-        val firstLetterIndex = trimmed.indexOfFirst { it.isLetterOrDigit() }
-        if (firstLetterIndex > 0) {
-            val potentialIcon = trimmed.substring(0, firstLetterIndex).trim()
-            val potentialName = trimmed.substring(firstLetterIndex).trim().trimEnd { !it.isLetterOrDigit() && !it.isWhitespace() }
-            if (potentialIcon.isNotEmpty() && potentialName.isNotEmpty()) {
-                return Pair(potentialIcon, potentialName)
-            }
+        // 1. Nếu có emoji người dùng chọn/nhập (khác generic placeholder "🏷️" và "🌸")
+        if (explicitEmoji != null && explicitEmoji != "🏷️" && explicitEmoji != "🌸") {
+            return Pair(explicitEmoji, cleanName)
         }
 
-        // 3. Kiểm tra hậu tố Emoji ở cuối (ví dụ "DaNgoai 🏕️" hoặc "DaNgoai🏕️")
-        val lastLetterIndex = trimmed.indexOfLast { it.isLetterOrDigit() }
-        if (lastLetterIndex in 0 until trimmed.length - 1) {
-            val potentialName = trimmed.substring(0, lastLetterIndex + 1).trim()
-            val potentialIcon = trimmed.substring(lastLetterIndex + 1).trim()
-            if (potentialIcon.isNotEmpty() && potentialName.isNotEmpty()) {
-                return Pair(potentialIcon, potentialName)
-            }
-        }
-
-        // 4. Nếu toàn bộ chuỗi chỉ gồm ký tự emoji / biểu tượng
-        if (trimmed.none { it.isLetterOrDigit() }) {
-            return Pair(trimmed, "Chung")
-        }
-
-        // 5. Nếu không có emoji phía trước, kiểm tra xem có khớp danh mục mặc định không
+        // 2. Tra cứu trong bảng danh mục mặc định
         for (preset in PRESET_CATEGORIES) {
-            val spaceIdx = preset.indexOf(' ')
-            if (spaceIdx > 0) {
-                val pIcon = preset.substring(0, spaceIdx).trim()
-                val pName = preset.substring(spaceIdx + 1).trim()
-                if (pName.equals(trimmed, ignoreCase = true)) {
-                    return Pair(pIcon, pName)
-                }
+            val (pIcon, pName) = extractExplicitEmojiAndCleanName(preset)
+            if (pName.equals(cleanName, ignoreCase = true)) {
+                return Pair(pIcon ?: "🏷️", pName)
             }
         }
 
-        // 6. Tìm trong bảng tra cứu tên thông dụng
-        val mappedIcon = NAME_TO_ICON_MAP[trimmed.lowercase()]
-        return if (mappedIcon != null) {
-            val capitalized = trimmed.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-            Pair(mappedIcon, capitalized)
-        } else {
-            Pair("🏷️", trimmed)
+        // 3. Tra cứu trong bảng tên thông dụng
+        val mappedIcon = NAME_TO_ICON_MAP[cleanName.lowercase()]
+        if (mappedIcon != null) {
+            val capitalized = cleanName.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            return Pair(mappedIcon, capitalized)
         }
+
+        return Pair(explicitEmoji ?: "🏷️", cleanName)
     }
 
     /**
-     * Định dạng danh mục chuẩn có emoji kèm theo, ví dụ "✈️ Du lịch"
+     * Định dạng danh mục chuẩn có emoji kèm theo, ví dụ "✈️ Du lịch".
+     * Tự động dọn dẹp các emoji thừa / placeholder rác để chỉ giữ 1 emoji và tên sạch.
      */
     fun formatStandard(rawCategory: String?): String {
-        val (explicitIcon, cleanName) = extractExplicitEmojiAndCleanName(rawCategory)
-        return if (explicitIcon != null && cleanName.isNotBlank()) {
-            "$explicitIcon $cleanName"
-        } else {
-            val (icon, name) = extractIconAndName(rawCategory)
-            "$icon $name"
-        }
+        val (icon, name) = extractIconAndName(rawCategory)
+        return "$icon $name"
     }
 
     /**
@@ -156,63 +148,55 @@ object CategoryHelper {
      * Kiểm tra xem danh mục có phải danh mục mặc định gốc không.
      */
     fun isPreset(category: String): Boolean {
-        val (_, name) = extractIconAndName(category)
+        val name = extractCleanTextName(category)
         return PRESET_CATEGORIES.any {
-            val (_, pName) = extractIconAndName(it)
+            val pName = extractCleanTextName(it)
             pName.equals(name, ignoreCase = true)
         }
     }
 
     /**
-     * Tách emoji rõ ràng (nếu người dùng thực sự nhập emoji vào chuỗi) và tên danh mục sạch.
+     * Tách emoji rõ ràng (nếu người dùng thực sự nhập emoji vào chuỗi) và tên danh mục sạch (chỉ gồm text).
      * Khác với extractIconAndName, hàm này KHÔNG tự động gán icon mặc định hay tra cứu NAME_TO_ICON_MAP.
+     * Tự động dọn dẹp các placeholder rác (như "🏷️ ") bị lưu chung với emoji người dùng nhập.
      * Trả về Pair(explicitEmoji?, cleanName).
      */
     fun extractExplicitEmojiAndCleanName(rawCategory: String?): Pair<String?, String> {
         val trimmed = rawCategory?.trim().orEmpty()
         if (trimmed.isEmpty()) return Pair(null, "")
 
-        // 1. Dạng "[Emoji] [Tên]"
-        val spaceIndex = trimmed.indexOf(' ')
-        if (spaceIndex > 0) {
-            val potentialIcon = trimmed.substring(0, spaceIndex).trim()
-            val potentialName = trimmed.substring(spaceIndex + 1).trim()
-            if (potentialIcon.isNotEmpty() && potentialIcon.none { it.isLetterOrDigit() } && potentialName.isNotEmpty()) {
-                val cleanName = potentialName.trimEnd { !it.isLetterOrDigit() && !it.isWhitespace() }
-                return Pair(potentialIcon, if (cleanName.isNotEmpty()) cleanName else potentialName)
-            }
-        }
+        val firstLetter = trimmed.indexOfFirst { it.isLetterOrDigit() }
+        val lastLetter = trimmed.indexOfLast { it.isLetterOrDigit() }
 
-        // 2. Dạng "[Emoji][Tên]" (không dấu cách)
-        val firstLetterIndex = trimmed.indexOfFirst { it.isLetterOrDigit() }
-        if (firstLetterIndex > 0) {
-            val potentialIcon = trimmed.substring(0, firstLetterIndex).trim()
-            val potentialName = trimmed.substring(firstLetterIndex).trim().trimEnd { !it.isLetterOrDigit() && !it.isWhitespace() }
-            if (potentialIcon.isNotEmpty() && potentialName.isNotEmpty()) {
-                return Pair(potentialIcon, potentialName)
-            }
-        }
-
-        // 3. Dạng "[Tên] [Emoji]" hoặc "[Tên][Emoji]"
-        val lastLetterIndex = trimmed.indexOfLast { it.isLetterOrDigit() }
-        if (lastLetterIndex in 0 until trimmed.length - 1) {
-            val potentialName = trimmed.substring(0, lastLetterIndex + 1).trim()
-            val potentialIcon = trimmed.substring(lastLetterIndex + 1).trim()
-            if (potentialIcon.isNotEmpty() && potentialName.isNotEmpty()) {
-                return Pair(potentialIcon, potentialName)
-            }
-        }
-
-        // 4. Nếu toàn bộ chuỗi chỉ gồm ký tự emoji / biểu tượng
-        if (trimmed.none { it.isLetterOrDigit() }) {
+        // Trường hợp chuỗi không chứa ký tự chữ/số nào (chỉ toàn emoji, vd "🏖️")
+        if (firstLetter == -1) {
             return Pair(trimmed, "")
         }
 
-        return Pair(null, trimmed)
+        val cleanName = trimmed.substring(firstLetter, lastLetter + 1).trim()
+        val leading = trimmed.substring(0, firstLetter).trim()
+        val trailing = trimmed.substring(lastLetter + 1).trim()
+
+        val realLeading = leading.replace("🏷️", "").replace("🌸", "").trim()
+        val realTrailing = trailing.replace("🏷️", "").replace("🌸", "").trim()
+
+        val explicitEmoji = when {
+            realLeading.isNotEmpty() -> {
+                if (realLeading.contains(" ")) realLeading.split("\\s+".toRegex()).last() else realLeading
+            }
+            realTrailing.isNotEmpty() -> {
+                if (realTrailing.contains(" ")) realTrailing.split("\\s+".toRegex()).first() else realTrailing
+            }
+            leading.isNotEmpty() -> leading
+            trailing.isNotEmpty() -> trailing
+            else -> null
+        }
+
+        return Pair(explicitEmoji, cleanName)
     }
 
     /**
-     * Khử trùng lặp danh sách danh mục theo tên chuẩn (cleanName lowercase).
+     * Khử trùng lặp danh sách danh mục theo tên chuẩn (cleanTextName lowercase).
      * Mục xuất hiện trước giữ lại icon của nó, không sinh ra bản sao trùng tên mang icon khác.
      */
     fun deduplicateCategories(categories: Collection<String>): List<String> {
@@ -220,7 +204,7 @@ object CategoryHelper {
         for (cat in categories) {
             val trimmed = cat.trim()
             if (trimmed.isEmpty()) continue
-            val (_, clean) = extractIconAndName(trimmed)
+            val clean = extractCleanTextName(trimmed)
             if (clean.isBlank()) continue
             val key = clean.lowercase()
             if (!map.containsKey(key)) {
@@ -243,7 +227,7 @@ object CategoryHelper {
         for (custom in customCats) {
             val trimmed = custom.trim()
             if (trimmed.isEmpty()) continue
-            val (_, clean) = extractIconAndName(trimmed)
+            val clean = extractCleanTextName(trimmed)
             if (clean.isBlank() || deletedSet.contains(clean.lowercase())) continue
             val key = clean.lowercase()
             if (!map.containsKey(key)) {
@@ -256,7 +240,7 @@ object CategoryHelper {
 
     /**
      * Lưu danh sách danh mục tuỳ chỉnh vào SharedPreferences.
-     * Tự động khử trùng lặp theo cleanName để tránh lưu nhiều icon cùng lúc cho 1 tên danh mục.
+     * Tự động khử trùng lặp theo cleanTextName để tránh lưu nhiều icon cùng lúc cho 1 tên danh mục.
      */
     fun saveCustomCategories(context: Context, categories: Collection<String>) {
         val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
@@ -265,7 +249,7 @@ object CategoryHelper {
         for (cat in categories) {
             val trimmed = cat.trim()
             if (trimmed.isEmpty()) continue
-            val (_, clean) = extractIconAndName(trimmed)
+            val clean = extractCleanTextName(trimmed)
             if (clean.isBlank() || deletedSet.contains(clean.lowercase())) continue
             val key = clean.lowercase()
             if (!map.containsKey(key)) {
@@ -285,7 +269,7 @@ object CategoryHelper {
         
         val map = linkedMapOf<String, String>()
         for (c in currentCustom) {
-            val (_, clean) = extractIconAndName(c)
+            val clean = extractCleanTextName(c)
             if (clean.isNotBlank() && !deletedSet.contains(clean.lowercase())) {
                 map[clean.lowercase()] = formatStandard(c)
             }
@@ -295,7 +279,7 @@ object CategoryHelper {
         for (raw in categories) {
             val trimmed = raw.trim()
             if (trimmed.isEmpty()) continue
-            val (_, clean) = extractIconAndName(trimmed)
+            val clean = extractCleanTextName(trimmed)
             if (clean.isBlank() || deletedSet.contains(clean.lowercase())) continue
             if (clean.equals("Chung", ignoreCase = true) && trimmed.isEmpty()) continue
             val key = clean.lowercase()
@@ -352,8 +336,8 @@ object CategoryHelper {
         db: AppDatabase? = null
     ): String {
         val newFormatted = formatStandard(newRaw)
-        val (_, oldClean) = extractIconAndName(oldCategory)
-        val (_, newClean) = extractIconAndName(newFormatted)
+        val oldClean = extractCleanTextName(oldCategory)
+        val newClean = extractCleanTextName(newFormatted)
         val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
 
         val deleted = prefs.getStringSet(PREF_DELETED_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
@@ -376,7 +360,7 @@ object CategoryHelper {
         val renamedPresets = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet())?.toMutableSet() ?: mutableSetOf()
         var matchedPresetClean: String? = null
         for (preset in PRESET_CATEGORIES) {
-            val (_, pClean) = extractIconAndName(preset)
+            val pClean = extractCleanTextName(preset)
             if (pClean.equals(oldClean, ignoreCase = true)) {
                 matchedPresetClean = pClean.lowercase()
                 break
@@ -424,7 +408,7 @@ object CategoryHelper {
         newIcon: String,
         db: AppDatabase? = null
     ): String {
-        val (_, cleanName) = extractIconAndName(category)
+        val cleanName = extractCleanTextName(category)
         val newFormatted = "$newIcon $cleanName"
         return renameCategory(context, category, newFormatted, db)
     }
@@ -440,30 +424,40 @@ object CategoryHelper {
         categoryToDelete: String,
         db: AppDatabase? = null
     ): Int {
-        val (_, clean) = extractIconAndName(categoryToDelete)
+        val clean = extractCleanTextName(categoryToDelete)
         val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
 
-        // 1. Thêm vào deleted_categories
+        // 1. Thêm vào deleted_categories (lưu tên text thuần tuý viết thường)
         val deleted = prefs.getStringSet(PREF_DELETED_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
-        if (clean.isNotBlank()) {
+        if (clean.isNotBlank() && !clean.equals("Chung", ignoreCase = true)) {
             deleted.add(clean.lowercase())
         }
+        val (_, rawName) = extractIconAndName(categoryToDelete)
+        if (rawName.isNotBlank() && !rawName.equals("Chung", ignoreCase = true)) {
+            deleted.add(rawName.lowercase())
+        }
+        val trimmedRaw = categoryToDelete.trim().lowercase()
+        if (trimmedRaw.isNotBlank()) {
+            deleted.add(trimmedRaw)
+        }
         for (preset in PRESET_CATEGORIES) {
-            val (_, pClean) = extractIconAndName(preset)
+            val pClean = extractCleanTextName(preset)
             if (matches(preset, clean)) {
                 deleted.add(pClean.lowercase())
             }
         }
 
-        // 2. Xoá khỏi custom_categories
+        // 2. Xoá khỏi custom_categories (xoá mọi biến thể khớp theo text thuần tuý)
         val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
-        currentCustom.removeAll { matches(it, clean) }
+        currentCustom.removeAll { matches(it, clean) || matches(it, categoryToDelete) }
 
         // 3. Xoá khỏi renamed_presets
         val renamedPresets = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet())?.toMutableSet() ?: mutableSetOf()
-        renamedPresets.removeAll { it.startsWith("${clean.lowercase()}|") || matches(it.substringAfter("|"), clean) }
+        renamedPresets.removeAll { 
+            matches(it.substringBefore("|"), clean) || matches(it.substringAfter("|"), clean) 
+        }
         for (preset in PRESET_CATEGORIES) {
-            val (_, pClean) = extractIconAndName(preset)
+            val pClean = extractCleanTextName(preset)
             if (matches(preset, clean)) {
                 renamedPresets.removeAll { it.startsWith("${pClean.lowercase()}|") }
             }
@@ -480,7 +474,7 @@ object CategoryHelper {
         val available = getAvailableCategories(context)
         val fallback = available.firstOrNull { !matches(it, clean) } ?: ""
 
-        // 5. Cập nhật các sự kiện trong Room DB
+        // 5. Cập nhật các sự kiện trong Room DB (so khớp theo text thuần tuý)
         var countUpdated = 0
         if (db != null) {
             val allEvents = db.eventDao().getAllIncludingDeleted()
@@ -503,7 +497,7 @@ object CategoryHelper {
         val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
         val deleted = prefs.getStringSet(PREF_DELETED_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
         for (preset in PRESET_CATEGORIES) {
-            val (_, pClean) = extractIconAndName(preset)
+            val pClean = extractCleanTextName(preset)
             deleted.remove(pClean.lowercase())
         }
         prefs.edit()
@@ -513,12 +507,12 @@ object CategoryHelper {
     }
 
     /**
-     * Kiểm tra xem sự kiện có thuộc danh mục mục tiêu không (không phân biệt hoa/thường, bỏ qua emoji).
+     * Kiểm tra xem sự kiện có thuộc danh mục mục tiêu không (so khớp thuần tuý theo text trong tên, bỏ qua mọi emoji).
      */
     fun matches(eventCategory: String?, targetCategoryId: String): Boolean {
         if (targetCategoryId == ALL_CATEGORY_ID) return true
-        val (_, targetName) = extractIconAndName(targetCategoryId)
-        val (_, eventName) = extractIconAndName(eventCategory)
-        return targetName.equals(eventName, ignoreCase = true)
+        val targetText = extractCleanTextName(targetCategoryId)
+        val eventText = extractCleanTextName(eventCategory)
+        return targetText.equals(eventText, ignoreCase = true)
     }
 }
