@@ -1,6 +1,7 @@
 package com.example.photoevents
 
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.ViewGroup
@@ -33,6 +34,7 @@ import java.util.Locale
 
 const val EXTRA_CATEGORY = "extra_category"
 private const val ACTION_ADD_NEW = "➕ Thêm danh mục mới..."
+private const val ACTION_MANAGE = "⚙️ Quản lý danh mục..."
 
 /**
  * Cho phép chọn NHIỀU ảnh cùng lúc (tối đa 10) bằng Photo Picker hệ thống.
@@ -70,15 +72,19 @@ class AddEventActivity : AppCompatActivity() {
         txtEventDate.text = formatDate(selectedDate)
         updatePickedCount()
 
-        // Thiết lập danh mục mặc định hoặc từ intent
+        // Thiết lập danh mục ban đầu
+        val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
         val initialCategory = intent.getStringExtra(EXTRA_CATEGORY)?.takeIf { it.isNotBlank() }
-            ?: com.example.photoevents.data.CategoryHelper.DEFAULT_CATEGORY
-        lastSelectedCategory = com.example.photoevents.data.CategoryHelper.formatStandard(initialCategory)
+            ?: available.firstOrNull() ?: ""
+        lastSelectedCategory = if (initialCategory.isNotBlank()) {
+            com.example.photoevents.data.CategoryHelper.formatStandard(initialCategory)
+        } else ""
 
         // Cấu hình Dropdown Menu cho Category
         val categoryList = getCategoriesForDropdown()
-        if (!categoryList.contains(lastSelectedCategory) && categoryList.isNotEmpty()) {
-            categoryList.add(categoryList.size - 1, lastSelectedCategory)
+        if (lastSelectedCategory.isNotBlank() && !categoryList.contains(lastSelectedCategory) && categoryList.isNotEmpty()) {
+            val insertIdx = (categoryList.size - 2).coerceAtLeast(0)
+            categoryList.add(insertIdx, lastSelectedCategory)
         }
         val dropdownAdapter = com.example.photoevents.ui.CategoryDropdownAdapter(
             this,
@@ -89,14 +95,21 @@ class AddEventActivity : AppCompatActivity() {
 
         edtCategory.setOnItemClickListener { parent, _, position, _ ->
             val selected = parent.getItemAtPosition(position).toString()
-            if (selected == ACTION_ADD_NEW) {
-                edtCategory.setText(lastSelectedCategory, false)
-                showAddNewCategoryDialog(edtCategory, categoryList, dropdownAdapter, chipGroupCategory) { newCat ->
-                    lastSelectedCategory = newCat
+            when (selected) {
+                ACTION_ADD_NEW -> {
+                    edtCategory.setText(lastSelectedCategory, false)
+                    showAddNewCategoryDialog(edtCategory) { newCat ->
+                        lastSelectedCategory = newCat
+                    }
                 }
-            } else {
-                lastSelectedCategory = selected
-                updateChipSelection(chipGroupCategory, selected)
+                ACTION_MANAGE -> {
+                    edtCategory.setText(lastSelectedCategory, false)
+                    startActivity(Intent(this, CategoryManagementActivity::class.java))
+                }
+                else -> {
+                    lastSelectedCategory = selected
+                    updateChipSelection(chipGroupCategory, selected)
+                }
             }
         }
 
@@ -122,9 +135,7 @@ class AddEventActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val category = edtCategory.text.toString().trim().ifBlank {
-                com.example.photoevents.data.CategoryHelper.DEFAULT_CATEGORY
-            }
+            val category = edtCategory.text.toString().trim()
 
             isSaving = true
             btnSave.isEnabled = false
@@ -155,14 +166,44 @@ class AddEventActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        refreshCategoryData()
+    }
+
+    private fun refreshCategoryData() {
+        val edtCategory = findViewById<com.google.android.material.textfield.MaterialAutoCompleteTextView>(R.id.edtCategory) ?: return
+        val chipGroupCategory = findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupCategory) ?: return
+
+        val deletedSet = com.example.photoevents.data.CategoryHelper.getDeletedCategories(this)
+        val (_, cleanSelected) = com.example.photoevents.data.CategoryHelper.extractIconAndName(lastSelectedCategory)
+        val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
+        if (deletedSet.contains(cleanSelected.lowercase())) {
+            lastSelectedCategory = available.firstOrNull() ?: ""
+            edtCategory.setText(lastSelectedCategory, false)
+        }
+
+        val categoryList = getCategoriesForDropdown()
+        if (lastSelectedCategory.isNotBlank() && !categoryList.contains(lastSelectedCategory) && categoryList.isNotEmpty()) {
+            val insertIdx = (categoryList.size - 2).coerceAtLeast(0)
+            categoryList.add(insertIdx, lastSelectedCategory)
+        }
+        val dropdownAdapter = com.example.photoevents.ui.CategoryDropdownAdapter(
+            this,
+            categoryList
+        )
+        edtCategory.setAdapter(dropdownAdapter)
+        setupCategoryChips(chipGroupCategory, edtCategory, lastSelectedCategory)
+    }
+
     private fun setupCategoryChips(
         chipGroup: com.google.android.material.chip.ChipGroup,
         edtCategory: com.google.android.material.textfield.MaterialAutoCompleteTextView,
         selectedCategory: String
     ) {
-        val presets = com.example.photoevents.data.CategoryHelper.PRESET_CATEGORIES
+        val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
         chipGroup.removeAllViews()
-        for (cat in presets) {
+        for (cat in available) {
             val chip = com.google.android.material.chip.Chip(this).apply {
                 text = cat
                 isCheckable = true
@@ -197,14 +238,12 @@ class AddEventActivity : AppCompatActivity() {
     private fun getCategoriesForDropdown(): MutableList<String> {
         val list = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
         list.add(ACTION_ADD_NEW)
+        list.add(ACTION_MANAGE)
         return list
     }
 
     private fun showAddNewCategoryDialog(
         edtCategory: com.google.android.material.textfield.MaterialAutoCompleteTextView,
-        categoryList: MutableList<String>,
-        adapter: android.widget.ArrayAdapter<String>,
-        chipGroup: com.google.android.material.chip.ChipGroup,
         onCreated: (String) -> Unit
     ) {
         val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
@@ -256,19 +295,11 @@ class AddEventActivity : AppCompatActivity() {
         btnSubmit?.setOnClickListener {
             val nameText = edtName?.text?.toString()?.trim().orEmpty()
             if (nameText.isNotBlank()) {
-                val formatted = com.example.photoevents.data.CategoryHelper.formatStandard(nameText)
-                val prefs = getSharedPreferences("settings", MODE_PRIVATE)
-                val current = prefs.getStringSet("custom_categories", emptySet())?.toMutableSet() ?: mutableSetOf()
-                current.add(formatted)
-                prefs.edit().putStringSet("custom_categories", current).apply()
-
-                val index = (categoryList.size - 1).coerceAtLeast(0)
-                categoryList.add(index, formatted)
-                adapter.notifyDataSetChanged()
-
+                val formatted = com.example.photoevents.data.CategoryHelper.addCategory(this, nameText)
+                lastSelectedCategory = formatted
+                refreshCategoryData()
                 edtCategory.setText(formatted, false)
                 onCreated(formatted)
-                setupCategoryChips(chipGroup, edtCategory, formatted)
                 Toast.makeText(this, "Đã chọn danh mục $formatted", Toast.LENGTH_SHORT).show()
                 sheet.dismiss()
             } else {

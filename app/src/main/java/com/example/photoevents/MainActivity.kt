@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
     private val sortFlow = MutableStateFlow(SortOption.NEWEST)
     private val selectedCategoryFlow = MutableStateFlow(com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID)
     private val customCategoriesFlow = MutableStateFlow<Set<String>>(emptySet())
+    private val categoryRevisionFlow = MutableStateFlow(0)
     private var scrollToTopOnNextList = false
     private lateinit var backPressedCallback: OnBackPressedCallback
 
@@ -179,6 +180,11 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        // Nút Quản lý danh mục
+        findViewById<View>(R.id.btnManageCategories).setOnClickListener {
+            startActivity(Intent(this, CategoryManagementActivity::class.java))
+        }
+
         // Khôi phục kiểu sắp xếp đã chọn lần trước
         sortFlow.value = SortOption.fromName(prefs.getString(PREF_SORT, null))
         btnSort = findViewById(R.id.btnSort)
@@ -191,8 +197,9 @@ class MainActivity : AppCompatActivity() {
                 AppDatabase.get(this@MainActivity).eventDao().observeAllWithImages(),
                 sortFlow,
                 selectedCategoryFlow,
-                customCategoriesFlow
-            ) { events, sort, selectedCat, customCats ->
+                customCategoriesFlow,
+                categoryRevisionFlow
+            ) { events, sort, selectedCat, customCats, _ ->
                 val categoryItems = buildCategoryItems(events, customCats)
                 val filtered = if (selectedCat == com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID) {
                     events
@@ -227,6 +234,18 @@ class MainActivity : AppCompatActivity() {
         } else {
             ensureSignedInThenSync()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val savedCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
+        customCategoriesFlow.value = savedCustom
+        val deletedSet = com.example.photoevents.data.CategoryHelper.getDeletedCategories(this)
+        val (_, currentClean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(selectedCategoryFlow.value)
+        if (deletedSet.contains(currentClean.lowercase())) {
+            selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
+        }
+        categoryRevisionFlow.value++
     }
 
     private fun showSortDialog() {
@@ -393,26 +412,32 @@ class MainActivity : AppCompatActivity() {
         events: List<com.example.photoevents.data.EventWithImages>,
         customCategories: Set<String>
     ): List<com.example.photoevents.data.CategoryItem> {
-        val renamedPresets = getRenamedPresetsMap()
+        val deletedSet = com.example.photoevents.data.CategoryHelper.getDeletedCategories(this)
         val categoriesSet = linkedSetOf<String>()
 
-        // 1. Thêm preset chuẩn (hoặc tên đã đổi nếu người dùng đã đổi tên preset)
-        for (preset in com.example.photoevents.data.CategoryHelper.PRESET_CATEGORIES) {
-            val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(preset)
-            val actual = renamedPresets[clean.lowercase()] ?: preset
-            categoriesSet.add(actual)
+        // 1. Thêm custom categories do người dùng tạo (trừ khi đã bị xoá)
+        for (custom in customCategories) {
+            val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(custom)
+            if (deletedSet.contains(clean.lowercase())) continue
+            categoriesSet.add(com.example.photoevents.data.CategoryHelper.formatStandard(custom))
         }
 
-        // 2. Thêm custom categories do người dùng tạo
-        categoriesSet.addAll(customCategories)
-
-        // 3. Thêm các categories thực tế đang có trong events
+        // 2. Thêm các categories thực tế đang có trong events (trừ khi đã bị xoá)
         events.forEach { item ->
             val cat = item.event.category.trim()
             if (cat.isNotEmpty()) {
-                categoriesSet.add(com.example.photoevents.data.CategoryHelper.formatStandard(cat))
+                val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
+                if (!deletedSet.contains(clean.lowercase())) {
+                    categoriesSet.add(com.example.photoevents.data.CategoryHelper.formatStandard(cat))
+                }
             }
         }
+
+        // Đồng bộ danh mục từ sự kiện vào SharedPreferences
+        com.example.photoevents.data.CategoryHelper.syncCategoriesFromEvents(
+            this,
+            events.map { it.event.category }
+        )
 
         val items = mutableListOf<com.example.photoevents.data.CategoryItem>()
         // "Tất cả" luôn đứng đầu
@@ -436,7 +461,8 @@ class MainActivity : AppCompatActivity() {
                     id = name,
                     name = name,
                     icon = icon,
-                    count = count
+                    count = count,
+                    isPreset = com.example.photoevents.data.CategoryHelper.isPreset(name)
                 )
             )
         }
@@ -507,11 +533,9 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Nhập tên danh mục", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val formatted = com.example.photoevents.data.CategoryHelper.formatStandard(text)
+            val formatted = com.example.photoevents.data.CategoryHelper.addCategory(this, text)
             val (_, cleanName) = com.example.photoevents.data.CategoryHelper.extractIconAndName(formatted)
-            val current = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
-            current.add(formatted)
-            prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, current).apply()
+            val current = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
             customCategoriesFlow.value = current
             selectedCategoryFlow.value = cleanName
             Toast.makeText(this, "Đã thêm danh mục $cleanName", Toast.LENGTH_SHORT).show()
@@ -522,9 +546,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showCategoryOptionsDialog(categoryItem: com.example.photoevents.data.CategoryItem) {
-        val customCats = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
-        val isCustom = customCats.any { com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.id) }
-
         val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.sheet_category_options, null)
         sheet.setContentView(view)
@@ -549,25 +570,47 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        val cardDelete = view.findViewById<android.view.View>(R.id.cardDeleteCustomCategory)
-        if (isCustom) {
-            cardDelete?.visibility = android.view.View.VISIBLE
-            cardDelete?.setOnClickListener {
-                sheet.dismiss()
-                val current = customCats.filterNot { com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.id) }.toSet()
-                prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, current).apply()
-                val renamedPresets = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet())?.toMutableSet() ?: mutableSetOf()
-                renamedPresets.removeAll { it.startsWith("${categoryItem.name.lowercase()}|") }
-                prefs.edit().putStringSet(PREF_RENAMED_PRESETS, renamedPresets).apply()
+        view.findViewById<android.view.View>(R.id.cardManageCategories)?.setOnClickListener {
+            sheet.dismiss()
+            startActivity(Intent(this, CategoryManagementActivity::class.java))
+        }
 
-                customCategoriesFlow.value = current
-                if (selectedCategoryFlow.value == categoryItem.id) {
-                    selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
-                }
-                Toast.makeText(this, "Đã xoá danh mục ${categoryItem.name}", Toast.LENGTH_SHORT).show()
+        val cardDelete = view.findViewById<android.view.View>(R.id.cardDeleteCategory)
+        cardDelete?.setOnClickListener {
+            sheet.dismiss()
+            val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
+            val fallback = available.firstOrNull { !com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.name) } ?: "🌸 Chung"
+            val fallbackFormatted = com.example.photoevents.data.CategoryHelper.formatStandard(fallback)
+
+            val message = if (categoryItem.count > 0) {
+                "Danh mục này hiện có ${categoryItem.count} sự kiện.\n\nKhi xoá, toàn bộ ${categoryItem.count} sự kiện này sẽ được chuyển sang danh mục '$fallbackFormatted'.\n\nBạn có chắc chắn muốn xoá danh mục này?"
+            } else {
+                "Bạn có chắc chắn muốn xoá danh mục '${categoryItem.name}' không?"
             }
-        } else {
-            cardDelete?.visibility = android.view.View.GONE
+
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("Xoá danh mục '${categoryItem.name}'?")
+                .setMessage(message)
+                .setPositiveButton("Xoá danh mục") { _, _ ->
+                    lifecycleScope.launch {
+                        val db = AppDatabase.get(this@MainActivity)
+                        val updatedCount = com.example.photoevents.data.CategoryHelper.deleteCategory(
+                            this@MainActivity,
+                            categoryItem.name,
+                            db
+                        )
+                        val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
+                        customCategoriesFlow.value = currentCustom
+                        if (com.example.photoevents.data.CategoryHelper.matches(selectedCategoryFlow.value, categoryItem.name)) {
+                            selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
+                        }
+                        val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện sang $fallbackFormatted)" else ""
+                        Toast.makeText(this@MainActivity, "Đã xoá danh mục ${categoryItem.name}$note", Toast.LENGTH_SHORT).show()
+                        runSync()
+                    }
+                }
+                .setNegativeButton("Huỷ", null)
+                .show()
         }
 
         sheet.show()
@@ -641,30 +684,13 @@ class MainActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 val db = AppDatabase.get(this@MainActivity)
-                val allEvents = db.eventDao().getAllIncludingDeleted()
-                val now = System.currentTimeMillis()
-                val matchedEvents = allEvents.filter {
-                    com.example.photoevents.data.CategoryHelper.matches(it.category, categoryItem.id) ||
-                            com.example.photoevents.data.CategoryHelper.matches(it.category, categoryItem.name)
-                }
-                if (matchedEvents.isNotEmpty()) {
-                    val updated = matchedEvents.map { it.copy(category = newFormatted, updatedAt = now) }
-                    db.eventDao().upsertAll(updated)
-                }
-
-                val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
-                currentCustom.removeAll {
-                    com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.id) ||
-                            com.example.photoevents.data.CategoryHelper.matches(it, categoryItem.name)
-                }
-                currentCustom.add(newFormatted)
-                prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, currentCustom).apply()
-
-                val renamedPresets = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet())?.toMutableSet() ?: mutableSetOf()
-                renamedPresets.removeAll { it.startsWith("${categoryItem.name.lowercase()}|") }
-                renamedPresets.add("${categoryItem.name.lowercase()}|$newFormatted")
-                prefs.edit().putStringSet(PREF_RENAMED_PRESETS, renamedPresets).apply()
-
+                com.example.photoevents.data.CategoryHelper.renameCategory(
+                    this@MainActivity,
+                    categoryItem.name,
+                    text,
+                    db
+                )
+                val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
                 customCategoriesFlow.value = currentCustom
                 selectedCategoryFlow.value = newCleanName
                 categoryAdapter.selectedCategoryId = newCleanName

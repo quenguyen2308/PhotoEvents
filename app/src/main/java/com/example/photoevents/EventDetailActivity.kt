@@ -1,6 +1,7 @@
 package com.example.photoevents
 
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.widget.Toast
 import android.net.Uri
 import android.os.Bundle
@@ -122,16 +123,18 @@ class EventDetailActivity : AppCompatActivity() {
 
         edtTitle.setText(currentTitle)
         edtNote.setText(currentNote)
-        val initialCat = currentCategory.ifBlank { com.example.photoevents.data.CategoryHelper.DEFAULT_CATEGORY }
-        val formattedInitial = com.example.photoevents.data.CategoryHelper.formatStandard(initialCat)
+        val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
+        val initialCat = currentCategory.ifBlank { available.firstOrNull() ?: "" }
+        val formattedInitial = if (initialCat.isNotBlank()) com.example.photoevents.data.CategoryHelper.formatStandard(initialCat) else ""
         edtTitle.setSelection(edtTitle.text?.length ?: 0)
 
         // Dropdown menu cho Category
         val categoryList = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
-        if (!categoryList.contains(formattedInitial) && categoryList.isNotEmpty()) {
+        if (formattedInitial.isNotBlank() && !categoryList.contains(formattedInitial) && categoryList.isNotEmpty()) {
             categoryList.add(formattedInitial)
         }
         categoryList.add("➕ Thêm danh mục mới...")
+        categoryList.add("⚙️ Quản lý danh mục...")
         val dropdownAdapter = com.example.photoevents.ui.CategoryDropdownAdapter(
             this,
             categoryList
@@ -141,24 +144,31 @@ class EventDetailActivity : AppCompatActivity() {
 
         edtCategory.setOnItemClickListener { parent, _, position, _ ->
             val selected = parent.getItemAtPosition(position).toString()
-            if (selected == "➕ Thêm danh mục mới...") {
-                edtCategory.setText(formattedInitial, false)
-                showAddNewCategoryInDetailDialog(edtCategory, categoryList, dropdownAdapter, chipGroupCategory)
-            } else {
-                for (i in 0 until chipGroupCategory.childCount) {
-                    (chipGroupCategory.getChildAt(i) as? com.google.android.material.chip.Chip)?.let { c ->
-                        c.isChecked = com.example.photoevents.data.CategoryHelper.matches(c.text.toString(), selected)
-                        c.setChipBackgroundColorResource(
-                            if (c.isChecked) R.color.badge_pink_bg else R.color.surface
-                        )
+            when (selected) {
+                "➕ Thêm danh mục mới..." -> {
+                    edtCategory.setText(formattedInitial, false)
+                    showAddNewCategoryInDetailDialog(edtCategory, categoryList, dropdownAdapter, chipGroupCategory)
+                }
+                "⚙️ Quản lý danh mục..." -> {
+                    edtCategory.setText(formattedInitial, false)
+                    sheet.dismiss()
+                    startActivity(Intent(this, CategoryManagementActivity::class.java))
+                }
+                else -> {
+                    for (i in 0 until chipGroupCategory.childCount) {
+                        (chipGroupCategory.getChildAt(i) as? com.google.android.material.chip.Chip)?.let { c ->
+                            c.isChecked = com.example.photoevents.data.CategoryHelper.matches(c.text.toString(), selected)
+                            c.setChipBackgroundColorResource(
+                                if (c.isChecked) R.color.badge_pink_bg else R.color.surface
+                            )
+                        }
                     }
                 }
             }
         }
 
-        val presets = com.example.photoevents.data.CategoryHelper.PRESET_CATEGORIES
         chipGroupCategory.removeAllViews()
-        for (cat in presets) {
+        for (cat in available) {
             val chip = com.google.android.material.chip.Chip(this).apply {
                 text = cat
                 isCheckable = true
@@ -184,9 +194,7 @@ class EventDetailActivity : AppCompatActivity() {
         btnSave.setOnClickListener {
             val newTitle = edtTitle.text?.toString()?.trim().orEmpty()
             val newNote = edtNote.text?.toString()?.trim().orEmpty()
-            val newCategory = edtCategory.text?.toString()?.trim().orEmpty().ifBlank {
-                com.example.photoevents.data.CategoryHelper.DEFAULT_CATEGORY
-            }
+            val newCategory = edtCategory.text?.toString()?.trim().orEmpty()
             if (newTitle.isEmpty()) {
                 layoutTitle.error = "Tên sự kiện không được để trống"
                 return@setOnClickListener
@@ -259,13 +267,8 @@ class EventDetailActivity : AppCompatActivity() {
         btnSubmit?.setOnClickListener {
             val nameText = edtName?.text?.toString()?.trim().orEmpty()
             if (nameText.isNotBlank()) {
-                val formatted = com.example.photoevents.data.CategoryHelper.formatStandard(nameText)
-                val prefs = getSharedPreferences("settings", MODE_PRIVATE)
-                val current = prefs.getStringSet("custom_categories", emptySet())?.toMutableSet() ?: mutableSetOf()
-                current.add(formatted)
-                prefs.edit().putStringSet("custom_categories", current).apply()
-
-                val index = (categoryList.size - 1).coerceAtLeast(0)
+                val formatted = com.example.photoevents.data.CategoryHelper.addCategory(this, nameText)
+                val index = (categoryList.size - 2).coerceAtLeast(0)
                 categoryList.add(index, formatted)
                 adapter.notifyDataSetChanged()
 

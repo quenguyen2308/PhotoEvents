@@ -52,4 +52,28 @@ class CategoryHelperTest {
         assertTrue(CategoryHelper.matches("", "Chung"))
         assertFalse(CategoryHelper.matches("Du lịch", "Gia đình"))
     }
+
+    @Test
+    fun testIsPreset() {
+        // Mọi danh mục đều là tuỳ chỉnh do người dùng tạo, không ép preset mặc định
+        assertFalse(CategoryHelper.isPreset("💖 Kỷ niệm"))
+        assertFalse(CategoryHelper.isPreset("Du lịch"))
+        assertFalse(CategoryHelper.isPreset("Cắm trại"))
+    }
+
+    @Test
+    fun testCompositeEmojiHandling() {
+        val (icon, name) = CategoryHelper.extractIconAndName("👨‍👩‍👧 Gia đình")
+        assertEquals("👨‍👩‍👧", icon)
+        assertEquals("Gia đình", name)
+        assertTrue(CategoryHelper.matches("👨‍👩‍👧 Gia đình", "gia đình"))
+        assertTrue(CategoryHelper.matches("gia đình", "👨‍👩‍👧 GIA ĐÌNH"))
+    }
+
+    @Test
+    fun testCategoryMapping() {
+        assertEquals("💼 Công việc", CategoryHelper.formatStandard("công việc"))
+        assertEquals("☕ Hẹn hò", CategoryHelper.formatStandard("hẹn hò"))
+        assertEquals("🌸 Chung", CategoryHelper.formatStandard("chung"))
+    }
 }

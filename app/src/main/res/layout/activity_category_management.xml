@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/warm_bg">
+
+    <!-- Top Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="10dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="@color/sakura_text_primary"
+            android:contentDescription="Quay lại" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Quản lý danh mục"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-black"
+                android:textColor="@color/sakura_text_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="Phân loại &amp; quản lý chủ đề kỷ niệm"
+                android:textSize="12sp"
+                android:textColor="@color/sakura_text_secondary" />
+
+        </LinearLayout>
+
+        <!-- Nút Khôi phục danh mục gốc -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRestoreDefaults"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:minHeight="36dp"
+            android:minWidth="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="0dp"
+            android:text="Khôi phục gốc"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/sakura_pink"
+            app:backgroundTint="@color/surface"
+            android:backgroundTint="@color/surface"
+            app:strokeColor="@color/sakura_border_soft"
+            app:strokeWidth="1dp"
+            app:cornerRadius="100dp"
+            app:rippleColor="#33FF6584"
+            app:icon="@drawable/ic_restore"
+            app:iconSize="14dp"
+            app:iconTint="@color/sakura_pink"
+            app:iconPadding="4dp"
+            app:iconGravity="textStart" />
+
+    </LinearLayout>
+
+    <!-- Nút Tạo danh mục mới -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardAddNewCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="12dp"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="1dp"
+        app:strokeWidth="1.2dp"
+        app:strokeColor="@color/sakura_pink_light"
+        app:cardBackgroundColor="@color/surface"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="16dp"
+            android:paddingVertical="14dp">
+
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_count_badge">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="➕"
+                    android:textSize="18sp" />
+
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="14dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tạo danh mục mới"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Chọn emoji và đặt tên danh mục riêng"
+                    android:textSize="12sp"
+                    android:textColor="@color/sakura_text_secondary" />
+
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_add"
+                app:tint="@color/colorPrimary" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Tiêu đề danh sách -->
+    <TextView
+        android:id="@+id/txtCategoryCountHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="6dp"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:textAllCaps="true"
+        android:letterSpacing="0.08"
+        android:textColor="@color/sakura_text_secondary"
+        tools:text="DANH SÁCH DANH MỤC (8)" />
+
+    <!-- RecyclerView danh sách danh mục -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerCategories"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingTop="2dp"
+        android:paddingBottom="24dp"
+        android:overScrollMode="never" />
+
+    <!-- Empty State -->
+    <LinearLayout
+        android:id="@+id/layoutEmptyCategories"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🌸"
+            android:textSize="48sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Chưa có danh mục nào"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/sakura_text_primary" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Bấm 'Tạo danh mục mới' hoặc khôi phục danh mục mặc định ban đầu."
+            android:textAlignment="center"
+            android:textSize="13sp"
+            android:textColor="@color/sakura_text_secondary" />
+
+    </LinearLayout>
+
+</LinearLayout>

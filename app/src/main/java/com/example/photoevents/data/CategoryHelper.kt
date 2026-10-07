@@ -1,28 +1,27 @@
 package com.example.photoevents.data
 
+import android.content.Context
+
 data class CategoryItem(
     val id: String, // "ALL", hoặc tên danh mục chuẩn
     val name: String,
     val icon: String,
     val count: Int = 0,
     val isAll: Boolean = false,
-    val isAddAction: Boolean = false
+    val isAddAction: Boolean = false,
+    val isPreset: Boolean = false
 )
 
 object CategoryHelper {
     const val ALL_CATEGORY_ID = "ALL"
-    const val DEFAULT_CATEGORY = "💖 Kỷ niệm"
+    const val DEFAULT_CATEGORY = ""
 
-    val PRESET_CATEGORIES = listOf(
-        "💖 Kỷ niệm",
-        "✈️ Du lịch",
-        "👨‍👩‍👧 Gia đình",
-        "🎉 Bạn bè",
-        "🎂 Sinh nhật",
-        "☕ Hẹn hò",
-        "🌿 Đời sống",
-        "💼 Công việc"
-    )
+    const val PREF_SETTINGS = "settings"
+    const val PREF_CUSTOM_CATEGORIES = "custom_categories"
+    const val PREF_RENAMED_PRESETS = "renamed_presets"
+    const val PREF_DELETED_CATEGORIES = "deleted_categories"
+
+    val PRESET_CATEGORIES: List<String> = emptyList()
 
     private val NAME_TO_ICON_MAP = mapOf(
         "kỷ niệm" to "💖",
@@ -71,10 +70,23 @@ object CategoryHelper {
             return Pair(trimmed, "Chung")
         }
 
-        // Nếu không có emoji phía trước, tìm trong bảng tra cứu
+        // Nếu không có emoji phía trước, kiểm tra xem có khớp danh mục mặc định không
+        for (preset in PRESET_CATEGORIES) {
+            val spaceIdx = preset.indexOf(' ')
+            if (spaceIdx > 0) {
+                val pIcon = preset.substring(0, spaceIdx).trim()
+                val pName = preset.substring(spaceIdx + 1).trim()
+                if (pName.equals(trimmed, ignoreCase = true)) {
+                    return Pair(pIcon, pName)
+                }
+            }
+        }
+
+        // Tìm trong bảng tra cứu tên thông dụng
         val mappedIcon = NAME_TO_ICON_MAP[trimmed.lowercase()]
         return if (mappedIcon != null) {
-            Pair(mappedIcon, trimmed)
+            val capitalized = trimmed.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            Pair(mappedIcon, capitalized)
         } else {
             Pair("🏷️", trimmed)
         }
@@ -89,30 +101,270 @@ object CategoryHelper {
     }
 
     /**
-     * Lấy danh sách các danh mục khả dụng gồm preset (đã cập nhật tên nếu được đổi) và custom.
+     * Lấy tập hợp các danh mục đã bị xoá (tên chuẩn viết thường).
      */
-    fun getAvailableCategories(context: android.content.Context): MutableList<String> {
-        val prefs = context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
-        val renamedSet = prefs.getStringSet("renamed_presets", emptySet()) ?: emptySet()
-        val renamedMap = mutableMapOf<String, String>()
-        for (entry in renamedSet) {
+    fun getDeletedCategories(context: Context): Set<String> {
+        val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
+        return prefs.getStringSet(PREF_DELETED_CATEGORIES, emptySet())
+            ?.map { it.trim().lowercase() }
+            ?.toSet() ?: emptySet()
+    }
+
+    /**
+     * Lấy bản đồ tên preset đã đổi: [presetCleanNameLowercase] -> [newNameFormatted]
+     */
+    fun getRenamedPresetsMap(context: Context): Map<String, String> {
+        val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
+        val set = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet()) ?: emptySet()
+        val map = mutableMapOf<String, String>()
+        for (entry in set) {
             val parts = entry.split("|", limit = 2)
             if (parts.size == 2) {
-                renamedMap[parts[0].lowercase()] = parts[1]
+                map[parts[0].lowercase()] = parts[1]
+            }
+        }
+        return map
+    }
+
+    /**
+     * Kiểm tra xem danh mục có phải danh mục mặc định gốc không.
+     */
+    fun isPreset(category: String): Boolean {
+        val (_, name) = extractIconAndName(category)
+        return PRESET_CATEGORIES.any {
+            val (_, pName) = extractIconAndName(it)
+            pName.equals(name, ignoreCase = true)
+        }
+    }
+
+    /**
+     * Lấy danh sách các danh mục khả dụng do người dùng tạo (loại bỏ các mục đã bị xoá).
+     */
+    fun getAvailableCategories(context: Context): MutableList<String> {
+        val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
+        val deletedSet = getDeletedCategories(context)
+
+        val result = linkedSetOf<String>()
+        val customCats = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
+        for (custom in customCats) {
+            val trimmed = custom.trim()
+            if (trimmed.isEmpty()) continue
+            val (_, clean) = extractIconAndName(trimmed)
+            if (deletedSet.contains(clean.lowercase())) continue
+            result.add(formatStandard(trimmed))
+        }
+
+        return result.toMutableList()
+    }
+
+    /**
+     * Lưu danh sách danh mục tuỳ chỉnh vào SharedPreferences.
+     */
+    fun saveCustomCategories(context: Context, categories: Collection<String>) {
+        val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
+        val deletedSet = getDeletedCategories(context)
+        val formattedSet = categories
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .map { formatStandard(it) }
+            .filter {
+                val (_, clean) = extractIconAndName(it)
+                !deletedSet.contains(clean.lowercase())
+            }
+            .toSet()
+        prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, formattedSet).apply()
+    }
+
+    /**
+     * Đồng bộ thêm các danh mục từ sự kiện hiện có vào SharedPreferences nếu chưa tồn tại.
+     */
+    fun syncCategoriesFromEvents(context: Context, categories: Collection<String>) {
+        val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
+        val deletedSet = getDeletedCategories(context)
+        val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+        var changed = false
+        for (raw in categories) {
+            val trimmed = raw.trim()
+            if (trimmed.isEmpty()) continue
+            val (_, clean) = extractIconAndName(trimmed)
+            if (deletedSet.contains(clean.lowercase())) continue
+            val formatted = formatStandard(trimmed)
+            if (currentCustom.none { matches(it, clean) }) {
+                currentCustom.add(formatted)
+                changed = true
+            }
+        }
+        if (changed) {
+            prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, currentCustom).apply()
+        }
+    }
+
+    /**
+     * Thêm một danh mục mới.
+     * Nếu trước đó từng bị xoá, sẽ khôi phục lại khỏi danh sách đã xoá.
+     */
+    fun addCategory(context: Context, rawCategory: String): String {
+        val formatted = formatStandard(rawCategory)
+        val (_, cleanName) = extractIconAndName(formatted)
+        val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
+
+        // 1. Xoá khỏi danh sách đã xoá nếu có
+        val deleted = prefs.getStringSet(PREF_DELETED_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+        deleted.removeAll { it.equals(cleanName, ignoreCase = true) }
+        for (preset in PRESET_CATEGORIES) {
+            val (_, pClean) = extractIconAndName(preset)
+            if (pClean.equals(cleanName, ignoreCase = true)) {
+                deleted.remove(pClean.lowercase())
+            }
+        }
+        prefs.edit().putStringSet(PREF_DELETED_CATEGORIES, deleted).apply()
+
+        // 2. Thêm vào custom_categories
+        val custom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+        custom.removeAll { matches(it, cleanName) }
+        custom.add(formatted)
+        prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, custom).apply()
+
+        return formatted
+    }
+
+    /**
+     * Đổi tên một danh mục và đồng bộ cập nhật vào Room Database.
+     */
+    suspend fun renameCategory(
+        context: Context,
+        oldCategory: String,
+        newRaw: String,
+        db: AppDatabase? = null
+    ): String {
+        val newFormatted = formatStandard(newRaw)
+        val (_, oldClean) = extractIconAndName(oldCategory)
+        val (_, newClean) = extractIconAndName(newFormatted)
+        val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
+
+        // Bỏ newClean khỏi danh sách đã xoá (nếu có)
+        val deleted = prefs.getStringSet(PREF_DELETED_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+        deleted.removeAll { it.equals(newClean, ignoreCase = true) }
+        prefs.edit().putStringSet(PREF_DELETED_CATEGORIES, deleted).apply()
+
+        // 1. Cập nhật custom_categories
+        val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+        val wasCustom = currentCustom.any { matches(it, oldClean) }
+        if (wasCustom) {
+            currentCustom.removeAll { matches(it, oldClean) }
+            currentCustom.add(newFormatted)
+            prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, currentCustom).apply()
+        }
+
+        // 2. Cập nhật renamed_presets
+        val renamedPresets = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet())?.toMutableSet() ?: mutableSetOf()
+        var matchedPresetClean: String? = null
+        for (preset in PRESET_CATEGORIES) {
+            val (_, pClean) = extractIconAndName(preset)
+            if (pClean.equals(oldClean, ignoreCase = true)) {
+                matchedPresetClean = pClean.lowercase()
+                break
+            }
+        }
+        if (matchedPresetClean == null) {
+            val existingEntry = renamedPresets.firstOrNull { matches(it.substringAfter("|"), oldClean) }
+            if (existingEntry != null) {
+                matchedPresetClean = existingEntry.substringBefore("|").lowercase()
+            }
+        }
+        if (matchedPresetClean != null) {
+            renamedPresets.removeAll { it.startsWith("$matchedPresetClean|") }
+            renamedPresets.add("$matchedPresetClean|$newFormatted")
+            prefs.edit().putStringSet(PREF_RENAMED_PRESETS, renamedPresets).apply()
+        }
+
+        // 3. Cập nhật tất cả sự kiện trong DB
+        if (db != null) {
+            val allEvents = db.eventDao().getAllIncludingDeleted()
+            val now = System.currentTimeMillis()
+            val matchedEvents = allEvents.filter { matches(it.category, oldClean) }
+            if (matchedEvents.isNotEmpty()) {
+                val updated = matchedEvents.map { it.copy(category = newFormatted, updatedAt = now) }
+                db.eventDao().upsertAll(updated)
             }
         }
 
-        val result = linkedSetOf<String>()
+        return newFormatted
+    }
+
+    /**
+     * Xoá hoàn toàn một danh mục:
+     * - Lưu vào danh sách đã xoá (để không bao giờ bị hiện lại từ presets hoặc sync cũ)
+     * - Xoá khỏi custom_categories và renamed_presets
+     * - Cập nhật toàn bộ sự kiện đang dùng danh mục này về danh mục thay thế
+     */
+    suspend fun deleteCategory(
+        context: Context,
+        categoryToDelete: String,
+        db: AppDatabase? = null
+    ): Int {
+        val (_, clean) = extractIconAndName(categoryToDelete)
+        val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
+
+        // 1. Thêm vào deleted_categories
+        val deleted = prefs.getStringSet(PREF_DELETED_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+        deleted.add(clean.lowercase())
         for (preset in PRESET_CATEGORIES) {
-            val (_, clean) = extractIconAndName(preset)
-            val actual = renamedMap[clean.lowercase()] ?: preset
-            result.add(actual)
+            val (_, pClean) = extractIconAndName(preset)
+            if (matches(preset, clean)) {
+                deleted.add(pClean.lowercase())
+            }
+        }
+        prefs.edit().putStringSet(PREF_DELETED_CATEGORIES, deleted).apply()
+
+        // 2. Xoá khỏi custom_categories
+        val currentCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+        currentCustom.removeAll { matches(it, clean) }
+        prefs.edit().putStringSet(PREF_CUSTOM_CATEGORIES, currentCustom).apply()
+
+        // 3. Xoá khỏi renamed_presets
+        val renamedPresets = prefs.getStringSet(PREF_RENAMED_PRESETS, emptySet())?.toMutableSet() ?: mutableSetOf()
+        renamedPresets.removeAll { it.startsWith("${clean.lowercase()}|") || matches(it.substringAfter("|"), clean) }
+        for (preset in PRESET_CATEGORIES) {
+            val (_, pClean) = extractIconAndName(preset)
+            if (matches(preset, clean)) {
+                renamedPresets.removeAll { it.startsWith("${pClean.lowercase()}|") }
+            }
+        }
+        prefs.edit().putStringSet(PREF_RENAMED_PRESETS, renamedPresets).apply()
+
+        // 4. Tìm danh mục thay thế cho các sự kiện bị mồ côi
+        val available = getAvailableCategories(context)
+        val fallback = available.firstOrNull { !matches(it, clean) } ?: ""
+
+        // 5. Cập nhật các sự kiện trong Room DB
+        var countUpdated = 0
+        if (db != null) {
+            val allEvents = db.eventDao().getAllIncludingDeleted()
+            val now = System.currentTimeMillis()
+            val matchedEvents = allEvents.filter { matches(it.category, clean) }
+            if (matchedEvents.isNotEmpty()) {
+                countUpdated = matchedEvents.size
+                val updated = matchedEvents.map { it.copy(category = fallback, updatedAt = now) }
+                db.eventDao().upsertAll(updated)
+            }
         }
 
-        val customCats = prefs.getStringSet("custom_categories", emptySet()) ?: emptySet()
-        result.addAll(customCats)
+        return countUpdated
+    }
 
-        return result.toMutableList()
+    /**
+     * Khôi phục tất cả danh mục mặc định ban đầu.
+     */
+    fun restoreDefaultPresets(context: Context) {
+        val prefs = context.getSharedPreferences(PREF_SETTINGS, Context.MODE_PRIVATE)
+        val deleted = prefs.getStringSet(PREF_DELETED_CATEGORIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+        for (preset in PRESET_CATEGORIES) {
+            val (_, pClean) = extractIconAndName(preset)
+            deleted.remove(pClean.lowercase())
+        }
+        prefs.edit().putStringSet(PREF_DELETED_CATEGORIES, deleted).apply()
+        prefs.edit().remove(PREF_RENAMED_PRESETS).apply()
     }
 
     /**

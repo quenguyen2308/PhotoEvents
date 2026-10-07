@@ -14,3 +14,6 @@ keystore.properties
 PhotoEvents_apk/
 app/build
 client_secret_583888639164-57orv84rhe50bolvvpnib7a757qj5h3k.apps.googleusercontent.com.json
+evidence_screenshots/
+test-evidence.html
+demo_*.html

@@ -17,10 +17,11 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/** Toàn bộ nội dung ghi vào metadata.json trên Drive: danh sách sự kiện + danh sách ảnh. */
+/** Toàn bộ nội dung ghi vào metadata.json trên Drive: danh sách sự kiện + danh sách ảnh + danh sách danh mục. */
 private data class SyncPayload(
     @Expose val events: List<Event>? = null,
-    @Expose val images: List<EventImage>? = null
+    @Expose val images: List<EventImage>? = null,
+    @Expose val categories: List<String>? = null
 )
 
 /** Kết quả 1 lần sync: số ảnh chưa tải về được (sẽ tự thử lại ở lần sync sau) và lỗi đầu tiên gặp phải. */
@@ -77,6 +78,21 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         // Cập nhật Room sớm: UI lập tức nhận được các sự kiện và metadata ảnh mới mà không phải đợi tải xong toàn bộ file
         eventDao.upsertAll(mergedEvents)
         imageDao.upsertAll(mergedImages)
+
+        // Đồng bộ danh mục 2 chiều giữa local, remote Drive và danh mục trên sự kiện
+        val localCategories = com.example.photoevents.data.CategoryHelper.getAvailableCategories(context)
+        val remoteCategories = remotePayload.categories ?: emptyList()
+        val eventCategories = mergedEvents.map { it.category.trim() }.filter { it.isNotEmpty() }
+        val deletedCategories = com.example.photoevents.data.CategoryHelper.getDeletedCategories(context)
+
+        val mergedCategoriesSet = linkedSetOf<String>()
+        for (cat in localCategories + remoteCategories + eventCategories) {
+            val (_, clean) = com.example.photoevents.data.CategoryHelper.extractIconAndName(cat)
+            if (!deletedCategories.contains(clean.lowercase())) {
+                mergedCategoriesSet.add(com.example.photoevents.data.CategoryHelper.formatStandard(cat))
+            }
+        }
+        com.example.photoevents.data.CategoryHelper.saveCustomCategories(context, mergedCategoriesSet)
 
         // 1) Xoá file Drive cho ảnh đã bị đánh dấu deleted nhưng vẫn còn driveFileId (chạy song song)
         val imagesToDeleteOnDrive = mergedImages.filter { it.deleted && it.driveFileId != null }
@@ -164,7 +180,7 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         }
 
         // 4) Chỉ tải lên metadata.json nếu thực sự có thay đổi so với remote
-        val newPayload = SyncPayload(mergedEvents, afterDownload)
+        val newPayload = SyncPayload(mergedEvents, afterDownload, mergedCategoriesSet.toList())
         val newJson = gson.toJson(newPayload)
         val hasChanges = remoteJson == null ||
                 imagesToDeleteOnDrive.isNotEmpty() ||

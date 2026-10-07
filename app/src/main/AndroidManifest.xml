@@ -27,5 +27,9 @@
             android:name=".EventDetailActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".CategoryManagementActivity"
+            android:exported="false" />
+
     </application>
 </manifest>
