@@ -33,7 +33,7 @@ class CategoryHelperTest {
     fun testExtractIconAndNameEmpty() {
         val (icon, name) = CategoryHelper.extractIconAndName("")
         assertEquals("📂", icon)
-        assertEquals("Chưa gán", name)
+        assertEquals("Khác", name)
     }
 
     @Test
@@ -41,8 +41,8 @@ class CategoryHelperTest {
         assertEquals("✈️ Du lịch", CategoryHelper.formatStandard("Du lịch"))
         assertEquals("💖 Kỷ niệm", CategoryHelper.formatStandard("Kỷ niệm"))
         assertEquals("🏷️ Cắm trại", CategoryHelper.formatStandard("Cắm trại"))
-        assertEquals("📂 Chưa gán", CategoryHelper.formatStandard(""))
-        assertEquals("📂 Chưa gán", CategoryHelper.formatStandard("UNCATEGORIZED"))
+        assertEquals("📂 Khác", CategoryHelper.formatStandard(""))
+        assertEquals("📂 Khác", CategoryHelper.formatStandard("UNCATEGORIZED"))
     }
 
     @Test
@@ -52,8 +52,8 @@ class CategoryHelperTest {
         assertTrue(CategoryHelper.matches("✈️ Du lịch", "Du lịch"))
         assertTrue(CategoryHelper.matches("Du lịch", "✈️ Du lịch"))
         assertTrue(CategoryHelper.matches("", "UNCATEGORIZED"))
-        assertTrue(CategoryHelper.matches("", "Chưa gán"))
-        assertTrue(CategoryHelper.matches("📂 Chưa gán", "UNCATEGORIZED"))
+        assertTrue(CategoryHelper.matches("", "Khác"))
+        assertTrue(CategoryHelper.matches("📂 Khác", "UNCATEGORIZED"))
         assertFalse(CategoryHelper.matches("", "Chung"))
         assertFalse(CategoryHelper.matches("", "Du lịch"))
         assertFalse(CategoryHelper.matches("Du lịch", "UNCATEGORIZED"))
@@ -66,8 +66,8 @@ class CategoryHelperTest {
         assertTrue(CategoryHelper.isUncategorized("   "))
         assertTrue(CategoryHelper.isUncategorized(null))
         assertTrue(CategoryHelper.isUncategorized("UNCATEGORIZED"))
-        assertTrue(CategoryHelper.isUncategorized("Chưa gán"))
-        assertTrue(CategoryHelper.isUncategorized("📂 Chưa gán"))
+        assertTrue(CategoryHelper.isUncategorized("Khác"))
+        assertTrue(CategoryHelper.isUncategorized("📂 Khác"))
         assertFalse(CategoryHelper.isUncategorized("Du lịch"))
         assertFalse(CategoryHelper.isUncategorized("🌸 Chung"))
     }
@@ -186,8 +186,8 @@ class CategoryHelperTest {
         assertEquals("Du lịch", CategoryHelper.extractCleanTextName("🏖️ Du lịch"))
         assertEquals("Du lịch", CategoryHelper.extractCleanTextName("Du lịch 🏖️"))
         assertEquals("Du lịch", CategoryHelper.extractCleanTextName("Du lịch"))
-        assertEquals("Chưa gán", CategoryHelper.extractCleanTextName(""))
-        assertEquals("Chưa gán", CategoryHelper.extractCleanTextName("UNCATEGORIZED"))
+        assertEquals("Khác", CategoryHelper.extractCleanTextName(""))
+        assertEquals("Khác", CategoryHelper.extractCleanTextName("UNCATEGORIZED"))
         assertEquals("Chung", CategoryHelper.extractCleanTextName("🌸 Chung"))
     }
 

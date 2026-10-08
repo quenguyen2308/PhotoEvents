@@ -107,7 +107,7 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         // Xử lý danh mục trên sự kiện:
         // - Nếu danh mục bị xoá (deleted = true):
         //     + ev.updatedAt > record.updatedAt: sự kiện được gán/sửa SAU khi xoá -> Người dùng cố ý dùng lại -> Tái sinh danh mục!
-        //     + ev.updatedAt <= record.updatedAt: sự kiện tồn tại TRƯỚC khi xoá -> Chuyển sự kiện về Chưa gán ("")
+        //     + ev.updatedAt <= record.updatedAt: sự kiện tồn tại TRƯỚC khi xoá -> Chuyển sự kiện về Khác ("")
         // - Nếu sự kiện có danh mục chưa có trong records -> Thêm vào records
         val sanitizedEvents = mergedEvents.map { ev ->
             val cat = ev.category.trim()

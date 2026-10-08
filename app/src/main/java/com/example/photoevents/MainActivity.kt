@@ -461,7 +461,7 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        // "Chưa gán" luôn đứng thứ 2
+        // "Khác" luôn đứng thứ 2
         val uncategorizedCount = events.count { com.example.photoevents.data.CategoryHelper.isUncategorized(it.event.category) }
         items.add(
             com.example.photoevents.data.CategoryItem(
@@ -661,7 +661,7 @@ class MainActivity : AppCompatActivity() {
 
             val message = "Bạn có chắc chắn muốn xoá vĩnh viễn danh mục này không?"
             val impactText = if (categoryItem.count > 0) {
-                "Có ${categoryItem.count} sự kiện sẽ được chuyển về Chưa gán."
+                "Có ${categoryItem.count} sự kiện sẽ được chuyển về Khác."
             } else {
                 null
             }
@@ -690,7 +690,7 @@ class MainActivity : AppCompatActivity() {
                         categoryAdapter.selectedCategoryId = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
                     }
                     categoryRevisionFlow.value += 1
-                    val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện về Chưa gán)" else ""
+                    val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện về Khác)" else ""
                     Toast.makeText(this@MainActivity, "Đã xoá danh mục ${categoryItem.name}$note", Toast.LENGTH_SHORT).show()
                     runSync()
                 }

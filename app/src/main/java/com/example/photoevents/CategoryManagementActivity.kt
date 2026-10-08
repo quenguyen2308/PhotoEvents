@@ -320,7 +320,7 @@ class CategoryManagementActivity : AppCompatActivity() {
     private fun showDeleteConfirmDialog(item: CategoryManagementItem) {
         val message = "Bạn có chắc chắn muốn xoá vĩnh viễn danh mục này không?"
         val impactText = if (item.count > 0) {
-            "Có ${item.count} sự kiện sẽ được chuyển về Chưa gán."
+            "Có ${item.count} sự kiện sẽ được chuyển về Khác."
         } else {
             null
         }
@@ -338,7 +338,7 @@ class CategoryManagementActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 val db = AppDatabase.get(this@CategoryManagementActivity)
                 val updatedCount = CategoryHelper.deleteCategory(this@CategoryManagementActivity, item.name, db)
-                val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện về Chưa gán)" else ""
+                val note = if (updatedCount > 0) " (đã chuyển $updatedCount sự kiện về Khác)" else ""
                 Toast.makeText(this@CategoryManagementActivity, "Đã xoá danh mục ${item.name}$note", Toast.LENGTH_SHORT).show()
                 loadCategories()
                 runSync()

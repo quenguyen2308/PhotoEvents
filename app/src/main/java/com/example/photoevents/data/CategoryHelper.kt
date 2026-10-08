@@ -26,9 +26,9 @@ data class CategoryItem(
 object CategoryHelper {
     const val ALL_CATEGORY_ID = "ALL"
     const val UNCATEGORIZED_CATEGORY_ID = "UNCATEGORIZED"
-    const val UNCATEGORIZED_NAME = "Chưa gán"
+    const val UNCATEGORIZED_NAME = "Khác"
     const val UNCATEGORIZED_ICON = "📂"
-    const val UNCATEGORIZED_DISPLAY = "📂 Chưa gán"
+    const val UNCATEGORIZED_DISPLAY = "📂 Khác"
     const val DEFAULT_CATEGORY = ""
 
     const val PREF_SETTINGS = "settings"
@@ -64,7 +64,7 @@ object CategoryHelper {
     )
 
     /**
-     * Kiểm tra xem một danh mục có phải là "Chưa gán" (không có danh mục) hay không.
+     * Kiểm tra xem một danh mục có phải là "Khác" (không có danh mục) hay không.
      */
     fun isUncategorized(category: String?): Boolean {
         val trimmed = category?.trim().orEmpty()
@@ -85,7 +85,7 @@ object CategoryHelper {
      *   "🏖️ Du lịch"    -> "Du lịch"
      *   "Du lịch 🏖️"    -> "Du lịch"
      *   "Du lịch"        -> "Du lịch"
-     *   ""               -> "Chưa gán"
+     *   ""               -> "Khác"
      */
     fun extractCleanTextName(category: String?): String {
         val trimmed = category?.trim().orEmpty()
@@ -108,7 +108,7 @@ object CategoryHelper {
      *   "🏷️ 🏖️ Du lịch" -> Pair("🏖️", "Du lịch")
      *   "✈️ Du lịch"     -> Pair("✈️", "Du lịch")
      *   "Du lịch"        -> Pair("✈️", "Du lịch")
-     *   ""               -> Pair("📂", "Chưa gán")
+     *   ""               -> Pair("📂", "Khác")
      */
     fun extractIconAndName(rawCategory: String?): Pair<String, String> {
         val trimmed = rawCategory?.trim().orEmpty()
@@ -511,7 +511,7 @@ object CategoryHelper {
     /**
      * Xoá hoàn toàn một danh mục:
      * - Lưu tombstone đã xoá với timestamp hiện tại
-     * - Cập nhật toàn bộ sự kiện đang dùng danh mục này về Chưa gán ("")
+     * - Cập nhật toàn bộ sự kiện đang dùng danh mục này về Khác ("")
      */
     suspend fun deleteCategory(
         context: Context,
@@ -534,7 +534,7 @@ object CategoryHelper {
         )
         saveCategoryRecords(context, currentRecords)
 
-        // Các sự kiện mồ côi sẽ được chuyển về Chưa gán ("")
+        // Các sự kiện mồ côi sẽ được chuyển về Khác ("")
         val fallback = ""
         var countUpdated = 0
         if (db != null) {
