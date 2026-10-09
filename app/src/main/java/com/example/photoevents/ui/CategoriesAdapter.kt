@@ -119,6 +119,7 @@ class CategoriesAdapter(
 
         holder.card.setOnLongClickListener {
             if (!item.isAll && !item.isUncategorized && !item.isAddAction && onCategoryLongClick != null) {
+                holder.card.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
                 onCategoryLongClick.invoke(item)
                 true
             } else {

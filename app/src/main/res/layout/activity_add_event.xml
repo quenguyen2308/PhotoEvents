@@ -55,6 +55,7 @@
 
             <!-- Ô nhập tên sự kiện Material 3 Outlined -->
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutTitle"
                 style="@style/TextInputStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

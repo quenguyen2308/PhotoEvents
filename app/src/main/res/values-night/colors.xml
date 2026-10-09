@@ -1,25 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Sakura Dark Palette -->
-    <color name="warm_bg">#221720</color>
-    <color name="surface">#2C1E2A</color>
-    <color name="surface_variant">#3A2837</color>
-    <color name="on_surface">#FDEEF2</color>
-    <color name="on_surface_variant">#CBB6C4</color>
-    <color name="outline">#40FF6584</color>
-    <color name="outline_variant">#20FFFFFF</color>
+    <!-- Sakura Blossom Palette (night) -->
+    <color name="sakura_pink">#FF6584</color>
+    <color name="sakura_pink_light">#FF8FA3</color>
+    <color name="sakura_pink_glow">#FFB3C1</color>
+    <color name="sakura_pink_container">#4A1828</color>
+    <color name="sakura_blush_bg">#221720</color>
+    <color name="sakura_surface">#2C1E2A</color>
+    <color name="sakura_border_soft">#40FF6584</color>
+    <color name="sakura_border_subtle">#20FFFFFF</color>
+    <color name="sakura_text_primary">#FDEEF2</color>
+    <color name="sakura_text_secondary">#CBB6C4</color>
 
-    <color name="colorPrimary">#FF6584</color>
+    <!-- Pastel accents (night) -->
+    <color name="pastel_lavender">#3B1F4F</color>
+    <color name="pastel_lavender_text">#E9D5FF</color>
+    <color name="pastel_mint">#133832</color>
+    <color name="pastel_mint_text">#5EEAD4</color>
+    <color name="amber_primary">#F59E0B</color>
+
+    <!-- Semantic tokens (night) -->
+    <color name="colorPrimary">@color/sakura_pink</color>
     <color name="colorOnPrimary">#FFFFFF</color>
-    <color name="colorPrimaryContainer">#4A1828</color>
+    <color name="colorPrimaryContainer">@color/sakura_pink_container</color>
     <color name="colorOnPrimaryContainer">#FFB3C1</color>
     <color name="colorSecondary">#C084FC</color>
     <color name="colorOnSecondary">#1F0D33</color>
-    <color name="colorSecondaryContainer">#3B1F4F</color>
-    <color name="colorOnSecondaryContainer">#E9D5FF</color>
+    <color name="colorSecondaryContainer">@color/pastel_lavender</color>
+    <color name="colorOnSecondaryContainer">@color/pastel_lavender_text</color>
 
+    <color name="warm_bg">@color/sakura_blush_bg</color>
+    <color name="surface">@color/sakura_surface</color>
+    <color name="surface_variant">#3A2837</color>
+    <color name="on_surface">@color/sakura_text_primary</color>
+    <color name="on_surface_variant">@color/sakura_text_secondary</color>
+    <color name="outline">@color/sakura_border_soft</color>
+    <color name="outline_variant">@color/sakura_border_subtle</color>
+
+    <!-- Badges (night) -->
     <color name="badge_date_bg">#E62C1E2A</color>
-    <color name="badge_date_text">#FDEEF2</color>
-    <color name="badge_pink_bg">#4A1828</color>
+    <color name="badge_date_text">@color/sakura_text_primary</color>
+    <color name="badge_pink_bg">@color/sakura_pink_container</color>
     <color name="badge_pink_text">#FFB3C1</color>
 </resources>

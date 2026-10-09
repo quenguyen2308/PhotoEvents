@@ -40,6 +40,13 @@ class ImageDragCallback(
         // không dùng swipe ở đây (swipeFlags = 0 nên hàm này thực chất không bao giờ được gọi)
     }
 
+    override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+        super.onSelectedChanged(viewHolder, actionState)
+        if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+            viewHolder?.itemView?.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+        }
+    }
+
     override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
         super.clearView(recyclerView, viewHolder)
         if (didMove) {

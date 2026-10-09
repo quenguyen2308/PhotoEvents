@@ -2,11 +2,12 @@ package com.example.photoevents
 
 import android.app.DatePickerDialog
 import android.content.Intent
-import android.widget.Toast
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -58,7 +59,20 @@ class EventDetailActivity : AppCompatActivity() {
         adapter = ImagesAdapter(
             onDelete = { image -> confirmDeleteImage(image) },
             onToggleCover = { image -> toggleCover(image) },
-            onAdjustFocus = { image -> showFocusAdjuster(image) }
+            onAdjustFocus = { image -> showFocusAdjuster(image) },
+            onImageClick = { image, pos ->
+                val total = adapter.itemCount
+                val isCover = image.id == explicitCoverId || (explicitCoverId == null && pos == 0)
+                com.example.photoevents.ui.PhotoLightboxDialog.show(
+                    context = this@EventDetailActivity,
+                    image = image,
+                    isCover = isCover,
+                    indexText = "Ảnh ${pos + 1} / $total",
+                    onToggleCover = { img -> toggleCover(img) },
+                    onDelete = { img -> confirmDeleteImage(img) },
+                    onAdjustFocus = { img -> showFocusAdjuster(img) }
+                )
+            }
         )
         findViewById<RecyclerView>(R.id.recyclerImages).apply {
             layoutManager = GridLayoutManager(this@EventDetailActivity, 3)
@@ -68,6 +82,7 @@ class EventDetailActivity : AppCompatActivity() {
             .attachToRecyclerView(findViewById(R.id.recyclerImages))
 
         findViewById<android.view.View>(R.id.btnBack)?.setOnClickListener { finish() }
+        findViewById<android.view.View>(R.id.btnDeleteEvent)?.setOnClickListener { confirmDeleteEvent() }
 
         findViewById<TextView>(R.id.txtEventDate).setOnClickListener { showDatePicker() }
         findViewById<TextView>(R.id.txtCategory).setOnClickListener { showEditTitleDialog() }
@@ -80,6 +95,9 @@ class EventDetailActivity : AppCompatActivity() {
                 ActivityResultContracts.PickVisualMedia.ImageOnly
             ))
         }
+
+        val emptyImagesView = findViewById<android.view.View>(R.id.layoutEmptyImages)
+        val recyclerImages = findViewById<RecyclerView>(R.id.recyclerImages)
 
         lifecycleScope.launch {
             AppDatabase.get(this@EventDetailActivity).eventDao()
@@ -98,8 +116,13 @@ class EventDetailActivity : AppCompatActivity() {
                     findViewById<TextView>(R.id.txtCategory).text =
                         com.example.photoevents.data.CategoryHelper.formatStandard(currentCategory)
                     explicitCoverId = eventWithImages.event.coverImageId
-                    adapter.submitList(eventWithImages.visibleImages)
+                    val images = eventWithImages.visibleImages
+                    adapter.submitList(images)
                     adapter.setCover(eventWithImages.coverImage?.id)
+
+                    val hasImages = images.isNotEmpty()
+                    recyclerImages.visibility = if (hasImages) View.VISIBLE else View.GONE
+                    emptyImagesView?.visibility = if (hasImages) View.GONE else View.VISIBLE
                 }
         }
 
@@ -124,6 +147,15 @@ class EventDetailActivity : AppCompatActivity() {
 
         edtTitle.setText(currentTitle)
         edtNote.setText(currentNote)
+        edtTitle.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (!s.isNullOrBlank()) {
+                    layoutTitle.error = null
+                }
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
         val available = com.example.photoevents.data.CategoryHelper.getAvailableCategories(this)
         val isCurrentUncat = com.example.photoevents.data.CategoryHelper.isUncategorized(currentCategory)
         val effectiveInitial = if (isCurrentUncat) {
@@ -453,6 +485,37 @@ class EventDetailActivity : AppCompatActivity() {
                 db.eventImageDao().updateFocus(image.id, newFocusX, newFocusY)
                 triggerSync()
             }
+        }
+    }
+
+    private fun confirmDeleteEvent() {
+        BentoDialogHelper.showConfirmDialog(
+            context = this,
+            title = "Xoá sự kiện '$currentTitle'?",
+            message = "Bạn có chắc chắn muốn xoá vĩnh viễn sự kiện này không?",
+            impactText = "Toàn bộ thông tin sự kiện và các ảnh kỷ niệm bên trong sẽ bị xoá khỏi máy và đồng bộ lên Google Drive.",
+            confirmText = "Xoá sự kiện",
+            cancelText = "Huỷ bỏ",
+            iconRes = R.drawable.ic_delete,
+            isDanger = true
+        ) {
+            deleteCurrentEvent()
+        }
+    }
+
+    private fun deleteCurrentEvent() {
+        lifecycleScope.launch {
+            val db = AppDatabase.get(this@EventDetailActivity)
+            val now = System.currentTimeMillis()
+            db.eventDao().softDelete(eventId, now)
+            db.eventImageDao().softDeleteForEvents(setOf(eventId), now)
+            DriveSession.getHelper(this@EventDetailActivity)?.let { helper ->
+                SyncScope.scope.launch {
+                    runCatching { SyncManager(applicationContext, helper).sync() }
+                }
+            }
+            Toast.makeText(this@EventDetailActivity, "Đã xoá sự kiện $currentTitle", Toast.LENGTH_SHORT).show()
+            finish()
         }
     }
 }

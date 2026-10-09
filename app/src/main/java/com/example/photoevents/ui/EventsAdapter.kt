@@ -54,6 +54,27 @@ class EventsAdapter(
         onSelectionChanged(0)
     }
 
+    fun selectAll(eventIds: Collection<String>) {
+        if (eventIds.isEmpty()) return
+        selectionMode = true
+        selectedIds.addAll(eventIds)
+        notifyDataSetChanged()
+        onSelectionChanged(selectedIds.size)
+    }
+
+    fun isAllSelected(eventIds: Collection<String>): Boolean {
+        if (eventIds.isEmpty()) return false
+        return selectedIds.containsAll(eventIds)
+    }
+
+    fun toggleSelectAll(eventIds: Collection<String>) {
+        if (isAllSelected(eventIds)) {
+            clearSelection()
+        } else {
+            selectAll(eventIds)
+        }
+    }
+
     private fun enterSelectionMode(id: String) {
         selectionMode = true
         selectedIds.add(id)
@@ -305,7 +326,10 @@ class EventsAdapter(
             }
         }
         holder.itemView.setOnLongClickListener {
-            if (!selectionMode) enterSelectionMode(event.id)
+            if (!selectionMode) {
+                holder.itemView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                enterSelectionMode(event.id)
+            }
             true
         }
     }
@@ -335,7 +359,14 @@ class EventsAdapter(
                 .transform(FocusCropTransformation(image.focusX, image.focusY))
                 .into(iv)
             iv.setOnClickListener {
-                onAdjustFocus?.invoke(image, 1.0f)
+                val item = getItem(holder.bindingAdapterPosition)
+                com.example.photoevents.ui.PhotoLightboxDialog.show(
+                    context = context,
+                    image = image,
+                    isCover = image.id == item?.coverImage?.id,
+                    indexText = item?.event?.title ?: "",
+                    onAdjustFocus = { img -> onAdjustFocus?.invoke(img, 1.0f) }
+                )
             }
             holder.imagesStrip.addView(iv)
         }

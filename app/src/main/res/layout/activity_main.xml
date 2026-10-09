@@ -61,17 +61,35 @@
                         android:fontFamily="sans-serif-black"
                         android:textColor="@color/sakura_text_primary" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:text="Nhật ký &amp; Kỷ niệm ảnh"
-                        android:textSize="12sp"
-                        android:textColor="@color/sakura_text_secondary" />
-
                 </LinearLayout>
 
             </LinearLayout>
+
+            <!-- Nút Tìm kiếm sự kiện -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnToggleSearch"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:minHeight="38dp"
+                android:minWidth="38dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:layout_marginEnd="8dp"
+                app:backgroundTint="@color/surface"
+                android:backgroundTint="@color/surface"
+                app:strokeColor="@color/sakura_border_soft"
+                app:strokeWidth="1.2dp"
+                app:cornerRadius="100dp"
+                app:elevation="1dp"
+                app:rippleColor="#33FF6584"
+                app:icon="@drawable/ic_search"
+                app:iconSize="17dp"
+                app:iconTint="@color/sakura_pink"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                android:contentDescription="Tìm kiếm sự kiện" />
 
             <!-- Nút Quản lý danh mục -->
             <com.google.android.material.button.MaterialButton
@@ -134,6 +152,53 @@
 
         </LinearLayout>
 
+        <!-- Thanh Tìm kiếm Mở rộng Sakura Search Bar -->
+        <LinearLayout
+            android:id="@+id/layoutSearchBar"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="8dp"
+            android:background="@drawable/bg_floating_date_badge"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_search"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="Tìm kiếm" />
+
+            <EditText
+                android:id="@+id/edtSearch"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:background="@null"
+                android:hint="Tìm kiếm sự kiện, kỷ niệm..."
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
+                android:textSize="14sp"
+                android:singleLine="true"
+                android:imeOptions="actionSearch" />
+
+            <ImageButton
+                android:id="@+id/btnClearSearch"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_close"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="Xoá tìm kiếm" />
+
+        </LinearLayout>
+
         <!-- Thanh chế độ chọn nhiều kiểu Sakura Blossom -->
         <LinearLayout
             android:id="@+id/headerSelection"
@@ -169,6 +234,16 @@
                 android:textStyle="bold"
                 android:textColor="?attr/colorPrimary"
                 tools:text="🌸 2 đã chọn" />
+
+            <ImageButton
+                android:id="@+id/btnSelectAll"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginEnd="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_select_all"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="Chọn tất cả" />
 
             <ImageButton
                 android:id="@+id/btnDeleteSelected"
@@ -247,6 +322,7 @@
         </FrameLayout>
 
         <TextView
+            android:id="@+id/txtEmptyTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -256,6 +332,7 @@
             android:textColor="?attr/colorOnSurface" />
 
         <TextView
+            android:id="@+id/txtEmptySubtitle"
             android:layout_width="260dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
@@ -264,6 +341,19 @@
             android:textSize="13sp"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:lineSpacingExtra="2dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEmptyAction"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="🌸 Tạo sự kiện mới"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            app:backgroundTint="?attr/colorPrimaryContainer"
+            app:cornerRadius="100dp" />
 
     </LinearLayout>
 

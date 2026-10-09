@@ -27,7 +27,8 @@ import com.example.photoevents.data.EventImage
 class ImagesAdapter(
     private val onDelete: (EventImage) -> Unit,
     private val onToggleCover: (EventImage) -> Unit,
-    private val onAdjustFocus: (EventImage) -> Unit
+    private val onAdjustFocus: (EventImage) -> Unit,
+    private val onImageClick: ((EventImage, Int) -> Unit)? = null
 ) : RecyclerView.Adapter<ImagesAdapter.VH>() {
 
     private val items = mutableListOf<EventImage>()
@@ -110,6 +111,12 @@ class ImagesAdapter(
         holder.btnCover.setOnClickListener { onToggleCover(image) }
         holder.btnDelete.setOnClickListener { onDelete(image) }
         holder.btnFocus.setOnClickListener { onAdjustFocus(image) }
-        holder.card.setOnClickListener { onAdjustFocus(image) }
+        holder.card.setOnClickListener {
+            if (onImageClick != null) {
+                onImageClick.invoke(image, holder.bindingAdapterPosition)
+            } else {
+                onAdjustFocus(image)
+            }
+        }
     }
 }

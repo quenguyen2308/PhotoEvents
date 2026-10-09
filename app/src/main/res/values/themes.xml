@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.PhotoEvents" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.PhotoEvents" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorOnPrimary">@color/colorOnPrimary</item>
         <item name="colorPrimaryContainer">@color/colorPrimaryContainer</item>
@@ -17,11 +17,14 @@
         <item name="colorOutlineVariant">@color/outline_variant</item>
         <item name="android:colorBackground">@color/warm_bg</item>
         <item name="android:statusBarColor">@color/warm_bg</item>
-        <item name="android:windowLightStatusBar">true</item>
 
         <!-- BottomSheet & Dialog Styles -->
         <item name="bottomSheetDialogTheme">@style/Theme.PhotoEvents.BottomSheetDialog</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.PhotoEvents.MaterialAlertDialog</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.PhotoEvents.MaterialAlertDialog</item>
+    </style>
+
+    <style name="Theme.PhotoEvents" parent="Base.Theme.PhotoEvents">
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

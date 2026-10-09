@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F20F080E">
+
+    <!-- Ảnh hiển thị chính giữa toàn màn hình -->
+    <ImageView
+        android:id="@+id/imgLightboxPhoto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:contentDescription="Ảnh chi tiết" />
+
+    <!-- Thanh công cụ phía trên (Top Bar) -->
+    <LinearLayout
+        android:id="@+id/layoutLightboxTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="36dp"
+        android:paddingBottom="16dp"
+        android:background="@drawable/bg_gradient_overlay">
+
+        <!-- Nút Đóng -->
+        <ImageButton
+            android:id="@+id/btnLightboxClose"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_circle_button"
+            android:src="@drawable/ic_close"
+            android:scaleType="fitCenter"
+            android:padding="8dp"
+            app:tint="#FFFFFF"
+            android:contentDescription="Đóng xem ảnh" />
+
+        <!-- Tiêu đề / Chỉ số ảnh -->
+        <TextView
+            android:id="@+id/txtLightboxIndex"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:text="Ảnh 2 / 5" />
+
+        <!-- Nút Đặt làm ảnh đại diện -->
+        <ImageButton
+            android:id="@+id/btnLightboxCover"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/bg_circle_button"
+            android:src="@drawable/ic_star_outline"
+            android:scaleType="fitCenter"
+            android:padding="8dp"
+            app:tint="#FFFFFF"
+            android:contentDescription="Đặt làm ảnh đại diện" />
+
+        <!-- Nút Chỉnh tiêu điểm nhanh -->
+        <ImageButton
+            android:id="@+id/btnLightboxFocus"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/bg_circle_button"
+            android:src="@drawable/ic_crop"
+            android:scaleType="fitCenter"
+            android:padding="8dp"
+            app:tint="#FFFFFF"
+            android:contentDescription="Chỉnh tiêu điểm Bento" />
+
+        <!-- Nút Xoá ảnh -->
+        <ImageButton
+            android:id="@+id/btnLightboxDelete"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_circle_button"
+            android:src="@drawable/ic_delete"
+            android:scaleType="fitCenter"
+            android:padding="8dp"
+            app:tint="#FF6584"
+            android:contentDescription="Xoá ảnh này" />
+
+    </LinearLayout>
+
+</FrameLayout>

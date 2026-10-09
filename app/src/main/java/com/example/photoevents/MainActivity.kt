@@ -56,12 +56,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var headerNormal: View
     private lateinit var headerSelection: View
     private lateinit var txtSelectedCount: TextView
+    private lateinit var layoutSearchBar: View
+    private lateinit var edtSearch: android.widget.EditText
 
     // Kiểu sắp xếp chỉ là tuỳ chọn hiển thị trên máy này — lưu SharedPreferences, không đồng bộ Drive.
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
     private val sortFlow = MutableStateFlow(SortOption.NEWEST)
     private val selectedCategoryFlow = MutableStateFlow(com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID)
     private val customCategoriesFlow = MutableStateFlow<Set<String>>(emptySet())
+    private val searchQueryFlow = MutableStateFlow("")
     private val categoryRevisionFlow = MutableStateFlow(0)
     private var scrollToTopOnNextList = false
     private lateinit var backPressedCallback: OnBackPressedCallback
@@ -158,17 +161,63 @@ class MainActivity : AppCompatActivity() {
         headerNormal = findViewById(R.id.headerNormal)
         headerSelection = findViewById(R.id.headerSelection)
         txtSelectedCount = findViewById(R.id.txtSelectedCount)
+        layoutSearchBar = findViewById(R.id.layoutSearchBar)
+        edtSearch = findViewById(R.id.edtSearch)
+
+        findViewById<View>(R.id.btnToggleSearch).setOnClickListener {
+            if (layoutSearchBar.visibility == View.VISIBLE) {
+                layoutSearchBar.visibility = View.GONE
+                edtSearch.setText("")
+                searchQueryFlow.value = ""
+            } else {
+                layoutSearchBar.visibility = View.VISIBLE
+                edtSearch.requestFocus()
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+                imm?.showSoftInput(edtSearch, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            }
+            backPressedCallback.isEnabled = adapter.selectionMode || layoutSearchBar.visibility == View.VISIBLE
+        }
+
+        findViewById<View>(R.id.btnClearSearch).setOnClickListener {
+            if (edtSearch.text.isNotEmpty()) {
+                edtSearch.setText("")
+                searchQueryFlow.value = ""
+            } else {
+                layoutSearchBar.visibility = View.GONE
+                backPressedCallback.isEnabled = adapter.selectionMode
+            }
+        }
+
+        edtSearch.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                searchQueryFlow.value = s?.toString()?.trim().orEmpty()
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
         findViewById<android.widget.ImageButton>(R.id.btnCancelSelection).setOnClickListener {
             adapter.clearSelection()
+        }
+        findViewById<android.widget.ImageButton>(R.id.btnSelectAll).setOnClickListener {
+            val allIds = adapter.currentList.map { it.event.id }
+            adapter.toggleSelectAll(allIds)
         }
         findViewById<android.widget.ImageButton>(R.id.btnDeleteSelected).setOnClickListener {
             confirmDeleteSelected()
         }
 
-        // Đang chọn nhiều mà bấm back thì thoát chế độ chọn trước, không thoát app luôn
+        // Đang chọn nhiều hoặc đang mở tìm kiếm mà bấm back thì xử lý đóng trước, không thoát app luôn
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                adapter.clearSelection()
+                if (adapter.selectionMode) {
+                    adapter.clearSelection()
+                } else if (layoutSearchBar.visibility == View.VISIBLE) {
+                    layoutSearchBar.visibility = View.GONE
+                    edtSearch.setText("")
+                    searchQueryFlow.value = ""
+                    isEnabled = false
+                }
             }
         }.also { callback -> backPressedCallback = callback })
 
@@ -193,24 +242,34 @@ class MainActivity : AppCompatActivity() {
         btnSort.text = sortFlow.value.shortLabel
         btnSort.setOnClickListener { showSortDialog() }
 
-        // Kết hợp dữ liệu Room + kiểu sắp xếp + danh mục lọc
+        // Kết hợp dữ liệu Room + kiểu sắp xếp + danh mục lọc + tìm kiếm
+        val eventsAndFiltersFlow = combine(
+            AppDatabase.get(this@MainActivity).eventDao().observeAllWithImages(),
+            selectedCategoryFlow,
+            combine(customCategoriesFlow, categoryRevisionFlow) { cats, _ -> cats }
+        ) { events, selectedCat, customCats ->
+            val categoryItems = buildCategoryItems(events, customCats)
+            val filteredByCat = if (selectedCat == com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID) {
+                events
+            } else {
+                events.filter { com.example.photoevents.data.CategoryHelper.matches(it.event.category, selectedCat) }
+            }
+            Triple(categoryItems, filteredByCat, selectedCat)
+        }
+
         lifecycleScope.launch {
-            combine(
-                AppDatabase.get(this@MainActivity).eventDao().observeAllWithImages(),
-                sortFlow,
-                selectedCategoryFlow,
-                customCategoriesFlow,
-                categoryRevisionFlow
-            ) { events, sort, selectedCat, customCats, _ ->
-                val categoryItems = buildCategoryItems(events, customCats)
-                val filtered = if (selectedCat == com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID) {
-                    events
+            combine(eventsAndFiltersFlow, searchQueryFlow, sortFlow) { (categoryItems, filteredByCat, selectedCat), query, sort ->
+                val filteredByQuery = if (query.isBlank()) {
+                    filteredByCat
                 } else {
-                    events.filter { com.example.photoevents.data.CategoryHelper.matches(it.event.category, selectedCat) }
+                    filteredByCat.filter {
+                        it.event.title.contains(query, ignoreCase = true) ||
+                        it.event.note.contains(query, ignoreCase = true)
+                    }
                 }
-                val sorted = sort.sort(filtered)
-                Triple(categoryItems, sorted, selectedCat)
-            }.collect { (catItems, sorted, selectedCat) ->
+                val sorted = sort.sort(filteredByQuery)
+                CombinedState(categoryItems, sorted, selectedCat, query)
+            }.collect { (catItems, sorted, selectedCat, query) ->
                 categoryAdapter.selectedCategoryId = selectedCat
                 categoryAdapter.submitList(catItems)
 
@@ -220,8 +279,48 @@ class MainActivity : AppCompatActivity() {
                         scrollToTopOnNextList = false
                     }
                 }
-                findViewById<android.view.View>(R.id.txtEmpty).visibility =
-                    if (sorted.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+
+                val emptyView = findViewById<android.view.View>(R.id.txtEmpty)
+                val txtEmptyTitle = findViewById<TextView>(R.id.txtEmptyTitle)
+                val txtEmptySubtitle = findViewById<TextView>(R.id.txtEmptySubtitle)
+                val btnEmptyAction = findViewById<MaterialButton>(R.id.btnEmptyAction)
+
+                if (sorted.isEmpty()) {
+                    emptyView.visibility = View.VISIBLE
+                    when {
+                        query.isNotBlank() -> {
+                            txtEmptyTitle.text = "Không tìm thấy sự kiện"
+                            txtEmptySubtitle.text = "Không có sự kiện nào khớp với từ khóa '$query'."
+                            btnEmptyAction.text = "Xoá tìm kiếm"
+                            btnEmptyAction.setOnClickListener {
+                                edtSearch.setText("")
+                                searchQueryFlow.value = ""
+                            }
+                        }
+                        selectedCat != com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID -> {
+                            val catName = catItems.firstOrNull { it.id == selectedCat }?.name ?: selectedCat
+                            txtEmptyTitle.text = "Chưa có sự kiện"
+                            txtEmptySubtitle.text = "Chưa có sự kiện nào trong danh mục '$catName'."
+                            btnEmptyAction.text = "🌸 Tạo sự kiện trong mục này"
+                            btnEmptyAction.setOnClickListener {
+                                val intent = Intent(this@MainActivity, AddEventActivity::class.java).apply {
+                                    putExtra(EXTRA_CATEGORY, selectedCat)
+                                }
+                                startActivity(intent)
+                            }
+                        }
+                        else -> {
+                            txtEmptyTitle.text = "Chưa có sự kiện nào"
+                            txtEmptySubtitle.text = "Bấm 'Tạo sự kiện' bên dưới để bắt đầu lưu giữ những kỷ niệm đáng nhớ."
+                            btnEmptyAction.text = "🌸 Tạo sự kiện mới"
+                            btnEmptyAction.setOnClickListener {
+                                startActivity(Intent(this@MainActivity, AddEventActivity::class.java))
+                            }
+                        }
+                    }
+                } else {
+                    emptyView.visibility = View.GONE
+                }
             }
         }
 
@@ -315,9 +414,20 @@ class MainActivity : AppCompatActivity() {
     private fun updateSelectionHeader(count: Int) {
         val inSelection = adapter.selectionMode
         headerNormal.visibility = if (inSelection) View.GONE else View.VISIBLE
+        if (inSelection) layoutSearchBar.visibility = View.GONE
         headerSelection.visibility = if (inSelection) View.VISIBLE else View.GONE
         txtSelectedCount.text = "$count đã chọn"
-        backPressedCallback.isEnabled = inSelection
+
+        val currentIds = adapter.currentList.map { it.event.id }
+        val btnSelectAll = findViewById<android.widget.ImageButton>(R.id.btnSelectAll)
+        if (currentIds.isNotEmpty() && adapter.isAllSelected(currentIds)) {
+            btnSelectAll?.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.sakura_pink))
+            btnSelectAll?.contentDescription = "Bỏ chọn tất cả"
+        } else {
+            btnSelectAll?.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.colorPrimary))
+            btnSelectAll?.contentDescription = "Chọn tất cả"
+        }
+        backPressedCallback.isEnabled = inSelection || layoutSearchBar.visibility == View.VISIBLE
     }
 
     private fun confirmDeleteSelected() {
@@ -820,3 +930,10 @@ class MainActivity : AppCompatActivity() {
         private const val PREF_RENAMED_PRESETS = "renamed_presets"
     }
 }
+
+private data class CombinedState(
+    val catItems: List<com.example.photoevents.data.CategoryItem>,
+    val sorted: List<com.example.photoevents.data.EventWithImages>,
+    val selectedCat: String,
+    val query: String
+)

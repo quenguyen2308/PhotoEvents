@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.PhotoEvents" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.PhotoEvents" parent="Base.Theme.PhotoEvents">
         <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

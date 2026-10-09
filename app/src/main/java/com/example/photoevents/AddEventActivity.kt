@@ -61,6 +61,7 @@ class AddEventActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_event)
 
+        val layoutTitle = findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.layoutTitle)
         val edtTitle = findViewById<EditText>(R.id.edtTitle)
         val edtNote = findViewById<EditText>(R.id.edtNote)
         val edtCategory = findViewById<com.google.android.material.textfield.MaterialAutoCompleteTextView>(R.id.edtCategory)
@@ -71,6 +72,16 @@ class AddEventActivity : AppCompatActivity() {
         txtPickedCount = findViewById(R.id.txtPickedCount)
         txtEventDate.text = formatDate(selectedDate)
         updatePickedCount()
+
+        edtTitle.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (!s.isNullOrBlank()) {
+                    layoutTitle?.error = null
+                }
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
 
         // Thiết lập danh mục ban đầu
         val rawExtra = intent.getStringExtra(EXTRA_CATEGORY)?.takeIf { it.isNotBlank() }
@@ -139,9 +150,11 @@ class AddEventActivity : AppCompatActivity() {
 
             val title = edtTitle.text.toString().trim()
             if (title.isEmpty()) {
-                Toast.makeText(this, "Nhập tên sự kiện", Toast.LENGTH_SHORT).show()
+                layoutTitle?.error = "Vui lòng nhập tên sự kiện"
+                edtTitle.requestFocus()
                 return@setOnClickListener
             }
+            layoutTitle?.error = null
 
             val rawCategory = edtCategory.text.toString().trim()
             val category = if (com.example.photoevents.data.CategoryHelper.isUncategorized(rawCategory)) {
@@ -152,6 +165,7 @@ class AddEventActivity : AppCompatActivity() {
 
             isSaving = true
             btnSave.isEnabled = false
+            btnSave.text = "⏳ Đang lưu sự kiện..."
 
             val event = Event(
                 title = title,
