@@ -22,23 +22,38 @@ private const val APPDATA_FOLDER = "appDataFolder"
 private const val METADATA_FILE_NAME = "metadata.json"
 const val THUMBNAIL_MAX_SIZE = 512 // px, cạnh dài nhất
 
-class DriveServiceHelper(context: Context, account: Account) {
-
+class DriveServiceHelper private constructor(
+    context: Context,
+    initializer: com.google.api.client.http.HttpRequestInitializer,
+    accountKey: String
+) {
     private val drive: Drive
-    private val prefs = context.getSharedPreferences("drive_appdata_cache_${account.name}", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("drive_appdata_cache_$accountKey", Context.MODE_PRIVATE)
 
     @Volatile
     private var cachedMetadataFileId: String? = prefs.getString("metadata_file_id", null)
 
-    init {
-        val credential = GoogleAccountCredential.usingOAuth2(
+    constructor(context: Context, account: Account) : this(
+        context = context,
+        initializer = GoogleAccountCredential.usingOAuth2(
             context, listOf(DriveScopes.DRIVE_APPDATA)
-        ).apply { selectedAccount = account }
+        ).apply { selectedAccount = account },
+        accountKey = account.name
+    )
 
+    constructor(context: Context, accessToken: String, accountKey: String = "token_account") : this(
+        context = context,
+        initializer = com.google.api.client.http.HttpRequestInitializer { request ->
+            request.headers.authorization = "Bearer $accessToken"
+        },
+        accountKey = accountKey
+    )
+
+    init {
         drive = Drive.Builder(
             NetHttpTransport(),
             GsonFactory.getDefaultInstance(),
-            credential
+            initializer
         ).setApplicationName("PhotoEvents").build()
     }
 

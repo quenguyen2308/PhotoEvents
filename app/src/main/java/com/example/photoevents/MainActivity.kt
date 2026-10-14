@@ -12,11 +12,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.activity.result.IntentSenderRequest
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.auth.api.identity.AuthorizationClient
+import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
 import com.google.android.material.button.MaterialButton
@@ -46,7 +47,6 @@ import kotlinx.coroutines.launch
  */
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var adapter: EventsAdapter
     private lateinit var categoryAdapter: com.example.photoevents.ui.CategoriesAdapter
     private lateinit var recyclerCategories: RecyclerView
@@ -69,36 +69,38 @@ class MainActivity : AppCompatActivity() {
     private var scrollToTopOnNextList = false
     private lateinit var backPressedCallback: OnBackPressedCallback
 
-    private val signInLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
+    private val authorizationLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
-        try {
-            val account = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                .getResult(ApiException::class.java)
-            if (account?.account != null) {
-                DriveSession.clearSession()
-                runSync()
-            } else {
+        if (result.resultCode == RESULT_OK) {
+            try {
+                val authResult = Identity.getAuthorizationClient(this)
+                    .getAuthorizationResultFromIntent(result.data)
+                val token = authResult.accessToken
+                val account = authResult.toGoogleSignInAccount()
+                val key = account?.email ?: account?.id ?: "authorized_account"
+                if (!token.isNullOrEmpty()) {
+                    DriveSession.setAccessToken(this, token, key)
+                    runSync()
+                } else {
+                    swipeRefresh.isRefreshing = false
+                }
+            } catch (e: Exception) {
                 swipeRefresh.isRefreshing = false
+                Toast.makeText(
+                    this,
+                    "Không thể xác thực Google Drive (${e.message}). Vẫn dùng app bình thường, chỉ không đồng bộ được.",
+                    Toast.LENGTH_LONG
+                ).show()
             }
-        } catch (e: ApiException) {
+        } else {
             swipeRefresh.isRefreshing = false
-            Toast.makeText(
-                this,
-                "Không đăng nhập được Google (mã ${e.statusCode}). Vẫn dùng app bình thường, chỉ không đồng bộ được.",
-                Toast.LENGTH_LONG
-            ).show()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
-            .build()
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
 
         adapter = EventsAdapter(
             onClick = { item ->
@@ -335,12 +337,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Release: bắt buộc đăng nhập Google ngay khi mở app (như hành vi gốc).
-        // Debug: bỏ qua — chỉ tự sync ngầm nếu máy đã từng đăng nhập sẵn, không ép đăng nhập,
+        // Debug: bỏ qua — chỉ tự sync ngầm nếu máy đã có token/phiên hợp lệ, không ép đăng nhập,
         // để chạy/test thoải mái trên máy ảo chưa cấu hình OAuth hoặc không có Play Services.
         if (BuildConfig.DEBUG) {
-            val account = GoogleSignIn.getLastSignedInAccount(this)
-            if (account?.account != null && GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_APPDATA))) {
-                runSync()
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                if (DriveSession.getHelper(this@MainActivity) != null) {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        runSync()
+                    }
+                }
             }
         } else {
             ensureSignedInThenSync()
@@ -473,21 +478,47 @@ class MainActivity : AppCompatActivity() {
 
     /** Gọi khi người dùng kéo-để-làm-mới (hoặc tự động ở bản release lúc mở app). */
     private fun ensureSignedInThenSync() {
-        val account = GoogleSignIn.getLastSignedInAccount(this)
-        if (account?.account != null && GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_APPDATA))) {
-            runSync()
-            return
-        }
-        try {
-            signInLauncher.launch(googleSignInClient.signInIntent)
-        } catch (e: ActivityNotFoundException) {
-            swipeRefresh.isRefreshing = false
-            Toast.makeText(
-                this,
-                "Máy ảo này không có Google Play Services nên không đăng nhập được. Vẫn dùng app bình thường, chỉ không đồng bộ được.",
-                Toast.LENGTH_LONG
-            ).show()
-        }
+        val authClient = Identity.getAuthorizationClient(this)
+        val authRequest = AuthorizationRequest.builder()
+            .setRequestedScopes(listOf(Scope(DriveScopes.DRIVE_APPDATA)))
+            .build()
+
+        authClient.authorize(authRequest)
+            .addOnSuccessListener { authResult ->
+                if (authResult.hasResolution()) {
+                    val pendingIntent = authResult.pendingIntent
+                    if (pendingIntent != null) {
+                        val intentSenderRequest = IntentSenderRequest.Builder(pendingIntent.intentSender).build()
+                        try {
+                            authorizationLauncher.launch(intentSenderRequest)
+                        } catch (e: Exception) {
+                            swipeRefresh.isRefreshing = false
+                            Toast.makeText(this, "Không thể mở hộp thoại ủy quyền: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        swipeRefresh.isRefreshing = false
+                    }
+                } else {
+                    val token = authResult.accessToken
+                    val account = authResult.toGoogleSignInAccount()
+                    val key = account?.email ?: account?.id ?: "authorized_account"
+                    if (!token.isNullOrEmpty()) {
+                        DriveSession.setAccessToken(this, token, key)
+                        runSync()
+                    } else {
+                        swipeRefresh.isRefreshing = false
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                swipeRefresh.isRefreshing = false
+                val msg = if (e is ApiException) "mã ${e.statusCode}" else e.message
+                Toast.makeText(
+                    this,
+                    "Không thể kết nối Google Drive ($msg). Vẫn dùng app bình thường, chỉ không đồng bộ được.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
     }
 
     private fun runSync() {
