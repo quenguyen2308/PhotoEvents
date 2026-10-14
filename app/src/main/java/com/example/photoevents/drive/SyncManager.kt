@@ -2,7 +2,11 @@ package com.example.photoevents.drive
 
 import android.content.Context
 import android.net.Uri
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
 import com.google.gson.annotations.Expose
 import com.example.photoevents.data.AppDatabase
 import com.example.photoevents.data.Event
@@ -16,6 +20,76 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.lang.reflect.Type
+import java.util.UUID
+
+/**
+ * Custom Deserializer cho EventImage khi tải từ Drive về:
+ * - Nếu updatedAt thiếu trong JSON, lấy createdAt (hoặc 0L), TUYỆT ĐỐI KHÔNG để Gson tự gọi System.currentTimeMillis()
+ *   làm updatedAt trên remote thành thời điểm tải về, dẫn tới đè mất toạ độ focus/dữ liệu vừa chỉnh ở local.
+ * - focusZoom thiếu hoặc <= 0 sẽ fallback về 1.0f.
+ */
+internal class EventImageDeserializer : JsonDeserializer<EventImage> {
+    override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): EventImage {
+        val obj = json.asJsonObject
+        val id = obj.get("id")?.takeIf { !it.isJsonNull }?.asString ?: UUID.randomUUID().toString()
+        val eventId = obj.get("eventId")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
+        val driveFileId = obj.get("driveFileId")?.takeIf { !it.isJsonNull }?.asString
+        val driveThumbnailLink = obj.get("driveThumbnailLink")?.takeIf { !it.isJsonNull }?.asString
+        val position = obj.get("position")?.takeIf { !it.isJsonNull }?.asInt ?: 0
+        val focusX = obj.get("focusX")?.takeIf { !it.isJsonNull }?.asFloat ?: 0.5f
+        val focusY = obj.get("focusY")?.takeIf { !it.isJsonNull }?.asFloat ?: 0.25f
+        val focusZoom = obj.get("focusZoom")?.takeIf { !it.isJsonNull }?.asFloat?.takeIf { it > 0.05f } ?: 1.0f
+        val createdAt = obj.get("createdAt")?.takeIf { !it.isJsonNull }?.asLong ?: 0L
+        val updatedAt = obj.get("updatedAt")?.takeIf { !it.isJsonNull }?.asLong ?: createdAt
+        val deleted = obj.get("deleted")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+        return EventImage(
+            id = id,
+            eventId = eventId,
+            driveFileId = driveFileId,
+            driveThumbnailLink = driveThumbnailLink,
+            localImagePath = null,
+            position = position,
+            focusX = focusX,
+            focusY = focusY,
+            focusZoom = focusZoom,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deleted = deleted
+        )
+    }
+}
+
+/**
+ * Custom Deserializer cho Event khi tải từ Drive về:
+ * - Bảo đảm updatedAt không bị gán thành thời điểm tải về nếu thiếu trong JSON.
+ */
+internal class EventDeserializer : JsonDeserializer<Event> {
+    override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): Event {
+        val obj = json.asJsonObject
+        val id = obj.get("id")?.takeIf { !it.isJsonNull }?.asString ?: UUID.randomUUID().toString()
+        val title = obj.get("title")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
+        val note = obj.get("note")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
+        val createdAt = obj.get("createdAt")?.takeIf { !it.isJsonNull }?.asLong ?: 0L
+        val updatedAt = obj.get("updatedAt")?.takeIf { !it.isJsonNull }?.asLong ?: createdAt
+        val coverImageId = obj.get("coverImageId")?.takeIf { !it.isJsonNull }?.asString
+        val eventDate = obj.get("eventDate")?.takeIf { !it.isJsonNull }?.asLong
+            ?: com.example.photoevents.data.normalizeToMidnight(System.currentTimeMillis())
+        val deleted = obj.get("deleted")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+        val category = obj.get("category")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
+        return Event(
+            id = id,
+            title = title,
+            note = note,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            coverImageId = coverImageId,
+            eventDate = eventDate,
+            deleted = deleted,
+            category = category
+        )
+    }
+}
 
 /** Toàn bộ nội dung ghi vào metadata.json trên Drive: danh sách sự kiện + danh sách ảnh + danh sách danh mục. */
 private data class SyncPayload(
@@ -39,7 +113,7 @@ data class SyncResult(val downloadFailed: Int = 0, val firstError: String? = nul
  */
 class SyncManager(private val context: Context, private val drive: DriveServiceHelper) {
 
-    private val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
+    private val gson = buildGson()
     private val eventDao = AppDatabase.get(context).eventDao()
     private val imageDao = AppDatabase.get(context).eventImageDao()
 
@@ -141,9 +215,13 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
             } else ev
         }
 
+        // Đối chiếu với Room trước khi cập nhật ban đầu để bảo vệ các thay đổi người dùng vừa thao tác
+        val reconciledEvents = reconcileEventsWithFreshRoom(sanitizedEvents)
+        val reconciledImages = reconcileImagesWithFreshRoom(mergedImages)
+
         // Cập nhật Room với dữ liệu đã merge và dọn sạch
-        eventDao.upsertAll(sanitizedEvents)
-        imageDao.upsertAll(mergedImages)
+        eventDao.upsertAll(reconciledEvents)
+        imageDao.upsertAll(reconciledImages)
 
         // Lưu CategoryRecords vào SharedPreferences local
         com.example.photoevents.data.CategoryHelper.saveCategoryRecords(
@@ -157,7 +235,7 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
             .map { it.name }
 
         // 1) Xoá file Drive cho ảnh đã bị đánh dấu deleted nhưng vẫn còn driveFileId (chạy song song)
-        val imagesToDeleteOnDrive = mergedImages.filter { it.deleted && it.driveFileId != null }
+        val imagesToDeleteOnDrive = reconciledImages.filter { it.deleted && it.driveFileId != null }
         if (imagesToDeleteOnDrive.isNotEmpty()) {
             coroutineScope {
                 imagesToDeleteOnDrive.map { image ->
@@ -167,7 +245,7 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
                 }.awaitAll()
             }
         }
-        val afterRemoteDelete = mergedImages.map { image ->
+        val afterRemoteDelete = reconciledImages.map { image ->
             if (image.deleted && image.driveFileId != null) {
                 image.copy(driveFileId = null, driveThumbnailLink = null)
             } else image
@@ -236,15 +314,17 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
             } else image
         }
 
-        // Ghi lại Room nếu có ảnh vừa upload hoặc download thành công
-        if (imagesToUpload.isNotEmpty() || downloadResults.isNotEmpty() || imagesToDeleteOnDrive.isNotEmpty()) {
-            imageDao.upsertAll(afterDownload)
-        }
+        // Ghi lại Room: Luôn đối chiếu lần cuối với dữ liệu Room mới nhất để không ghi đè thay đổi vừa diễn ra trong lúc sync chạy ngầm
+        val finalImages = reconcileImagesWithFreshRoom(afterDownload)
+        val finalEvents = reconcileEventsWithFreshRoom(reconciledEvents)
+
+        imageDao.upsertAll(finalImages)
+        eventDao.upsertAll(finalEvents)
 
         // 4) Chỉ tải lên metadata.json nếu thực sự có thay đổi so với remote
         val newPayload = SyncPayload(
-            events = sanitizedEvents,
-            images = afterDownload,
+            events = finalEvents,
+            images = finalImages,
             categories = activeCategories,
             categoryRecords = finalCategoryRecords
         )
@@ -261,7 +341,62 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
         return SyncResult(downloadFailed, firstError)
     }
 
-    private fun <T> mergeById(local: List<T>, remote: List<T>, idOf: (T) -> String): List<T>
+    /**
+     * Đối chiếu danh sách ảnh đang xử lý trong bộ nhớ với dữ liệu thực tế mới nhất trong Room.
+     * Nếu người dùng vừa chỉnh sửa ảnh (tiêu điểm, sắp xếp, xoá...) trong lúc sync đang chạy ngầm,
+     * giữ lại 100% thay đổi mới nhất từ Room để không bị ghi đè dữ liệu cũ.
+     */
+    internal suspend fun reconcileImagesWithFreshRoom(
+        inMemoryImages: List<EventImage>
+    ): List<EventImage> {
+        val freshLocal = imageDao.getAllIncludingDeleted().associateBy { it.id }
+        val reconciled = inMemoryImages.map { inMem ->
+            val fresh = freshLocal[inMem.id]
+            if (fresh != null && fresh.updatedAt >= inMem.updatedAt) {
+                fresh.copy(
+                    driveFileId = fresh.driveFileId ?: inMem.driveFileId,
+                    driveThumbnailLink = fresh.driveThumbnailLink ?: inMem.driveThumbnailLink,
+                    localImagePath = fresh.localImagePath ?: inMem.localImagePath
+                )
+            } else if (fresh != null) {
+                inMem.copy(
+                    localImagePath = inMem.localImagePath ?: fresh.localImagePath,
+                    driveFileId = inMem.driveFileId ?: fresh.driveFileId,
+                    driveThumbnailLink = inMem.driveThumbnailLink ?: fresh.driveThumbnailLink
+                )
+            } else inMem
+        }.toMutableList()
+
+        val existingIds = inMemoryImages.map { it.id }.toSet()
+        for ((id, fresh) in freshLocal) {
+            if (!existingIds.contains(id)) {
+                reconciled.add(fresh)
+            }
+        }
+        return reconciled
+    }
+
+    internal suspend fun reconcileEventsWithFreshRoom(
+        inMemoryEvents: List<Event>
+    ): List<Event> {
+        val freshLocal = eventDao.getAllIncludingDeleted().associateBy { it.id }
+        val reconciled = inMemoryEvents.map { inMem ->
+            val fresh = freshLocal[inMem.id]
+            if (fresh != null && fresh.updatedAt >= inMem.updatedAt) {
+                fresh
+            } else inMem
+        }.toMutableList()
+
+        val existingIds = inMemoryEvents.map { it.id }.toSet()
+        for ((id, fresh) in freshLocal) {
+            if (!existingIds.contains(id)) {
+                reconciled.add(fresh)
+            }
+        }
+        return reconciled
+    }
+
+    internal fun <T> mergeById(local: List<T>, remote: List<T>, idOf: (T) -> String): List<T>
             where T : Any {
         val updatedAtOf: (T) -> Long = { item ->
             when (item) {
@@ -280,8 +415,19 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
                         item.driveFileId = existing.driveFileId
                         item.driveThumbnailLink = existing.driveThumbnailLink
                     }
+                    if (item.localImagePath == null && existing.localImagePath != null) {
+                        item.localImagePath = existing.localImagePath
+                    }
                 }
                 byId[idOf(item)] = item
+            } else {
+                if (item is EventImage && existing is EventImage) {
+                    // Kể cả khi remote thắng (updatedAt mới hơn), đường dẫn file local của máy này
+                    // KHÔNG BAO GIỜ được ghi đè thành null vì remote không lưu localImagePath.
+                    if (existing.localImagePath == null && item.localImagePath != null) {
+                        existing.localImagePath = item.localImagePath
+                    }
+                }
             }
         }
         return byId.values.toList()
@@ -290,5 +436,11 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
     companion object {
         private val syncMutex = Mutex()
         private const val PREF_MIGRATED_TO_APPDATA = "migrated_to_appdata_v1"
+
+        fun buildGson(): Gson = GsonBuilder()
+            .excludeFieldsWithoutExposeAnnotation()
+            .registerTypeAdapter(EventImage::class.java, EventImageDeserializer())
+            .registerTypeAdapter(Event::class.java, EventDeserializer())
+            .create()
     }
 }

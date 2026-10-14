@@ -20,7 +20,8 @@ import java.security.MessageDigest
  */
 class FocusCropTransformation(
     val focusX: Float = 0.5f,
-    val focusY: Float = 0.25f
+    val focusY: Float = 0.25f,
+    val focusZoom: Float = 1.0f
 ) : BitmapTransformation() {
 
     override fun transform(
@@ -29,44 +30,55 @@ class FocusCropTransformation(
         outWidth: Int,
         outHeight: Int
     ): Bitmap {
-        if (toTransform.width == outWidth && toTransform.height == outHeight) {
+        if (outWidth <= 0 || outHeight <= 0) {
             return toTransform
         }
 
-        val scaleX = outWidth.toFloat() / toTransform.width
-        val scaleY = outHeight.toFloat() / toTransform.height
-        val scale = maxOf(scaleX, scaleY)
+        if (toTransform.width == outWidth && toTransform.height == outHeight && focusZoom == 1.0f) {
+            return toTransform
+        }
+
+        val baseScaleX = outWidth.toFloat() / toTransform.width
+        val baseScaleY = outHeight.toFloat() / toTransform.height
+        val baseScale = maxOf(baseScaleX, baseScaleY)
+        val zoom = focusZoom.coerceIn(0.05f, 10.0f)
+        val scale = baseScale * zoom
 
         val scaledWidth = scale * toTransform.width
         val scaledHeight = scale * toTransform.height
 
-        val clampedFocusX = focusX.coerceIn(0f, 1f)
-        val clampedFocusY = focusY.coerceIn(0f, 1f)
+        val slackX = scaledWidth - outWidth
+        val slackY = scaledHeight - outHeight
 
-        // Dịch chuyển ngang dựa theo focusX khi ảnh rộng hơn khung nhìn
-        val dx = if (scaledWidth > outWidth) {
-            (outWidth - scaledWidth) * clampedFocusX
+        // Luôn giới hạn focusX và focusY trong [0.0f, 1.0f] để đảm bảo vùng crop luôn nằm trọn vẹn trong ảnh,
+        // tuyệt đối không bị trượt ra ngoài làm mất đầu hoặc lộ khoảng trống.
+        val clampedFocusX = focusX.coerceIn(0.0f, 1.0f)
+        val clampedFocusY = focusY.coerceIn(0.0f, 1.0f)
+
+        // Dịch chuyển ngang: khi ảnh rộng hơn khung (slackX > 0), dịch theo focusX;
+        // khi ảnh vừa khít hoặc hẹp hơn (slackX <= 0), căn giữa tuyệt đối không để lộ khoảng trống.
+        val dx = if (slackX > 0f) {
+            -clampedFocusX * slackX
         } else {
             (outWidth - scaledWidth) * 0.5f
         }
 
-        // Dịch chuyển dọc dựa theo focusY khi ảnh cao hơn khung nhìn
-        val dy = if (scaledHeight > outHeight) {
-            (outHeight - scaledHeight) * clampedFocusY
+        // Dịch chuyển dọc: khi ảnh cao hơn khung (slackY > 0), dịch theo focusY;
+        // khi ảnh vừa khít hoặc thấp hơn (slackY <= 0), căn giữa tuyệt đối không để lộ khoảng trống.
+        val dy = if (slackY > 0f) {
+            -clampedFocusY * slackY
         } else {
             (outHeight - scaledHeight) * 0.5f
         }
 
-        val config = toTransform.config
-        val result = pool.get(outWidth, outHeight, config)
+        val config: Bitmap.Config? = toTransform.config
+        val safeConfig = if (config == null || config == Bitmap.Config.HARDWARE) Bitmap.Config.ARGB_8888 else config
+        val result = pool.get(outWidth, outHeight, safeConfig)
 
-        if (toTransform.hasAlpha()) {
-            result.setHasAlpha(true)
-            val clearCanvas = Canvas(result)
-            clearCanvas.drawColor(android.graphics.Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-        }
-
+        result.setHasAlpha(true)
         val canvas = Canvas(result)
+        canvas.drawColor(android.graphics.Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+
         val matrix = Matrix().apply {
             setScale(scale, scale)
             postTranslate(dx, dy)
@@ -79,13 +91,13 @@ class FocusCropTransformation(
 
     override fun updateDiskCacheKey(messageDigest: MessageDigest) {
         messageDigest.update(ID_BYTES)
-        val byteBuffer = ByteBuffer.allocate(8).putFloat(focusX).putFloat(focusY)
+        val byteBuffer = ByteBuffer.allocate(12).putFloat(focusX.coerceIn(0.0f, 1.0f)).putFloat(focusY.coerceIn(0.0f, 1.0f)).putFloat(focusZoom)
         messageDigest.update(byteBuffer.array())
     }
 
     override fun equals(other: Any?): Boolean {
         if (other is FocusCropTransformation) {
-            return focusX == other.focusX && focusY == other.focusY
+            return focusX == other.focusX && focusY == other.focusY && focusZoom == other.focusZoom
         }
         return false
     }
@@ -94,11 +106,12 @@ class FocusCropTransformation(
         var result = ID.hashCode()
         result = 31 * result + focusX.hashCode()
         result = 31 * result + focusY.hashCode()
+        result = 31 * result + focusZoom.hashCode()
         return result
     }
 
     companion object {
-        private const val ID = "com.example.photoevents.ui.FocusCropTransformation"
+        private const val ID = "com.example.photoevents.ui.FocusCropTransformation.v7"
         private val ID_BYTES = ID.toByteArray(Charsets.UTF_8)
     }
 }

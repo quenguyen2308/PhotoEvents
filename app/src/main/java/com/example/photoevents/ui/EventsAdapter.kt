@@ -36,7 +36,7 @@ import java.util.Locale
 class EventsAdapter(
     private val onClick: (EventWithImages) -> Unit,
     private val onSelectionChanged: (count: Int) -> Unit,
-    private val onAdjustFocus: ((EventImage, Float) -> Unit)? = null
+    private val onAdjustFocus: ((event: com.example.photoevents.data.Event, image: EventImage, aspectRatio: Float, isCover: Boolean) -> Unit)? = null
 ) : ListAdapter<EventWithImages, EventsAdapter.VH>(DIFF) {
 
     private val expandedIds = mutableSetOf<String>()
@@ -147,17 +147,27 @@ class EventsAdapter(
         // Lưới Bento Mosaic: ảnh đại diện cover bên trái, các ảnh phụ bên phải
         val cover = item.coverImage
         val otherImages = images.filter { it.id != cover?.id }
-        val radius = 20 * holder.itemView.resources.displayMetrics.density
+        val displayMetrics = holder.itemView.context.resources.displayMetrics
+        val density = displayMetrics.density
+        val radius = 20 * density
+
+        val cardWidth = if (holder.itemView.width > 0) {
+            holder.itemView.width
+        } else {
+            displayMetrics.widthPixels - (32 * density).toInt()
+        }
+        val containerHeight = (215 * density).toInt()
+        val gap = (3 * density).toInt()
+
+        val (mainTargetWidth, mainTargetHeight) = if (otherImages.isNotEmpty()) {
+            val availWidth = (cardWidth - gap).coerceAtLeast(10)
+            val w = (availWidth * 0.6f).toInt()
+            w to containerHeight
+        } else {
+            cardWidth to containerHeight
+        }
 
         if (cover != null) {
-            ImageViewCompat.setImageTintList(holder.img, null)
-            holder.img.scaleType = ImageView.ScaleType.CENTER_CROP
-            val src: Any? = cover.localImagePath ?: cover.driveThumbnailLink
-            Glide.with(holder.img)
-                .load(src)
-                .transform(FocusCropTransformation(cover.focusX, cover.focusY))
-                .into(holder.img)
-
             if (otherImages.isNotEmpty()) {
                 // Có từ 2 ảnh trở lên: Kích hoạt Bento Mosaic
                 holder.img.shapeAppearanceModel = holder.img.shapeAppearanceModel.toBuilder()
@@ -171,22 +181,8 @@ class EventsAdapter(
 
                 holder.layoutSubImages.visibility = View.VISIBLE
 
-                val sub1 = otherImages[0]
-                val srcSub1: Any? = sub1.localImagePath ?: sub1.driveThumbnailLink
-                Glide.with(holder.imgSub1)
-                    .load(srcSub1)
-                    .transform(FocusCropTransformation(sub1.focusX, sub1.focusY))
-                    .into(holder.imgSub1)
-
                 if (otherImages.size >= 2) {
                     holder.frameSub2.visibility = View.VISIBLE
-                    val sub2 = otherImages[1]
-                    val srcSub2: Any? = sub2.localImagePath ?: sub2.driveThumbnailLink
-                    Glide.with(holder.imgSub2)
-                        .load(srcSub2)
-                        .transform(FocusCropTransformation(sub2.focusX, sub2.focusY))
-                        .into(holder.imgSub2)
-
                     val moreCount = images.size - 3
                     if (moreCount > 0) {
                         holder.txtMoreOverlay.visibility = View.VISIBLE
@@ -215,22 +211,59 @@ class EventsAdapter(
                 Glide.with(holder.imgSub2).clear(holder.imgSub2)
             }
 
+            ImageViewCompat.setImageTintList(holder.img, null)
+            holder.img.scaleType = ImageView.ScaleType.CENTER_CROP
+            val src: Any? = cover.localImagePath ?: cover.driveThumbnailLink
+            Glide.with(holder.img)
+                .load(src)
+                .override(mainTargetWidth, mainTargetHeight)
+                .transform(FocusCropTransformation(cover.focusX, cover.focusY, cover.focusZoom))
+                .into(holder.img)
+
+            if (otherImages.isNotEmpty()) {
+                val availWidth = (cardWidth - gap).coerceAtLeast(10)
+                val subWidth = availWidth - mainTargetWidth
+                val hasTwoSubs = otherImages.size >= 2
+                val sub1Height = if (hasTwoSubs) (containerHeight - gap) / 2 else containerHeight
+                val sub2Height = if (hasTwoSubs) containerHeight - gap - sub1Height else 0
+
+                val sub1 = otherImages[0]
+                val srcSub1: Any? = sub1.localImagePath ?: sub1.driveThumbnailLink
+                holder.imgSub1.scaleType = ImageView.ScaleType.CENTER_CROP
+                Glide.with(holder.imgSub1)
+                    .load(srcSub1)
+                    .override(subWidth, sub1Height)
+                    .transform(FocusCropTransformation(sub1.focusX, sub1.focusY, sub1.focusZoom))
+                    .into(holder.imgSub1)
+
+                if (otherImages.size >= 2) {
+                    val sub2 = otherImages[1]
+                    val srcSub2: Any? = sub2.localImagePath ?: sub2.driveThumbnailLink
+                    holder.imgSub2.scaleType = ImageView.ScaleType.CENTER_CROP
+                    Glide.with(holder.imgSub2)
+                        .load(srcSub2)
+                        .override(subWidth, sub2Height)
+                        .transform(FocusCropTransformation(sub2.focusX, sub2.focusY, sub2.focusZoom))
+                        .into(holder.imgSub2)
+                }
+            }
+
             // Cho phép chỉnh tiêu điểm nhanh trực tiếp bằng cách nhấn giữ vào ảnh trên Bento
             holder.img.setOnLongClickListener {
                 if (!selectionMode) {
-                    onAdjustFocus?.invoke(cover, if (otherImages.isNotEmpty()) 1.0f else 1.6f)
+                    onAdjustFocus?.invoke(event, cover, if (otherImages.isNotEmpty()) 1.0f else 1.6f, true)
                     true
                 } else false
             }
             holder.imgSub1.setOnLongClickListener {
                 if (!selectionMode && otherImages.isNotEmpty()) {
-                    onAdjustFocus?.invoke(otherImages[0], if (otherImages.size >= 2) 1.33f else 0.67f)
+                    onAdjustFocus?.invoke(event, otherImages[0], if (otherImages.size >= 2) 1.33f else 0.67f, false)
                     true
                 } else false
             }
             holder.imgSub2.setOnLongClickListener {
                 if (!selectionMode && otherImages.size >= 2) {
-                    onAdjustFocus?.invoke(otherImages[1], 1.33f)
+                    onAdjustFocus?.invoke(event, otherImages[1], 1.33f, false)
                     true
                 } else false
             }
@@ -240,7 +273,7 @@ class EventsAdapter(
                 holder.btnAdjustFocus.visibility = View.VISIBLE
                 holder.btnAdjustFocus.setOnClickListener {
                     if (otherImages.isEmpty()) {
-                        onAdjustFocus?.invoke(cover, 1.6f)
+                        onAdjustFocus?.invoke(event, cover, 1.6f, true)
                     } else {
                         val popup = androidx.appcompat.widget.PopupMenu(holder.itemView.context, holder.btnAdjustFocus)
                         popup.menu.add(0, 0, 0, "🌸 Chỉnh ảnh đại diện (khung vuông)")
@@ -250,9 +283,9 @@ class EventsAdapter(
                         }
                         popup.setOnMenuItemClickListener { menuItem ->
                             when (menuItem.itemId) {
-                                0 -> onAdjustFocus?.invoke(cover, 1.0f)
-                                1 -> onAdjustFocus?.invoke(otherImages[0], if (otherImages.size >= 2) 1.33f else 0.67f)
-                                2 -> if (otherImages.size >= 2) onAdjustFocus?.invoke(otherImages[1], 1.33f)
+                                0 -> onAdjustFocus?.invoke(event, cover, 1.0f, true)
+                                1 -> onAdjustFocus?.invoke(event, otherImages[0], if (otherImages.size >= 2) 1.33f else 0.67f, false)
+                                2 -> if (otherImages.size >= 2) onAdjustFocus?.invoke(event, otherImages[1], 1.33f, false)
                             }
                             true
                         }
@@ -356,7 +389,7 @@ class EventsAdapter(
             Glide.with(context)
                 .load(src)
                 .placeholder(R.drawable.ic_image)
-                .transform(FocusCropTransformation(image.focusX, image.focusY))
+                .transform(FocusCropTransformation(image.focusX, image.focusY, image.focusZoom))
                 .into(iv)
             iv.setOnClickListener {
                 val item = getItem(holder.bindingAdapterPosition)
@@ -365,7 +398,9 @@ class EventsAdapter(
                     image = image,
                     isCover = image.id == item?.coverImage?.id,
                     indexText = item?.event?.title ?: "",
-                    onAdjustFocus = { img -> onAdjustFocus?.invoke(img, 1.0f) }
+                    onAdjustFocus = { img ->
+                        item?.let { onAdjustFocus?.invoke(it.event, img, 1.0f, img.id == it.coverImage?.id) }
+                    }
                 )
             }
             holder.imagesStrip.addView(iv)

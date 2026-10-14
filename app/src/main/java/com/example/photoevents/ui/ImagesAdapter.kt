@@ -77,9 +77,10 @@ class ImagesAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val image = items[position]
         val src: Any? = image.localImagePath ?: image.driveThumbnailLink
+        holder.img.scaleType = ImageView.ScaleType.CENTER_CROP
         Glide.with(holder.img)
             .load(src)
-            .transform(FocusCropTransformation(image.focusX, image.focusY))
+            .transform(FocusCropTransformation(image.focusX, image.focusY, image.focusZoom))
             .into(holder.img)
 
         val isCover = image.id == coverImageId

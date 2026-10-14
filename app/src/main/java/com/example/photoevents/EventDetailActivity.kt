@@ -479,10 +479,20 @@ class EventDetailActivity : AppCompatActivity() {
             supportFragmentManager,
             image,
             aspectRatio
-        ) { newFocusX, newFocusY ->
+        ) { newFocusX, newFocusY, newFocusZoom ->
             lifecycleScope.launch {
                 val db = AppDatabase.get(this@EventDetailActivity)
-                db.eventImageDao().updateFocus(image.id, newFocusX, newFocusY)
+                val currentImage = db.eventImageDao().getById(image.id)
+                val currentEvent = db.eventDao().getById(eventId)
+                val now = maxOf(
+                    System.currentTimeMillis(),
+                    (currentImage?.updatedAt ?: image.updatedAt) + 1L,
+                    (currentEvent?.updatedAt ?: 0L) + 1L
+                )
+                db.eventImageDao().updateFocus(image.id, newFocusX, newFocusY, newFocusZoom, now)
+                if (isCover && currentEvent?.coverImageId != image.id) {
+                    db.eventDao().setCover(eventId, image.id, now)
+                }
                 triggerSync()
             }
         }

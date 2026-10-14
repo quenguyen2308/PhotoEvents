@@ -38,6 +38,7 @@ data class EventImage(
     @Expose var position: Int = 0,
     @Expose var focusX: Float = 0.5f,
     @Expose var focusY: Float = 0.25f,
+    @Expose var focusZoom: Float = 1.0f,
     @Expose var createdAt: Long = System.currentTimeMillis(),
     @Expose var updatedAt: Long = System.currentTimeMillis(),
     @Expose var deleted: Boolean = false

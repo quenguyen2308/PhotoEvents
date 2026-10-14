@@ -108,15 +108,25 @@ class MainActivity : AppCompatActivity() {
                 )
             },
             onSelectionChanged = { count -> updateSelectionHeader(count) },
-            onAdjustFocus = { image, aspectRatio ->
+            onAdjustFocus = { event, image, aspectRatio, isCover ->
                 FocusAdjustBottomSheet.show(
                     supportFragmentManager,
                     image,
                     aspectRatio
-                ) { newFocusX, newFocusY ->
+                ) { newFocusX, newFocusY, newFocusZoom ->
                     lifecycleScope.launch {
                         val db = AppDatabase.get(this@MainActivity)
-                        db.eventImageDao().updateFocus(image.id, newFocusX, newFocusY)
+                        val currentImage = db.eventImageDao().getById(image.id)
+                        val currentEvent = db.eventDao().getById(event.id)
+                        val now = maxOf(
+                            System.currentTimeMillis(),
+                            (currentImage?.updatedAt ?: image.updatedAt) + 1L,
+                            (currentEvent?.updatedAt ?: event.updatedAt) + 1L
+                        )
+                        db.eventImageDao().updateFocus(image.id, newFocusX, newFocusY, newFocusZoom, now)
+                        if (isCover && currentEvent?.coverImageId != image.id) {
+                            db.eventDao().setCover(event.id, image.id, now)
+                        }
                         runSync()
                     }
                 }
