@@ -130,10 +130,23 @@ class FocusAdjustBottomSheet : BottomSheetDialogFragment() {
             if (!skipSlider && !sliderZoom.isPressed) {
                 val minZ = focusView.getMinZoom()
                 val maxZ = focusView.maxZoom
-                val fromVal = minOf(0.4f, minZ)
-                sliderZoom.valueFrom = fromVal
-                sliderZoom.valueTo = maxZ
-                sliderZoom.value = focusView.zoom.coerceIn(fromVal, maxZ)
+                val fromVal = minOf(0.3f, minZ)
+                val toVal = maxOf(fromVal + 0.1f, maxZ)
+                try {
+                    sliderZoom.stepSize = 0f
+                    // Đặt value trong khoảng hiện tại trước khi cập nhật valueFrom/valueTo để tránh out of bounds
+                    val clampedValue = focusView.zoom.coerceIn(fromVal, toVal)
+                    if (fromVal < sliderZoom.valueTo) {
+                        sliderZoom.valueFrom = fromVal
+                        sliderZoom.valueTo = toVal
+                    } else {
+                        sliderZoom.valueTo = toVal
+                        sliderZoom.valueFrom = fromVal
+                    }
+                    sliderZoom.value = clampedValue
+                } catch (e: Exception) {
+                    // Tránh crash nếu slider đang trong trạng thái tính toán layout
+                }
             }
         }
 

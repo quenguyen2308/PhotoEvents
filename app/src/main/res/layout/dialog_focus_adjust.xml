@@ -175,10 +175,9 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginHorizontal="4dp"
-                    android:valueFrom="0.5"
-                    android:valueTo="3.0"
-                    android:value="1.0"
-                    android:stepSize="0.02" />
+                    android:valueFrom="0.3"
+                    android:valueTo="4.0"
+                    android:value="1.0" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnZoomIn"
