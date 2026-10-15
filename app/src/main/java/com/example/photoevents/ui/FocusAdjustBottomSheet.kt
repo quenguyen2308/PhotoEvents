@@ -1,12 +1,12 @@
 package com.example.photoevents.ui
 
+import android.app.Dialog
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -16,16 +16,32 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.transition.Transition
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.slider.Slider
 import com.example.photoevents.R
 import com.example.photoevents.data.EventImage
 
 class FocusAdjustBottomSheet : BottomSheetDialogFragment() {
 
     private var onSavedListener: ((Float, Float, Float) -> Unit)? = null
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
+        dialog.setOnShowListener {
+            val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            if (bottomSheet != null) {
+                val behavior = BottomSheetBehavior.from(bottomSheet)
+                behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                behavior.skipCollapsed = true
+            }
+        }
+        return dialog
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,25 +55,33 @@ class FocusAdjustBottomSheet : BottomSheetDialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val focusView = view.findViewById<FocusAdjustView>(R.id.focusAdjustView)
+        val btnClose = view.findViewById<MaterialButton>(R.id.btnClose)
+
         val chipGroupRatio = view.findViewById<ChipGroup>(R.id.chipGroupRatio)
         val chipRatioSquare = view.findViewById<Chip>(R.id.chipRatioSquare)
         val chipRatioSub = view.findViewById<Chip>(R.id.chipRatioSub)
+        val chipRatioPortrait = view.findViewById<Chip>(R.id.chipRatioPortrait)
         val chipRatioWide = view.findViewById<Chip>(R.id.chipRatioWide)
 
         val btnZoomOut = view.findViewById<MaterialButton>(R.id.btnZoomOut)
+        val sliderZoom = view.findViewById<Slider>(R.id.sliderZoom)
         val btnZoomIn = view.findViewById<MaterialButton>(R.id.btnZoomIn)
         val txtZoomLevel = view.findViewById<TextView>(R.id.txtZoomLevel)
+
         val btnResetZoom = view.findViewById<MaterialButton>(R.id.btnResetZoom)
         val btnFullSide = view.findViewById<MaterialButton>(R.id.btnFullSide)
+        val btnTogglePreview = view.findViewById<MaterialButton>(R.id.btnTogglePreview)
 
-        val btnPresetTop = view.findViewById<Button>(R.id.btnPresetTop)
-        val btnPresetCenter = view.findViewById<Button>(R.id.btnPresetCenter)
-        val btnPresetBottom = view.findViewById<Button>(R.id.btnPresetBottom)
-        val btnCancel = view.findViewById<Button>(R.id.btnCancel)
-        val btnSave = view.findViewById<Button>(R.id.btnSave)
-        val btnSaveHeader = view.findViewById<Button>(R.id.btnSaveHeader)
+        val btnPresetFace = view.findViewById<MaterialButton>(R.id.btnPresetFace)
+        val btnPresetCenter = view.findViewById<MaterialButton>(R.id.btnPresetCenter)
+        val btnPresetLeft = view.findViewById<MaterialButton>(R.id.btnPresetLeft)
+        val btnPresetRight = view.findViewById<MaterialButton>(R.id.btnPresetRight)
+        val btnPresetBottom = view.findViewById<MaterialButton>(R.id.btnPresetBottom)
 
-        // Tự động đẩy nội dung lên trên thanh điều hướng hệ thống (Navigation bar) của Android
+        val btnResetAll = view.findViewById<MaterialButton>(R.id.btnResetAll)
+        val btnSave = view.findViewById<MaterialButton>(R.id.btnSave)
+
+        // Đẩy nội dung lên trên thanh điều hướng hệ thống (Navigation bar) của Android
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
             val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
             val basePadding = (16 * resources.displayMetrics.density).toInt()
@@ -71,59 +95,62 @@ class FocusAdjustBottomSheet : BottomSheetDialogFragment() {
         val initZoom = arguments?.getFloat(ARG_ZOOM, 1.0f) ?: 1.0f
         val aspectRatio = arguments?.getFloat(ARG_ASPECT_RATIO, 1.0f) ?: 1.0f
 
-        // Đặt tỷ lệ ban đầu
+        // Đặt tỷ lệ ban đầu chuẩn xác theo layout Bento
         focusView.targetAspectRatio = aspectRatio
 
-        // Chọn chip tương ứng
+        // Chọn chip tương ứng với layout của ảnh trên Bento
         when {
             aspectRatio in 0.85f..1.15f -> chipRatioSquare.isChecked = true
             aspectRatio in 1.16f..1.45f -> chipRatioSub.isChecked = true
+            aspectRatio < 0.85f -> chipRatioPortrait.isChecked = true
             aspectRatio > 1.45f -> chipRatioWide.isChecked = true
             else -> chipRatioSquare.isChecked = true
         }
 
-        fun updateZoomUi() {
+        fun updatePreviewButtonUi() {
+            if (focusView.isPreviewMode) {
+                btnTogglePreview.text = "Chỉnh sửa"
+                btnTogglePreview.setIconResource(R.drawable.ic_crop)
+            } else {
+                btnTogglePreview.text = "Xem trước"
+                btnTogglePreview.setIconResource(R.drawable.ic_visibility)
+            }
+        }
+
+        fun updateZoomUi(skipSlider: Boolean = false) {
             val percent = (focusView.zoom * 100).toInt()
             if (focusView.isFullSide()) {
-                txtZoomLevel.text = "Full"
+                txtZoomLevel.text = "Toàn ảnh"
                 btnFullSide.text = "Cắt khung"
             } else {
                 txtZoomLevel.text = "$percent%"
                 btnFullSide.text = "Toàn ảnh"
             }
-        }
 
-        fun updatePresetButtons() {
-            val hasH = focusView.hasHorizontalSlack()
-            val hasV = focusView.hasVerticalSlack()
-
-            if (hasH && !hasV) {
-                btnPresetTop.text = "Căn trái"
-                btnPresetCenter.text = "Căn giữa"
-                btnPresetBottom.text = "Căn phải"
-
-                btnPresetTop.setOnClickListener { focusView.alignLeft() }
-                btnPresetCenter.setOnClickListener { focusView.alignCenter() }
-                btnPresetBottom.setOnClickListener { focusView.alignRight() }
-            } else {
-                btnPresetTop.text = "Căn đỉnh"
-                btnPresetCenter.text = "Căn giữa"
-                btnPresetBottom.text = "Căn đáy"
-
-                btnPresetTop.setOnClickListener { focusView.alignTop() }
-                btnPresetCenter.setOnClickListener { focusView.alignCenter() }
-                btnPresetBottom.setOnClickListener { focusView.alignBottom() }
+            if (!skipSlider && !sliderZoom.isPressed) {
+                val minZ = focusView.getMinZoom()
+                val maxZ = focusView.maxZoom
+                val fromVal = minOf(0.4f, minZ)
+                sliderZoom.valueFrom = fromVal
+                sliderZoom.valueTo = maxZ
+                sliderZoom.value = focusView.zoom.coerceIn(fromVal, maxZ)
             }
         }
 
         focusView.onFocusChanged = { _, _, _ ->
-            updatePresetButtons()
             updateZoomUi()
         }
 
         focusView.onStateChanged = {
-            updatePresetButtons()
             updateZoomUi()
+            updatePreviewButtonUi()
+        }
+
+        sliderZoom.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) {
+                focusView.zoom = value
+                updateZoomUi(skipSlider = true)
+            }
         }
 
         btnZoomIn.setOnClickListener {
@@ -146,13 +173,30 @@ class FocusAdjustBottomSheet : BottomSheetDialogFragment() {
             updateZoomUi()
         }
 
+        btnTogglePreview.setOnClickListener {
+            focusView.isPreviewMode = !focusView.isPreviewMode
+            updatePreviewButtonUi()
+        }
+
+        // Căn nhanh thông minh
+        btnPresetFace.setOnClickListener { focusView.alignFace() }
+        btnPresetCenter.setOnClickListener { focusView.alignCenter() }
+        btnPresetLeft.setOnClickListener { focusView.alignLeft() }
+        btnPresetRight.setOnClickListener { focusView.alignRight() }
+        btnPresetBottom.setOnClickListener { focusView.alignBottom() }
+
+        // Đặt lại về toạ độ ban đầu
+        btnResetAll.setOnClickListener {
+            focusView.animateFocusTo(initFocusX, initFocusY, initZoom)
+        }
+
         chipGroupRatio.setOnCheckedStateChangeListener { _, checkedIds ->
             when (checkedIds.firstOrNull()) {
                 R.id.chipRatioSquare -> focusView.targetAspectRatio = 1.0f
                 R.id.chipRatioSub -> focusView.targetAspectRatio = 1.33f
+                R.id.chipRatioPortrait -> focusView.targetAspectRatio = 0.67f
                 R.id.chipRatioWide -> focusView.targetAspectRatio = 1.6f
             }
-            updatePresetButtons()
             updateZoomUi()
         }
 
@@ -165,7 +209,6 @@ class FocusAdjustBottomSheet : BottomSheetDialogFragment() {
                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                         focusView.bitmap = resource
                         focusView.setFocus(initFocusX, initFocusY, initZoom)
-                        updatePresetButtons()
                         updateZoomUi()
                     }
 
@@ -175,18 +218,17 @@ class FocusAdjustBottomSheet : BottomSheetDialogFragment() {
                 })
         }
 
-        updatePresetButtons()
         updateZoomUi()
+        updatePreviewButtonUi()
 
         val saveAction = {
-            focusView.cancelZoomAnimation()
+            focusView.cancelAllAnimations()
             onSavedListener?.invoke(focusView.focusX, focusView.focusY, focusView.zoom)
             dismiss()
         }
 
-        btnCancel.setOnClickListener { dismiss() }
+        btnClose.setOnClickListener { dismiss() }
         btnSave.setOnClickListener { saveAction() }
-        btnSaveHeader?.setOnClickListener { saveAction() }
     }
 
     companion object {

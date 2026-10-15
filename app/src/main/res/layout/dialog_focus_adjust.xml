@@ -5,8 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="?attr/colorSurface"
-    android:paddingBottom="24dp">
+    android:background="@drawable/bg_bottom_sheet_surface"
+    android:paddingBottom="16dp">
 
     <!-- Thanh kéo Bottom Sheet -->
     <View
@@ -14,265 +14,381 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="12dp"
-        android:layout_marginBottom="12dp"
-        android:background="@drawable/bg_count_badge" />
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_bottom_sheet_handle" />
 
-    <!-- Tiêu đề, hướng dẫn & nút Lưu vị trí nhanh ở trên đỉnh -->
-    <LinearLayout
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="20dp"
-        android:layout_marginBottom="6dp">
+        android:fillViewport="true"
+        android:overScrollMode="never">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginEnd="12dp">
+            android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Tiêu đề & Nút đóng -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="🌸 Chỉnh tiêu điểm ảnh"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="20dp"
+                android:layout_marginBottom="8dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+                <FrameLayout
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_sakura_icon_box"
+                    android:layout_marginEnd="12dp">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_center_focus"
+                        app:tint="@android:color/white" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tiêu điểm ảnh Bento"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Chạm lấy nét · Kéo di chuyển · Phóng to"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnClose"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="0dp"
+                    app:icon="@drawable/ic_close"
+                    app:iconSize="20dp"
+                    app:iconTint="?attr/colorOnSurfaceVariant"
+                    android:contentDescription="Đóng" />
+
+            </LinearLayout>
+
+            <!-- Chọn tỷ lệ khung nhìn Bento -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Kéo tự do mọi vị trí · Kéo 4 góc để resize khung"
-                android:textSize="12sp"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+                android:scrollbars="none"
+                android:paddingHorizontal="16dp"
+                android:layout_marginBottom="4dp">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupRatio"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true"
+                    app:selectionRequired="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipRatioSquare"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1:1 (Bento chính)"
+                        android:textSize="12sp"
+                        android:checked="true" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipRatioSub"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="4:3 (Bento phụ ngang)"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipRatioPortrait"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="2:3 (Bento phụ dọc)"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipRatioWide"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="16:10 (Toàn cảnh)"
+                        android:textSize="12sp" />
+
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <!-- Khung xem trước & kéo ảnh -->
+            <com.example.photoevents.ui.FocusAdjustView
+                android:id="@+id/focusAdjustView"
+                android:layout_width="match_parent"
+                android:layout_height="270dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginVertical="4dp" />
+
+            <!-- Thanh điều khiển Zoom với Slider mượt mà -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:layout_marginTop="6dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnZoomOut"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:padding="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:icon="@drawable/ic_zoom_out"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:cornerRadius="19dp"
+                    android:contentDescription="Thu nhỏ" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderZoom"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="4dp"
+                    android:valueFrom="0.5"
+                    android:valueTo="3.0"
+                    android:value="1.0"
+                    android:stepSize="0.02" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnZoomIn"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:padding="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:icon="@drawable/ic_zoom_in"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:cornerRadius="19dp"
+                    android:contentDescription="Phóng to" />
+
+                <!-- Mức Zoom hiển thị -->
+                <TextView
+                    android:id="@+id/txtZoomLevel"
+                    android:layout_width="52dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="100%"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface" />
+
+            </LinearLayout>
+
+            <!-- Hàng phím tắt: 1.0x, Toàn cảnh & Xem trước Bento -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:layout_marginTop="4dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnResetZoom"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:paddingHorizontal="12dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="1.0x Chuẩn"
+                    android:textSize="12sp"
+                    app:cornerRadius="17dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnFullSide"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:paddingHorizontal="10dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:layout_marginStart="6dp"
+                    android:text="Toàn ảnh"
+                    android:textSize="12sp"
+                    app:icon="@drawable/ic_fullscreen"
+                    app:iconSize="16dp"
+                    app:iconPadding="4dp"
+                    app:cornerRadius="17dp" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTogglePreview"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:paddingHorizontal="12dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="Xem trước"
+                    android:textSize="12sp"
+                    app:icon="@drawable/ic_visibility"
+                    app:iconSize="16dp"
+                    app:iconPadding="4dp"
+                    app:cornerRadius="17dp" />
+
+            </LinearLayout>
+
+            <!-- Các nút căn nhanh thông minh (Smart Presets) -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:paddingHorizontal="16dp"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPresetFace"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="12dp"
+                        android:layout_marginEnd="6dp"
+                        android:text="👤 Khuôn mặt"
+                        android:textSize="12sp"
+                        app:cornerRadius="17dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPresetCenter"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="12dp"
+                        android:layout_marginEnd="6dp"
+                        android:text="🎯 Giữa"
+                        android:textSize="12sp"
+                        app:cornerRadius="17dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPresetLeft"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="12dp"
+                        android:layout_marginEnd="6dp"
+                        android:text="⬅️ Trái"
+                        android:textSize="12sp"
+                        app:cornerRadius="17dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPresetRight"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="12dp"
+                        android:layout_marginEnd="6dp"
+                        android:text="➡️ Phải"
+                        android:textSize="12sp"
+                        app:cornerRadius="17dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPresetBottom"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="12dp"
+                        android:text="⬇️ Đáy"
+                        android:textSize="12sp"
+                        app:cornerRadius="17dp" />
+
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- Thanh nút hành động Đặt lại / Lưu -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp"
+                android:paddingHorizontal="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnResetAll"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingHorizontal="14dp"
+                    android:text="Đặt lại"
+                    android:textSize="13sp"
+                    app:icon="@drawable/ic_restore"
+                    app:iconSize="18dp"
+                    app:iconPadding="6dp"
+                    app:cornerRadius="22dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSave"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="Lưu tiêu điểm"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:icon="@drawable/ic_check_circle"
+                    app:iconSize="18dp"
+                    app:iconPadding="6dp"
+                    app:cornerRadius="22dp" />
+
+            </LinearLayout>
+
         </LinearLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSaveHeader"
-            style="@style/Widget.Material3.Button"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:paddingHorizontal="18dp"
-            android:text="Lưu vị trí"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            app:cornerRadius="20dp" />
-
-    </LinearLayout>
-
-    <!-- Chọn tỷ lệ khung nhìn Bento -->
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:paddingHorizontal="20dp"
-        android:layout_marginBottom="4dp">
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupRatio"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:singleSelection="true"
-            app:selectionRequired="true">
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipRatioSquare"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Vuông 1:1 (Bento chính)"
-                android:checked="true" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipRatioSub"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Ngang 4:3 (Bento phụ)" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipRatioWide"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Rộng 16:10 (Toàn cảnh)" />
-
-        </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
-
-    <!-- Khung xem trước & kéo ảnh -->
-    <com.example.photoevents.ui.FocusAdjustView
-        android:id="@+id/focusAdjustView"
-        android:layout_width="match_parent"
-        android:layout_height="250dp"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginVertical="6dp" />
-
-    <!-- Thanh điều khiển Phóng to / Thu nhỏ & Toàn cảnh (Full side) -->
-    <LinearLayout
-        android:id="@+id/layoutZoomControls"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp"
-        android:layout_marginTop="4dp">
-
-        <!-- Nút Zoom Out -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnZoomOut"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            app:icon="@drawable/ic_zoom_out"
-            app:iconGravity="textStart"
-            app:iconPadding="0dp"
-            app:cornerRadius="20dp"
-            android:contentDescription="Thu nhỏ" />
-
-        <!-- Mức Zoom hiển thị -->
-        <TextView
-            android:id="@+id/txtZoomLevel"
-            android:layout_width="52dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="100%"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorOnSurface" />
-
-        <!-- Nút Zoom In -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnZoomIn"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            app:icon="@drawable/ic_zoom_in"
-            app:iconGravity="textStart"
-            app:iconPadding="0dp"
-            app:cornerRadius="20dp"
-            android:contentDescription="Phóng to" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
-
-        <!-- Nút Reset 1.0x -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnResetZoom"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:paddingHorizontal="12dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:layout_marginEnd="6dp"
-            android:text="1.0x"
-            android:textSize="12sp"
-            app:cornerRadius="18dp" />
-
-        <!-- Nút Xem toàn cảnh (Full side) -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnFullSide"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:paddingHorizontal="10dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="Toàn ảnh"
-            android:textSize="12sp"
-            app:icon="@drawable/ic_fullscreen"
-            app:iconSize="16dp"
-            app:iconPadding="4dp"
-            app:cornerRadius="18dp" />
-
-    </LinearLayout>
-
-    <!-- Các nút preset nhanh -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginTop="8dp"
-        android:paddingHorizontal="16dp">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPresetTop"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="6dp"
-            android:text="Căn đỉnh"
-            android:textSize="12sp"
-            app:cornerRadius="100dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPresetCenter"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginHorizontal="3dp"
-            android:text="Căn giữa"
-            android:textSize="12sp"
-            app:cornerRadius="100dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPresetBottom"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="6dp"
-            android:text="Căn đáy"
-            android:textSize="12sp"
-            app:cornerRadius="100dp" />
-
-    </LinearLayout>
-
-    <!-- Thanh nút hành động Huỷ / Lưu -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="16dp"
-        android:paddingHorizontal="20dp">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCancel"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Huỷ"
-            android:textColor="?attr/colorOnSurfaceVariant" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSave"
-            style="@style/Widget.Material3.Button"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.3"
-            android:layout_marginStart="12dp"
-            android:text="Lưu tiêu điểm"
-            android:textStyle="bold"
-            app:cornerRadius="100dp" />
-
-    </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>
