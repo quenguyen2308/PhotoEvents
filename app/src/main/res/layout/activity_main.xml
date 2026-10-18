@@ -65,9 +65,9 @@
 
             </LinearLayout>
 
-            <!-- Nút Tìm kiếm sự kiện -->
+            <!-- Nút Tuỳ chọn mở rộng (Menu 3 chấm) -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnToggleSearch"
+                android:id="@+id/btnMoreOptions"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="38dp"
                 android:layout_height="38dp"
@@ -84,38 +84,12 @@
                 app:cornerRadius="100dp"
                 app:elevation="1dp"
                 app:rippleColor="#33FF6584"
-                app:icon="@drawable/ic_search"
-                app:iconSize="17dp"
+                app:icon="@drawable/ic_more_vert"
+                app:iconSize="18dp"
                 app:iconTint="@color/sakura_pink"
                 app:iconGravity="textStart"
                 app:iconPadding="0dp"
-                android:contentDescription="Tìm kiếm sự kiện" />
-
-            <!-- Nút Quản lý danh mục -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnManageCategories"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:minHeight="38dp"
-                android:minWidth="38dp"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:padding="0dp"
-                android:layout_marginEnd="8dp"
-                app:backgroundTint="@color/surface"
-                android:backgroundTint="@color/surface"
-                app:strokeColor="@color/sakura_border_soft"
-                app:strokeWidth="1.2dp"
-                app:cornerRadius="100dp"
-                app:elevation="1dp"
-                app:rippleColor="#33FF6584"
-                app:icon="@drawable/ic_category"
-                app:iconSize="17dp"
-                app:iconTint="@color/sakura_pink"
-                app:iconGravity="textStart"
-                app:iconPadding="0dp"
-                android:contentDescription="Quản lý danh mục" />
+                android:contentDescription="Tùy chọn mở rộng" />
 
             <!-- Bên phải: Nút sắp xếp dạng Sakura Pill Button -->
             <com.google.android.material.button.MaterialButton

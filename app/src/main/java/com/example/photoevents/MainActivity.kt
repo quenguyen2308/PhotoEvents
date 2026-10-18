@@ -30,9 +30,11 @@ import com.example.photoevents.ui.BentoDialogHelper
 import com.example.photoevents.ui.EventsAdapter
 import com.example.photoevents.ui.FocusAdjustBottomSheet
 import com.example.photoevents.ui.SortOption
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Đăng nhập Google bắt buộc ở bản RELEASE (ép đăng nhập ngay khi mở app, như hành vi gốc).
@@ -176,18 +178,8 @@ class MainActivity : AppCompatActivity() {
         layoutSearchBar = findViewById(R.id.layoutSearchBar)
         edtSearch = findViewById(R.id.edtSearch)
 
-        findViewById<View>(R.id.btnToggleSearch).setOnClickListener {
-            if (layoutSearchBar.visibility == View.VISIBLE) {
-                layoutSearchBar.visibility = View.GONE
-                edtSearch.setText("")
-                searchQueryFlow.value = ""
-            } else {
-                layoutSearchBar.visibility = View.VISIBLE
-                edtSearch.requestFocus()
-                val imm = getSystemService(INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
-                imm?.showSoftInput(edtSearch, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
-            }
-            backPressedCallback.isEnabled = adapter.selectionMode || layoutSearchBar.visibility == View.VISIBLE
+        findViewById<View>(R.id.btnMoreOptions).setOnClickListener {
+            showMoreOptionsSheet()
         }
 
         findViewById<View>(R.id.btnClearSearch).setOnClickListener {
@@ -241,11 +233,6 @@ class MainActivity : AppCompatActivity() {
                 intent.putExtra(EXTRA_CATEGORY, currentCat)
             }
             startActivity(intent)
-        }
-
-        // Nút Quản lý danh mục
-        findViewById<View>(R.id.btnManageCategories).setOnClickListener {
-            startActivity(Intent(this, CategoryManagementActivity::class.java))
         }
 
         // Khôi phục kiểu sắp xếp đã chọn lần trước
@@ -423,6 +410,120 @@ class MainActivity : AppCompatActivity() {
             container.addView(itemView)
         }
 
+        sheet.show()
+    }
+
+    private fun showMoreOptionsSheet() {
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val sheetView = layoutInflater.inflate(R.layout.sheet_more_options, null)
+        sheet.setContentView(sheetView)
+
+        sheetView.findViewById<View>(R.id.btnCloseMoreSheet)?.setOnClickListener { sheet.dismiss() }
+
+        // 1. Tìm kiếm sự kiện
+        sheetView.findViewById<View>(R.id.cardOptionSearch)?.setOnClickListener {
+            sheet.dismiss()
+            if (layoutSearchBar.visibility != View.VISIBLE) {
+                layoutSearchBar.visibility = View.VISIBLE
+                edtSearch.requestFocus()
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+                imm?.showSoftInput(edtSearch, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                backPressedCallback.isEnabled = true
+            }
+        }
+
+        // 2. Quản lý danh mục
+        sheetView.findViewById<View>(R.id.cardOptionCategories)?.setOnClickListener {
+            sheet.dismiss()
+            startActivity(Intent(this, CategoryManagementActivity::class.java))
+        }
+
+        // 3. Dung lượng Google Drive
+        sheetView.findViewById<View>(R.id.cardOptionDriveStorage)?.setOnClickListener {
+            sheet.dismiss()
+            showDriveStorageDialog()
+        }
+
+        sheet.show()
+    }
+
+    private fun showDriveStorageDialog() {
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val sheetView = layoutInflater.inflate(R.layout.sheet_drive_storage, null)
+        sheet.setContentView(sheetView)
+
+        val txtAccount = sheetView.findViewById<android.widget.TextView>(R.id.txtStorageAccount)
+        val layoutLoading = sheetView.findViewById<View>(R.id.layoutStorageLoading)
+        val layoutError = sheetView.findViewById<View>(R.id.layoutStorageError)
+        val txtErrorMessage = sheetView.findViewById<android.widget.TextView>(R.id.txtStorageErrorMessage)
+        val btnRetry = sheetView.findViewById<View>(R.id.btnStorageRetry)
+        val layoutContent = sheetView.findViewById<View>(R.id.layoutStorageContent)
+
+        val txtTotalSize = sheetView.findViewById<android.widget.TextView>(R.id.txtTotalStorageSize)
+        val txtTotalFiles = sheetView.findViewById<android.widget.TextView>(R.id.txtTotalStorageFiles)
+        val txtMetadataSize = sheetView.findViewById<android.widget.TextView>(R.id.txtMetadataSize)
+        val txtImagesCountDetail = sheetView.findViewById<android.widget.TextView>(R.id.txtImagesCountDetail)
+        val txtImagesSize = sheetView.findViewById<android.widget.TextView>(R.id.txtImagesSize)
+        val btnRefresh = sheetView.findViewById<View>(R.id.btnRefreshStorage)
+
+        sheetView.findViewById<View>(R.id.btnCloseStorageSheet)?.setOnClickListener { sheet.dismiss() }
+
+        fun formatBytes(bytes: Long): String {
+            if (bytes <= 0) return "0 B"
+            if (bytes < 1024) return "$bytes B"
+            val kb = bytes / 1024.0
+            if (kb < 1024) return String.format(java.util.Locale.US, "%.1f KB", kb)
+            val mb = kb / 1024.0
+            if (mb < 1024) return String.format(java.util.Locale.US, "%.1f MB", mb)
+            val gb = mb / 1024.0
+            return String.format(java.util.Locale.US, "%.2f GB", gb)
+        }
+
+        fun loadStorageUsage() {
+            layoutLoading.visibility = View.VISIBLE
+            layoutError.visibility = View.GONE
+            layoutContent.visibility = View.GONE
+
+            lifecycleScope.launch {
+                val helper = withContext(Dispatchers.IO) {
+                    DriveSession.getHelper(this@MainActivity)
+                }
+
+                if (helper == null) {
+                    layoutLoading.visibility = View.GONE
+                    layoutError.visibility = View.VISIBLE
+                    txtAccount.text = "Chưa kết nối tài khoản"
+                    txtErrorMessage.text = "Chưa đăng nhập hoặc chưa cấp quyền Google Drive.\nHãy kéo màn hình chính xuống để đăng nhập / đồng bộ."
+                    btnRetry.visibility = View.VISIBLE
+                    return@launch
+                }
+
+                //txtAccount.text = "Tài khoản: ${helper.accountKey}"
+                txtAccount.text = ""
+
+                try {
+                    val usage = helper.getStorageUsage()
+                    txtTotalSize.text = formatBytes(usage.totalBytes)
+                    txtTotalFiles.text = "(${usage.totalFiles} tệp)"
+                    txtMetadataSize.text = formatBytes(usage.metadataBytes)
+                    txtImagesCountDetail.text = "${usage.imagesCount} ảnh thu nhỏ đã đồng bộ"
+                    txtImagesSize.text = formatBytes(usage.imagesBytes)
+
+                    layoutLoading.visibility = View.GONE
+                    layoutContent.visibility = View.VISIBLE
+                } catch (e: Exception) {
+                    layoutLoading.visibility = View.GONE
+                    layoutError.visibility = View.VISIBLE
+                    txtErrorMessage.text = "Không thể đọc thông tin từ Drive:\n${e.message}"
+                    btnRetry.visibility = View.VISIBLE
+                }
+            }
+        }
+
+        btnRetry?.setOnClickListener { loadStorageUsage() }
+        btnRefresh?.setOnClickListener { loadStorageUsage() }
+
+        loadStorageUsage()
         sheet.show()
     }
 

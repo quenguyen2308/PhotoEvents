@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet_surface"
+    android:paddingBottom="24dp">
+
+    <!-- Thanh kéo Bottom Sheet -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="14dp"
+        android:background="@drawable/bg_bottom_sheet_handle" />
+
+    <!-- Tiêu đề Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:layout_marginBottom="16dp">
+
+        <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_category_icon_circle"
+            android:layout_marginEnd="12dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="🌸"
+                android:textSize="18sp" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tùy chọn"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/sakura_text_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="Công cụ và tính năng ứng dụng"
+                android:textSize="12sp"
+                android:textColor="@color/sakura_text_secondary" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCloseMoreSheet"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            app:icon="@drawable/ic_close"
+            app:iconTint="@color/sakura_text_secondary"
+            app:iconSize="20dp"
+            android:contentDescription="Đóng" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp">
+
+        <!-- Mục 1: Tìm kiếm sự kiện -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardOptionSearch"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginBottom="10dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1.2dp"
+            app:strokeColor="@color/sakura_border_soft"
+            app:cardBackgroundColor="@color/surface"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/sakura_pink"
+                    android:layout_marginEnd="14dp"
+                    android:contentDescription="Tìm kiếm" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tìm kiếm sự kiện"
+                        android:textSize="14.5sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/sakura_text_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Lọc theo tên, địa điểm, ghi chú"
+                        android:textSize="11.5sp"
+                        android:textColor="@color/sakura_text_secondary" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Mục 2: Quản lý danh mục -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardOptionCategories"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginBottom="10dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1.2dp"
+            app:strokeColor="@color/sakura_border_soft"
+            app:cardBackgroundColor="@color/surface"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_category"
+                    app:tint="@color/sakura_pink"
+                    android:layout_marginEnd="14dp"
+                    android:contentDescription="Danh mục" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Quản lý danh mục"
+                        android:textSize="14.5sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/sakura_text_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Thêm, sửa biểu tượng, đổi tên danh mục"
+                        android:textSize="11.5sp"
+                        android:textColor="@color/sakura_text_secondary" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Mục 3: Dung lượng Google Drive -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardOptionDriveStorage"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1.2dp"
+            app:strokeColor="@color/sakura_border_soft"
+            app:cardBackgroundColor="@color/surface"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_cloud"
+                    app:tint="@color/sakura_pink"
+                    android:layout_marginEnd="14dp"
+                    android:contentDescription="Dung lượng Drive" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Dung lượng Google Drive"
+                        android:textSize="14.5sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/sakura_text_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Xem dung lượng bộ nhớ app đang dùng trên đám mây"
+                        android:textSize="11.5sp"
+                        android:textColor="@color/sakura_text_secondary" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+</LinearLayout>

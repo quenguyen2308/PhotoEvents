@@ -25,7 +25,7 @@ const val THUMBNAIL_MAX_SIZE = 512 // px, cạnh dài nhất
 class DriveServiceHelper private constructor(
     context: Context,
     initializer: com.google.api.client.http.HttpRequestInitializer,
-    accountKey: String
+    val accountKey: String
 ) {
     private val drive: Drive
     private val prefs = context.getSharedPreferences("drive_appdata_cache_$accountKey", Context.MODE_PRIVATE)
@@ -186,6 +186,52 @@ class DriveServiceHelper private constructor(
             val created = drive.files().create(meta, content).setFields("id").execute()
             saveMetadataFileId(created.id)
         }
+    }
+
+    /**
+     * Lấy thống kê dung lượng ứng dụng trên Google Drive (trong appDataFolder).
+     * Chỉ quét lấy thông tin dung lượng và số lượng tệp, không tải dữ liệu tệp.
+     */
+    suspend fun getStorageUsage(): DriveStorageUsage = withContext(Dispatchers.IO) {
+        var totalBytes = 0L
+        var totalFiles = 0
+        var metadataBytes = 0L
+        var imagesBytes = 0L
+        var imagesCount = 0
+
+        var pageToken: String? = null
+        do {
+            val fileList = drive.files().list()
+                .setSpaces(APPDATA_FOLDER)
+                .setQ("trashed = false")
+                .setFields("nextPageToken, files(id, name, size)")
+                .setPageSize(1000)
+                .setPageToken(pageToken)
+                .execute()
+
+            val files = fileList.files ?: emptyList()
+            for (f in files) {
+                totalFiles++
+                val fileSize: Long = f.getSize()?.toLong() ?: 0L
+                totalBytes += fileSize
+                if (f.name == METADATA_FILE_NAME) {
+                    metadataBytes += fileSize
+                } else {
+                    imagesCount++
+                    imagesBytes += fileSize
+                }
+            }
+            pageToken = fileList.nextPageToken
+        } while (!pageToken.isNullOrEmpty())
+
+        DriveStorageUsage(
+            totalBytes = totalBytes,
+            totalFiles = totalFiles,
+            metadataBytes = metadataBytes,
+            imagesBytes = imagesBytes,
+            imagesCount = imagesCount,
+            accountName = accountKey
+        )
     }
 
     private fun decodeSampledBitmap(context: Context, uri: Uri, maxSize: Int): Bitmap {

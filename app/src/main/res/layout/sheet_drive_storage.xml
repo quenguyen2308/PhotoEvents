@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet_surface"
+    android:paddingBottom="24dp">
+
+    <!-- Thanh kéo Bottom Sheet -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="14dp"
+        android:background="@drawable/bg_bottom_sheet_handle" />
+
+    <!-- Tiêu đề Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:layout_marginBottom="16dp">
+
+        <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_category_icon_circle"
+            android:layout_marginEnd="12dp">
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_cloud"
+                app:tint="@color/sakura_pink"
+                android:contentDescription="Google Drive" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dung lượng Google Drive"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/sakura_text_primary" />
+
+            <TextView
+                android:id="@+id/txtStorageAccount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Đang kiểm tra tài khoản..."
+                android:textSize="12sp"
+                android:textColor="@color/sakura_text_secondary" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCloseStorageSheet"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            app:icon="@drawable/ic_close"
+            app:iconTint="@color/sakura_text_secondary"
+            app:iconSize="20dp"
+            android:contentDescription="Đóng" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="20dp">
+
+        <!-- Trạng thái Loading -->
+        <LinearLayout
+            android:id="@+id/layoutStorageLoading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="32dp"
+            android:visibility="visible">
+
+            <ProgressBar
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:indeterminateTint="@color/sakura_pink" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Đang tính toán dung lượng trên Drive..."
+                android:textSize="13sp"
+                android:textColor="@color/sakura_text_secondary" />
+        </LinearLayout>
+
+        <!-- Trạng thái Lỗi / Chưa đăng nhập -->
+        <LinearLayout
+            android:id="@+id/layoutStorageError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="24dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/txtStorageErrorMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Chưa kết nối Google Drive"
+                android:textSize="14sp"
+                android:textColor="@color/sakura_text_secondary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStorageRetry"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginTop="12dp"
+                android:text="Thử lại"
+                android:textSize="13sp"
+                app:backgroundTint="@color/sakura_pink_container"
+                android:textColor="@color/sakura_pink"
+                app:cornerRadius="100dp" />
+        </LinearLayout>
+
+        <!-- Trạng thái Hiển thị Dữ liệu Bento -->
+        <LinearLayout
+            android:id="@+id/layoutStorageContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Card Tổng quan dung lượng -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="18dp"
+                app:strokeWidth="1.2dp"
+                app:strokeColor="@color/sakura_border_soft"
+                app:cardBackgroundColor="@color/sakura_blush_bg"
+                app:cardElevation="0dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TỔNG DUNG LƯỢNG SỬ DỤNG"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05"
+                        android:textColor="@color/sakura_text_secondary" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="bottom"
+                        android:layout_marginTop="6dp">
+
+                        <TextView
+                            android:id="@+id/txtTotalStorageSize"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 KB"
+                            android:textSize="28sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-black"
+                            android:textColor="@color/sakura_pink" />
+
+                        <TextView
+                            android:id="@+id/txtTotalStorageFiles"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="(0 tệp)"
+                            android:textSize="13sp"
+                            android:textColor="@color/sakura_text_secondary" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Lưu trữ an toàn trong thư mục appDataFolder ẩn của PhotoEvents"
+                        android:textSize="11.5sp"
+                        android:textColor="@color/sakura_text_secondary" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card Bento Chi tiết từng phần -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="18dp"
+                app:strokeWidth="1.2dp"
+                app:strokeColor="@color/sakura_border_soft"
+                app:cardBackgroundColor="@color/surface"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <!-- Mục Metadata -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="📄"
+                            android:textSize="18sp"
+                            android:layout_marginEnd="10dp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Dữ liệu sự kiện &amp; cài đặt"
+                                android:textSize="13.5sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/sakura_text_primary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Tệp metadata.json"
+                                android:textSize="11.5sp"
+                                android:textColor="@color/sakura_text_secondary" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/txtMetadataSize"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 KB"
+                            android:textSize="13.5sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/sakura_text_primary" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="6dp"
+                        android:background="@color/sakura_border_subtle" />
+
+                    <!-- Mục Thumbnails -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🖼️"
+                            android:textSize="18sp"
+                            android:layout_marginEnd="10dp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Ảnh thu nhỏ (Thumbnails)"
+                                android:textSize="13.5sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/sakura_text_primary" />
+
+                            <TextView
+                                android:id="@+id/txtImagesCountDetail"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0 ảnh đã đồng bộ"
+                                android:textSize="11.5sp"
+                                android:textColor="@color/sakura_text_secondary" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/txtImagesSize"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 KB"
+                            android:textSize="13.5sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/sakura_text_primary" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Hàng nút hành động -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:layout_marginTop="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRefreshStorage"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="Làm mới"
+                    android:textSize="13sp"
+                    android:textColor="@color/sakura_pink"
+                    app:icon="@drawable/ic_sync"
+                    app:iconTint="@color/sakura_pink"
+                    app:iconSize="16dp"
+                    app:strokeColor="@color/sakura_border_soft"
+                    app:cornerRadius="100dp" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>
