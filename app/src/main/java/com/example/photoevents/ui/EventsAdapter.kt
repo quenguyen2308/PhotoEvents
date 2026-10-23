@@ -376,7 +376,7 @@ class EventsAdapter(
         val radius = (14 * context.resources.displayMetrics.density)
 
         holder.imagesStrip.removeAllViews()
-        images.forEach { image ->
+        images.forEachIndexed { index, image ->
             val src: Any? = image.localImagePath ?: image.driveThumbnailLink
             val iv = ImageView(context).apply {
                 layoutParams = LinearLayout.LayoutParams(size, size).apply {
@@ -395,9 +395,9 @@ class EventsAdapter(
                 val item = getItem(holder.bindingAdapterPosition)
                 com.example.photoevents.ui.PhotoLightboxDialog.show(
                     context = context,
-                    image = image,
-                    isCover = image.id == item?.coverImage?.id,
-                    indexText = item?.event?.title ?: "",
+                    images = images,
+                    initialPosition = index,
+                    getIsCover = { img -> img.id == item?.coverImage?.id },
                     onAdjustFocus = { img ->
                         item?.let { onAdjustFocus?.invoke(it.event, img, 1.0f, img.id == it.coverImage?.id) }
                     }

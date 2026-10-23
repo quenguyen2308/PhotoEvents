@@ -6,13 +6,11 @@
     android:layout_height="match_parent"
     android:background="#F20F080E">
 
-    <!-- Ảnh hiển thị chính giữa toàn màn hình -->
-    <ImageView
-        android:id="@+id/imgLightboxPhoto"
+    <!-- Slide lướt ảnh toàn màn hình -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPagerLightbox"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitCenter"
-        android:contentDescription="Ảnh chi tiết" />
+        android:layout_height="match_parent" />
 
     <!-- Thanh công cụ phía trên (Top Bar) -->
     <LinearLayout

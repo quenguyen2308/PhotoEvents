@@ -60,14 +60,15 @@ class EventDetailActivity : AppCompatActivity() {
             onDelete = { image -> confirmDeleteImage(image) },
             onToggleCover = { image -> toggleCover(image) },
             onAdjustFocus = { image -> showFocusAdjuster(image) },
-            onImageClick = { image, pos ->
-                val total = adapter.itemCount
-                val isCover = image.id == explicitCoverId || (explicitCoverId == null && pos == 0)
+            onImageClick = { _, pos ->
+                val images = adapter.currentList()
                 com.example.photoevents.ui.PhotoLightboxDialog.show(
                     context = this@EventDetailActivity,
-                    image = image,
-                    isCover = isCover,
-                    indexText = "Ảnh ${pos + 1} / $total",
+                    images = images,
+                    initialPosition = pos,
+                    getIsCover = { img ->
+                        img.id == explicitCoverId || (explicitCoverId == null && images.firstOrNull()?.id == img.id)
+                    },
                     onToggleCover = { img -> toggleCover(img) },
                     onDelete = { img -> confirmDeleteImage(img) },
                     onAdjustFocus = { img -> showFocusAdjuster(img) }
