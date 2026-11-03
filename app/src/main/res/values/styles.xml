@@ -37,7 +37,7 @@
     </style>
 
     <style name="ShapeAppearance.PhotoEvents.AppLogo" parent="ShapeAppearance.Material3.SmallComponent">
-        <item name="cornerSize">12dp</item>
+        <item name="cornerSize">0dp</item>
     </style>
 
     <style name="ShapeAppearance.PhotoEvents.Pill" parent="ShapeAppearance.Material3.SmallComponent">
