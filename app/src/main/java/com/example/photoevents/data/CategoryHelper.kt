@@ -31,6 +31,7 @@ object CategoryHelper {
     const val UNCATEGORIZED_DISPLAY = "📂 Khác"
     const val DEFAULT_CATEGORY = ""
     const val ICON_SIMPLE_NOTES = "ic_simple_notes"
+    const val ALL_CATEGORY_ICON = ICON_SIMPLE_NOTES
 
     const val PREF_SETTINGS = "settings"
     const val PREF_CUSTOM_CATEGORIES = "custom_categories"
@@ -46,14 +47,35 @@ object CategoryHelper {
         return icon == ICON_SIMPLE_NOTES || icon == "ic_launcher_simple_notes"
     }
 
-    fun renderIcon(textView: android.widget.TextView?, icon: String?) {
+    fun renderIcon(textView: android.widget.TextView?, icon: String?, targetSizeDp: Float? = null) {
         if (textView == null) return
         val context = textView.context
         if (isCustomIcon(icon)) {
             textView.text = ""
-            val d = androidx.core.content.ContextCompat.getDrawable(context, com.example.photoevents.R.drawable.ic_launcher_simple_notes)
-            val size = (textView.textSize * 1.35f).toInt().coerceAtLeast((22 * context.resources.displayMetrics.density).toInt())
-            d?.setBounds(0, 0, size, size)
+            val d = androidx.core.content.ContextCompat.getDrawable(context, com.example.photoevents.R.drawable.ic_launcher_simple_notes) ?: return
+            val density = context.resources.displayMetrics.density
+
+            // Lấy kích thước khớp vừa khít với khung cha (parent View, ví dụ FrameLayout 38dp, 44dp, 32dp)
+            val parent = textView.parent as? android.view.View
+            val parentWidth = parent?.layoutParams?.width ?: -1
+            val parentHeight = parent?.layoutParams?.height ?: -1
+            val parentSize = if (parentWidth > 0 && parentHeight > 0) {
+                Math.min(parentWidth, parentHeight)
+            } else if (parentWidth > 0) {
+                parentWidth
+            } else if (parentHeight > 0) {
+                parentHeight
+            } else {
+                -1
+            }
+
+            val size = when {
+                targetSizeDp != null && targetSizeDp > 0 -> (targetSizeDp * density).toInt()
+                parentSize > 0 -> parentSize
+                else -> (38f * density).toInt()
+            }
+
+            d.setBounds(0, 0, size, size)
             textView.setCompoundDrawables(d, null, null, null)
         } else {
             textView.setCompoundDrawables(null, null, null, null)

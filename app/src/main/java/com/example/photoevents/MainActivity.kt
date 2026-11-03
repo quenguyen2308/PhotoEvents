@@ -707,7 +707,7 @@ class MainActivity : AppCompatActivity() {
             com.example.photoevents.data.CategoryItem(
                 id = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID,
                 name = "Tất cả",
-                icon = "🌸",
+                icon = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ICON,
                 count = events.size,
                 isAll = true
             )
