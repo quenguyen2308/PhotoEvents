@@ -15,17 +15,50 @@ import com.example.photoevents.data.CategoryHelper
 
 object EmojiPickerHelper {
 
+    /**
+     * Danh sách biểu tượng emoji đề xuất hiển thị nhanh trên các thanh chip gợi ý (sheet tạo/sửa danh mục).
+     * Bao gồm hoa anh đào 🌸, icon chính thức của simple-notes-app, kỷ niệm, showbiz/giải trí.
+     */
+    val SUGGESTED_EMOJIS = listOf(
+        "💖", "🌸", CategoryHelper.ICON_SIMPLE_NOTES, "✈️", "👨‍👩‍👧", "🎉", "🎂", "☕", "🌿", "💼", "🏕️",
+        "🎬", "🎤", "🎵", "🎸", "💃", "🎭", "🌟", "📸", "🎟️", "👑", "🏆", "✨", "🍿",
+        "🍜", "🏋️", "🛍️", "🐾", "🎨", "☘️", "🍀", "📝", "📓"
+    )
+
     val POPULAR_EMOJIS = listOf(
-        "💖", "🌸", "✈️", "🏖️", "🏕️", "🎂", "🎉", "☕", "🌿", "👨‍👩‍👧", "💼", "⭐", "🔥", "✨", "🌟"
+        "💖", "🌸", CategoryHelper.ICON_SIMPLE_NOTES, "✈️", "🏖️", "🏕️", "🎂", "🎉", "☕", "🌿", "👨‍👩‍👧", "💼", "⭐", "🔥", "✨", "🌟", "👑", "🏆"
+    )
+
+    val SHOWBIZ_EMOJIS = listOf(
+        "🎤", "🎬", "🎵", "🎸", "🎹", "💃", "🕺", "🎭", "🌟", "📸", "🎟️", "👑", "🏆", "✨", "🍿", "🎪", "📻", "🎙️", "🪄", "🪩"
     )
 
     val ACTIVITY_EMOJIS = listOf(
-        "🍜", "🍕", "🍣", "🍰", "🍻", "🏋️", "🚴", "⚽", "🎮", "🎬", "🎤", "🎨", "📚", "🛍️"
+        "🍜", "🍕", "🍣", "🍰", "🍻", "🏋️", "🚴", "⚽", "🎮", "🎨", "📚", "🛍️", "🎯", "🎳"
     )
 
     val LIFE_EMOJIS = listOf(
-        "🌿", "🐾", "🚗", "🏠", "🌅", "🎁", "🏆", "💎", "💡", "📸", "🩺", "🎓", "💰", "💍", "🌻", "🏷️"
+        CategoryHelper.ICON_SIMPLE_NOTES, "🌿", "☘️", "🍀", "🪷", "🦋", "🐾", "🚗", "🏠", "🌅", "🎁", "💎", "💡", "🩺", "🎓", "💰", "💍", "🌻", "📝", "📓", "✍️", "🏷️"
     )
+
+    fun createChip(context: Context, emoji: String, onClick: () -> Unit): Chip {
+        return Chip(context).apply {
+            if (CategoryHelper.isCustomIcon(emoji)) {
+                text = ""
+                chipIcon = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_launcher_simple_notes)
+                isChipIconVisible = true
+                val size = 24f * resources.displayMetrics.density
+                chipIconSize = size
+            } else {
+                text = emoji
+                isChipIconVisible = false
+            }
+            isCheckable = false
+            textSize = 15f
+            setChipBackgroundColorResource(R.color.badge_pink_bg)
+            setOnClickListener { onClick() }
+        }
+    }
 
     /**
      * Hiển thị Bottom Sheet chọn biểu tượng Emoji cho một danh mục.
@@ -47,10 +80,11 @@ object EmojiPickerHelper {
         val btnApply = view.findViewById<MaterialButton>(R.id.btnApplyCustomEmoji)
 
         val chipPopular = view.findViewById<ChipGroup>(R.id.chipGroupEmojiPopular)
+        val chipShowbiz = view.findViewById<ChipGroup>(R.id.chipGroupEmojiShowbiz)
         val chipActivities = view.findViewById<ChipGroup>(R.id.chipGroupEmojiActivities)
         val chipLife = view.findViewById<ChipGroup>(R.id.chipGroupEmojiLife)
 
-        txtPreview?.text = currentEmoji.ifBlank { "🏷️" }
+        CategoryHelper.renderIcon(txtPreview, currentEmoji.ifBlank { "🏷️" })
         txtSubtitle?.text = "Chọn biểu tượng đại diện cho danh mục '$categoryName'"
 
         btnClose?.setOnClickListener { sheet.dismiss() }
@@ -58,22 +92,17 @@ object EmojiPickerHelper {
         fun addChipsToGroup(group: ChipGroup?, emojis: List<String>) {
             group?.removeAllViews()
             for (emoji in emojis) {
-                val chip = Chip(context).apply {
-                    text = emoji
-                    isCheckable = false
-                    textSize = 16f
-                    setChipBackgroundColorResource(R.color.badge_pink_bg)
-                    setOnClickListener {
-                        txtPreview?.text = emoji
-                        onEmojiSelected(emoji)
-                        sheet.dismiss()
-                    }
+                val chip = createChip(context, emoji) {
+                    CategoryHelper.renderIcon(txtPreview, emoji)
+                    onEmojiSelected(emoji)
+                    sheet.dismiss()
                 }
                 group?.addView(chip)
             }
         }
 
         addChipsToGroup(chipPopular, POPULAR_EMOJIS)
+        addChipsToGroup(chipShowbiz, SHOWBIZ_EMOJIS)
         addChipsToGroup(chipActivities, ACTIVITY_EMOJIS)
         addChipsToGroup(chipLife, LIFE_EMOJIS)
 
@@ -89,7 +118,7 @@ object EmojiPickerHelper {
             } else {
                 input.take(4).trim()
             }
-            txtPreview?.text = selected
+            CategoryHelper.renderIcon(txtPreview, selected)
             onEmojiSelected(selected)
             sheet.dismiss()
         }

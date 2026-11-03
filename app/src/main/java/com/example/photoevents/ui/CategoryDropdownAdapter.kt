@@ -75,7 +75,7 @@ class CategoryDropdownAdapter(
             txtName.text = ""
         } else {
             val (icon, name) = CategoryHelper.extractIconAndName(item)
-            txtIcon.text = icon
+            CategoryHelper.renderIcon(txtIcon, icon)
             txtIcon.textSize = 16f
             txtName.text = name
             txtName.setTextColor(ContextCompat.getColor(context, R.color.sakura_text_primary))

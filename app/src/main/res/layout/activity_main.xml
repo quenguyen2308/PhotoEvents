@@ -33,19 +33,15 @@
                 android:gravity="center_vertical"
                 android:layout_marginEnd="12dp">
 
-                <!-- Sakura icon box -->
-                <FrameLayout
+                <!-- App icon -->
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/imgAppLogo"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:background="@drawable/bg_sakura_icon_box"
-                    android:layout_marginEnd="12dp">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:text="🌸"
-                        android:textSize="20sp" />
-                </FrameLayout>
+                    android:layout_marginEnd="12dp"
+                    android:src="@mipmap/ic_launcher"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.PhotoEvents.AppLogo"
+                    android:contentDescription="@string/app_name" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"

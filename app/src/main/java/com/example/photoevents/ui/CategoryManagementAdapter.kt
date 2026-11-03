@@ -48,7 +48,7 @@ class CategoryManagementAdapter(
         val item = getItem(position)
         val context = holder.itemView.context
 
-        holder.txtIcon.text = item.icon
+        com.example.photoevents.data.CategoryHelper.renderIcon(holder.txtIcon, item.icon)
         holder.txtName.text = item.name
         holder.txtCount.text = if (item.count == 1) "1 sự kiện" else "${item.count} sự kiện"
 

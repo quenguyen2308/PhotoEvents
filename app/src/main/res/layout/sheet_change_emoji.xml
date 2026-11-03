@@ -155,7 +155,24 @@
                 android:layout_marginBottom="12dp"
                 app:singleLine="false" />
 
-            <!-- Nhóm 2: Ẩm thực & Hoạt động -->
+            <!-- Nhóm 2: Showbiz & Giải trí -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎬 Showbiz &amp; Giải trí"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@color/sakura_text_secondary"
+                android:layout_marginBottom="6dp" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupEmojiShowbiz"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:singleLine="false" />
+
+            <!-- Nhóm 3: Ẩm thực & Hoạt động -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

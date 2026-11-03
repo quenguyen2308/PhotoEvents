@@ -30,6 +30,7 @@ object CategoryHelper {
     const val UNCATEGORIZED_ICON = "📂"
     const val UNCATEGORIZED_DISPLAY = "📂 Khác"
     const val DEFAULT_CATEGORY = ""
+    const val ICON_SIMPLE_NOTES = "ic_simple_notes"
 
     const val PREF_SETTINGS = "settings"
     const val PREF_CUSTOM_CATEGORIES = "custom_categories"
@@ -40,6 +41,25 @@ object CategoryHelper {
     private val recordsGson by lazy { Gson() }
 
     val PRESET_CATEGORIES: List<String> = emptyList()
+
+    fun isCustomIcon(icon: String?): Boolean {
+        return icon == ICON_SIMPLE_NOTES || icon == "ic_launcher_simple_notes"
+    }
+
+    fun renderIcon(textView: android.widget.TextView?, icon: String?) {
+        if (textView == null) return
+        val context = textView.context
+        if (isCustomIcon(icon)) {
+            textView.text = ""
+            val d = androidx.core.content.ContextCompat.getDrawable(context, com.example.photoevents.R.drawable.ic_launcher_simple_notes)
+            val size = (textView.textSize * 1.35f).toInt().coerceAtLeast((22 * context.resources.displayMetrics.density).toInt())
+            d?.setBounds(0, 0, size, size)
+            textView.setCompoundDrawables(d, null, null, null)
+        } else {
+            textView.setCompoundDrawables(null, null, null, null)
+            textView.text = icon.orEmpty()
+        }
+    }
 
     private val NAME_TO_ICON_MAP = mapOf(
         "kỷ niệm" to "💖",
@@ -60,7 +80,32 @@ object CategoryHelper {
         "công việc" to "💼",
         "cong viec" to "💼",
         "chung" to "🌸",
-        "chưa phân loại" to "🌸"
+        "chưa phân loại" to "🌸",
+        "hoa anh đào" to "🌸",
+        "hoa anh dao" to "🌸",
+        "sakura" to "🌸",
+        "showbiz" to "🌟",
+        "ca nhạc" to "🎤",
+        "ca nhac" to "🎤",
+        "âm nhạc" to "🎵",
+        "am nhac" to "🎵",
+        "phim ảnh" to "🎬",
+        "phim anh" to "🎬",
+        "điện ảnh" to "🎬",
+        "dien anh" to "🎬",
+        "concert" to "🎟️",
+        "thần tượng" to "👑",
+        "than tuong" to "👑",
+        "idol" to "👑",
+        "kịch nghệ" to "🎭",
+        "kich nghe" to "🎭",
+        "ghi chú" to "📝",
+        "ghi chu" to "📝",
+        "nhật ký" to "📓",
+        "nhat ky" to "📓",
+        "simple notes" to ICON_SIMPLE_NOTES,
+        "simplenotes" to ICON_SIMPLE_NOTES,
+        "simple note" to ICON_SIMPLE_NOTES
     )
 
     /**
@@ -89,6 +134,9 @@ object CategoryHelper {
      */
     fun extractCleanTextName(category: String?): String {
         val trimmed = category?.trim().orEmpty()
+            .removePrefix(ICON_SIMPLE_NOTES)
+            .removePrefix("ic_launcher_simple_notes")
+            .trim()
         if (trimmed.isEmpty() || trimmed.equals(UNCATEGORIZED_CATEGORY_ID, ignoreCase = true)) {
             return UNCATEGORIZED_NAME
         }
@@ -303,6 +351,15 @@ object CategoryHelper {
     fun extractExplicitEmojiAndCleanName(rawCategory: String?): Pair<String?, String> {
         val trimmed = rawCategory?.trim().orEmpty()
         if (trimmed.isEmpty()) return Pair(null, "")
+
+        if (trimmed.startsWith(ICON_SIMPLE_NOTES)) {
+            val rest = trimmed.removePrefix(ICON_SIMPLE_NOTES).trim()
+            return Pair(ICON_SIMPLE_NOTES, extractCleanTextName(rest))
+        }
+        if (trimmed.startsWith("ic_launcher_simple_notes")) {
+            val rest = trimmed.removePrefix("ic_launcher_simple_notes").trim()
+            return Pair(ICON_SIMPLE_NOTES, extractCleanTextName(rest))
+        }
 
         val firstLetter = trimmed.indexOfFirst { it.isLetterOrDigit() }
         val lastLetter = trimmed.indexOfLast { it.isLetterOrDigit() }

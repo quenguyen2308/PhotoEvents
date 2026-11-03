@@ -49,7 +49,7 @@ class CategoriesAdapter(
         val item = getItem(position)
         val context = holder.itemView.context
 
-        holder.txtIcon.text = item.icon
+        com.example.photoevents.data.CategoryHelper.renderIcon(holder.txtIcon, item.icon)
         holder.txtName.text = item.name
 
         if (item.isAddAction) {

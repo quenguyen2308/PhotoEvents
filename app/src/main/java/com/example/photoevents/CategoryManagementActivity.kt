@@ -137,7 +137,7 @@ class CategoryManagementActivity : AppCompatActivity() {
         val btnSubmit = view.findViewById<MaterialButton>(R.id.btnSubmitCategory)
 
         var selectedEmoji = "🏷️"
-        txtPreview?.text = selectedEmoji
+        CategoryHelper.renderIcon(txtPreview, selectedEmoji)
         txtTitle?.text = "🌸 Thêm danh mục mới"
         txtSub?.text = "Nhập tên danh mục và chọn biểu tượng emoji gợi nhớ"
         btnSubmit?.text = "🌸 Thêm danh mục"
@@ -146,24 +146,18 @@ class CategoryManagementActivity : AppCompatActivity() {
             val currentName = edtName?.text?.toString()?.trim().orEmpty().ifEmpty { "Mới" }
             EmojiPickerHelper.showEmojiPicker(this, currentName, selectedEmoji) { emoji ->
                 selectedEmoji = emoji
-                txtPreview?.text = emoji
+                CategoryHelper.renderIcon(txtPreview, emoji)
             }
         }
 
         framePreview?.setOnClickListener { openPicker() }
 
-        val emojis = listOf("💖", "✈️", "👨‍👩‍👧", "🎉", "🎂", "☕", "🌿", "💼", "🏕️", "🎬", "🍜", "🏋️", "🛍️", "🐾", "🎨", "🎵")
+        val emojis = EmojiPickerHelper.SUGGESTED_EMOJIS
         chipGroupSuggestions?.removeAllViews()
         for (emoji in emojis) {
-            val chip = Chip(this).apply {
-                text = emoji
-                isCheckable = false
-                textSize = 15f
-                setChipBackgroundColorResource(R.color.badge_pink_bg)
-                setOnClickListener {
-                    selectedEmoji = emoji
-                    txtPreview?.text = emoji
-                }
+            val chip = EmojiPickerHelper.createChip(this, emoji) {
+                selectedEmoji = emoji
+                CategoryHelper.renderIcon(txtPreview, emoji)
             }
             chipGroupSuggestions?.addView(chip)
         }
@@ -182,7 +176,7 @@ class CategoryManagementActivity : AppCompatActivity() {
                 val (explicitIcon, _) = CategoryHelper.extractExplicitEmojiAndCleanName(s?.toString())
                 if (explicitIcon != null) {
                     selectedEmoji = explicitIcon
-                    txtPreview?.text = explicitIcon
+                    CategoryHelper.renderIcon(txtPreview, explicitIcon)
                 }
             }
             override fun afterTextChanged(s: Editable?) {}
@@ -227,7 +221,7 @@ class CategoryManagementActivity : AppCompatActivity() {
         val btnSubmit = view.findViewById<MaterialButton>(R.id.btnSubmitCategory)
 
         var selectedEmoji = item.icon
-        txtPreview?.text = selectedEmoji
+        CategoryHelper.renderIcon(txtPreview, selectedEmoji)
         txtTitle?.text = "✏️ Đổi tên & Biểu tượng"
         txtSub?.text = "Tất cả sự kiện trong danh mục này sẽ tự động cập nhật an toàn"
         btnSubmit?.text = "✨ Lưu thay đổi"
@@ -238,24 +232,18 @@ class CategoryManagementActivity : AppCompatActivity() {
             val currentName = edtName?.text?.toString()?.trim().orEmpty().ifEmpty { item.name }
             EmojiPickerHelper.showEmojiPicker(this, currentName, selectedEmoji) { emoji ->
                 selectedEmoji = emoji
-                txtPreview?.text = emoji
+                CategoryHelper.renderIcon(txtPreview, emoji)
             }
         }
 
         framePreview?.setOnClickListener { openPicker() }
 
-        val emojis = listOf("💖", "✈️", "👨‍👩‍👧", "🎉", "🎂", "☕", "🌿", "💼", "🏕️", "🎬", "🍜", "🏋️", "🛍️", "🐾", "🎨", "🎵")
+        val emojis = EmojiPickerHelper.SUGGESTED_EMOJIS
         chipGroup?.removeAllViews()
         for (emoji in emojis) {
-            val chip = Chip(this).apply {
-                text = emoji
-                isCheckable = false
-                textSize = 15f
-                setChipBackgroundColorResource(R.color.badge_pink_bg)
-                setOnClickListener {
-                    selectedEmoji = emoji
-                    txtPreview?.text = emoji
-                }
+            val chip = EmojiPickerHelper.createChip(this, emoji) {
+                selectedEmoji = emoji
+                CategoryHelper.renderIcon(txtPreview, emoji)
             }
             chipGroup?.addView(chip)
         }
@@ -274,7 +262,7 @@ class CategoryManagementActivity : AppCompatActivity() {
                 val (explicitIcon, _) = CategoryHelper.extractExplicitEmojiAndCleanName(s?.toString())
                 if (explicitIcon != null) {
                     selectedEmoji = explicitIcon
-                    txtPreview?.text = explicitIcon
+                    CategoryHelper.renderIcon(txtPreview, explicitIcon)
                 }
             }
             override fun afterTextChanged(s: Editable?) {}

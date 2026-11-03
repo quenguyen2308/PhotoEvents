@@ -36,6 +36,10 @@
         <item name="cornerSize">14dp</item>
     </style>
 
+    <style name="ShapeAppearance.PhotoEvents.AppLogo" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerSize">12dp</item>
+    </style>
+
     <style name="ShapeAppearance.PhotoEvents.Pill" parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerSize">100dp</item>
     </style>
