@@ -38,6 +38,7 @@ class CategoryManagementActivity : AppCompatActivity() {
     private lateinit var recyclerCategories: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.example.photoevents.util.ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_category_management)
 

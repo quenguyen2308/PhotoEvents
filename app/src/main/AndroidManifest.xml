@@ -12,12 +12,49 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true" />
+
+        <!-- Activity Alias cho Theme 1: Sakura Blossom (Mặc định) -->
+        <activity-alias
+            android:name=".MainActivitySakura"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_sakura"
+            android:roundIcon="@mipmap/ic_launcher_sakura_round"
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <!-- Activity Alias cho Theme 2: Memory Chest 3D -->
+        <activity-alias
+            android:name=".MainActivityMemoryChest"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_memory_chest"
+            android:roundIcon="@mipmap/ic_launcher_memory_chest_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Activity Alias cho Theme 3: Memory Journal 3D -->
+        <activity-alias
+            android:name=".MainActivityMemoryJournal"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_memory_journal"
+            android:roundIcon="@mipmap/ic_launcher_memory_journal_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <activity
             android:name=".AddEventActivity"

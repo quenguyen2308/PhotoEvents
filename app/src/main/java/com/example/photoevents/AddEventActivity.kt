@@ -58,6 +58,7 @@ class AddEventActivity : AppCompatActivity() {
     private var lastSelectedCategory: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.example.photoevents.util.ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_event)
 

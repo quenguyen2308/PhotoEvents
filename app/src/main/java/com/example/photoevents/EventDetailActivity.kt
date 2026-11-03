@@ -51,6 +51,7 @@ class EventDetailActivity : AppCompatActivity() {
     ) { uris -> if (uris.isNotEmpty()) addImages(uris) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.example.photoevents.util.ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_event_detail)
 

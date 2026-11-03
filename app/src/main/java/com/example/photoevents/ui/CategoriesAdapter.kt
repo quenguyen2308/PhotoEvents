@@ -53,12 +53,16 @@ class CategoriesAdapter(
         holder.txtName.text = item.name
 
         if (item.isAddAction) {
+            val primaryColor = com.google.android.material.color.MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorPrimary)
+            val surfaceColor = com.google.android.material.color.MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface)
+            val onSurfaceVariant = com.google.android.material.color.MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorOnSurfaceVariant)
+
             holder.txtCount.text = "Tạo mới"
-            holder.card.setCardBackgroundColor(ContextCompat.getColor(context, R.color.surface))
-            holder.card.strokeColor = ContextCompat.getColor(context, R.color.colorPrimary)
+            holder.card.setCardBackgroundColor(surfaceColor)
+            holder.card.strokeColor = primaryColor
             holder.card.cardElevation = 1f * context.resources.displayMetrics.density
-            holder.txtName.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary))
-            holder.txtCount.setTextColor(ContextCompat.getColor(context, R.color.on_surface_variant))
+            holder.txtName.setTextColor(primaryColor)
+            holder.txtCount.setTextColor(onSurfaceVariant)
 
             val iconBg = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
@@ -77,7 +81,7 @@ class CategoriesAdapter(
         val isSelected = item.id == selectedCategoryId
 
         if (isSelected) {
-            val primaryColor = ContextCompat.getColor(context, R.color.colorPrimary)
+            val primaryColor = com.google.android.material.color.MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorPrimary)
             holder.card.setCardBackgroundColor(primaryColor)
             holder.card.strokeColor = primaryColor
             holder.card.cardElevation = 3.5f * context.resources.displayMetrics.density
@@ -99,8 +103,11 @@ class CategoriesAdapter(
                 holder.btnEdit.visibility = View.GONE
             }
         } else {
-            val surfaceColor = ContextCompat.getColor(context, R.color.surface)
-            val outlineColor = ContextCompat.getColor(context, R.color.sakura_border_soft)
+            val surfaceColor = com.google.android.material.color.MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface)
+            val outlineColor = com.google.android.material.color.MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorOutline)
+            val onSurface = com.google.android.material.color.MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorOnSurface)
+            val onSurfaceVariant = com.google.android.material.color.MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorOnSurfaceVariant)
+
             holder.card.setCardBackgroundColor(surfaceColor)
             holder.card.strokeColor = outlineColor
             holder.card.cardElevation = 1f * context.resources.displayMetrics.density
@@ -108,8 +115,8 @@ class CategoriesAdapter(
             val defaultIconBg = ContextCompat.getDrawable(context, R.drawable.bg_category_icon_circle)
             holder.frameIcon.background = defaultIconBg
 
-            holder.txtName.setTextColor(ContextCompat.getColor(context, R.color.on_surface))
-            holder.txtCount.setTextColor(ContextCompat.getColor(context, R.color.on_surface_variant))
+            holder.txtName.setTextColor(onSurface)
+            holder.txtCount.setTextColor(onSurfaceVariant)
             holder.btnEdit.visibility = View.GONE
         }
 

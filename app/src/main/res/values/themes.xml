@@ -1,30 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Base.Theme.PhotoEvents" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorOnPrimary">@color/colorOnPrimary</item>
-        <item name="colorPrimaryContainer">@color/colorPrimaryContainer</item>
-        <item name="colorOnPrimaryContainer">@color/colorOnPrimaryContainer</item>
-        <item name="colorSecondary">@color/colorSecondary</item>
-        <item name="colorOnSecondary">@color/colorOnSecondary</item>
-        <item name="colorSecondaryContainer">@color/colorSecondaryContainer</item>
-        <item name="colorOnSecondaryContainer">@color/colorOnSecondaryContainer</item>
-        <item name="colorSurface">@color/surface</item>
-        <item name="colorOnSurface">@color/on_surface</item>
-        <item name="colorSurfaceVariant">@color/surface_variant</item>
-        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
-        <item name="colorOutline">@color/outline</item>
-        <item name="colorOutlineVariant">@color/outline_variant</item>
-        <item name="android:colorBackground">@color/warm_bg</item>
-        <item name="android:statusBarColor">@color/warm_bg</item>
-
         <!-- BottomSheet & Dialog Styles -->
         <item name="bottomSheetDialogTheme">@style/Theme.PhotoEvents.BottomSheetDialog</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.PhotoEvents.MaterialAlertDialog</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.PhotoEvents.MaterialAlertDialog</item>
     </style>
 
-    <style name="Theme.PhotoEvents" parent="Base.Theme.PhotoEvents">
+    <!-- Theme 1: Sakura Blossom (Mặc định) -->
+    <style name="Theme.PhotoEvents.Sakura" parent="Base.Theme.PhotoEvents">
         <item name="android:windowLightStatusBar">true</item>
+        <item name="colorPrimary">@color/sakura_pink</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">@color/sakura_pink_container</item>
+        <item name="colorOnPrimaryContainer">#8E1B3E</item>
+        <item name="colorSecondary">@color/colorSecondary</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">@color/pastel_lavender</item>
+        <item name="colorOnSecondaryContainer">@color/pastel_lavender_text</item>
+        <item name="colorSurface">@color/sakura_surface</item>
+        <item name="colorOnSurface">@color/sakura_text_primary</item>
+        <item name="colorSurfaceVariant">#FFF2F5</item>
+        <item name="colorOnSurfaceVariant">@color/sakura_text_secondary</item>
+        <item name="colorOutline">@color/sakura_border_soft</item>
+        <item name="colorOutlineVariant">@color/sakura_border_subtle</item>
+        <item name="android:colorBackground">@color/sakura_blush_bg</item>
+        <item name="android:statusBarColor">@color/sakura_blush_bg</item>
     </style>
+
+    <!-- Theme 2: Memory Chest 3D -->
+    <style name="Theme.PhotoEvents.MemoryChest" parent="Base.Theme.PhotoEvents">
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="colorPrimary">@color/chest_pink</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">@color/chest_pink_container</item>
+        <item name="colorOnPrimaryContainer">#5C1D30</item>
+        <item name="colorSecondary">@color/chest_gold</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">@color/chest_gold_container</item>
+        <item name="colorOnSecondaryContainer">#78350F</item>
+        <item name="colorSurface">@color/chest_surface</item>
+        <item name="colorOnSurface">@color/chest_text_primary</item>
+        <item name="colorSurfaceVariant">#FFF0F4</item>
+        <item name="colorOnSurfaceVariant">@color/chest_text_secondary</item>
+        <item name="colorOutline">@color/chest_border_soft</item>
+        <item name="colorOutlineVariant">@color/chest_border_subtle</item>
+        <item name="android:colorBackground">@color/chest_bg</item>
+        <item name="android:statusBarColor">@color/chest_bg</item>
+    </style>
+
+    <!-- Theme 3: Memory Journal 3D -->
+    <style name="Theme.PhotoEvents.MemoryJournal" parent="Base.Theme.PhotoEvents">
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="colorPrimary">@color/journal_mint</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">@color/journal_mint_container</item>
+        <item name="colorOnPrimaryContainer">#0F4C44</item>
+        <item name="colorSecondary">@color/journal_kraft</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">@color/journal_kraft_container</item>
+        <item name="colorOnSecondaryContainer">#78350F</item>
+        <item name="colorSurface">@color/journal_surface</item>
+        <item name="colorOnSurface">@color/journal_text_primary</item>
+        <item name="colorSurfaceVariant">#EBF8F5</item>
+        <item name="colorOnSurfaceVariant">@color/journal_text_secondary</item>
+        <item name="colorOutline">@color/journal_border_soft</item>
+        <item name="colorOutlineVariant">@color/journal_border_subtle</item>
+        <item name="android:colorBackground">@color/journal_bg</item>
+        <item name="android:statusBarColor">@color/journal_bg</item>
+    </style>
+
+    <!-- Theme mặc định của ứng dụng kế thừa từ Theme.PhotoEvents.Sakura -->
+    <style name="Theme.PhotoEvents" parent="Theme.PhotoEvents.Sakura" />
 </resources>

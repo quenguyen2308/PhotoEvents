@@ -101,8 +101,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.example.photoevents.util.ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val currentTheme = com.example.photoevents.util.ThemeHelper.getSavedTheme(this)
+        findViewById<android.widget.ImageView>(R.id.imgAppLogo)?.apply {
+            setImageResource(currentTheme.iconResId)
+            setOnClickListener {
+                com.example.photoevents.ui.ThemeSwitcherBottomSheet.show(this@MainActivity)
+            }
+        }
 
         adapter = EventsAdapter(
             onClick = { item ->
@@ -442,6 +451,12 @@ class MainActivity : AppCompatActivity() {
         sheetView.findViewById<View>(R.id.cardOptionDriveStorage)?.setOnClickListener {
             sheet.dismiss()
             showDriveStorageDialog()
+        }
+
+        // 4. Giao diện & Biểu tượng
+        sheetView.findViewById<View>(R.id.cardOptionTheme)?.setOnClickListener {
+            sheet.dismiss()
+            com.example.photoevents.ui.ThemeSwitcherBottomSheet.show(this)
         }
 
         sheet.show()

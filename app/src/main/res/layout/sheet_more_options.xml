@@ -191,11 +191,12 @@
             android:id="@+id/cardOptionDriveStorage"
             android:layout_width="match_parent"
             android:layout_height="56dp"
+            android:layout_marginBottom="10dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="0dp"
             app:strokeWidth="1.2dp"
-            app:strokeColor="@color/sakura_border_soft"
-            app:cardBackgroundColor="@color/surface"
+            app:strokeColor="?attr/colorOutline"
+            app:cardBackgroundColor="?attr/colorSurface"
             android:clickable="true"
             android:focusable="true"
             android:foreground="?attr/selectableItemBackground">
@@ -211,7 +212,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_cloud"
-                    app:tint="@color/sakura_pink"
+                    app:tint="?attr/colorPrimary"
                     android:layout_marginEnd="14dp"
                     android:contentDescription="Dung lượng Drive" />
 
@@ -227,14 +228,67 @@
                         android:text="Dung lượng Google Drive"
                         android:textSize="14.5sp"
                         android:textStyle="bold"
-                        android:textColor="@color/sakura_text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Xem dung lượng bộ nhớ app đang dùng trên đám mây"
                         android:textSize="11.5sp"
-                        android:textColor="@color/sakura_text_secondary" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Mục 4: Giao diện & Biểu tượng -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardOptionTheme"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1.2dp"
+            app:strokeColor="?attr/colorOutline"
+            app:cardBackgroundColor="?attr/colorSurface"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp">
+
+                <TextView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:text="🎨"
+                    android:textSize="17sp"
+                    android:gravity="center"
+                    android:layout_marginEnd="14dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Giao diện &amp; Biểu tượng"
+                        android:textSize="14.5sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Đổi phong cách màu và tự động đồng bộ Launcher Icon"
+                        android:textSize="11.5sp"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

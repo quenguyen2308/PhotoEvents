@@ -42,4 +42,34 @@
     <color name="badge_date_text">@color/sakura_text_primary</color>
     <color name="badge_pink_bg">@color/sakura_pink_container</color>
     <color name="badge_pink_text">@color/sakura_pink</color>
+
+    <!-- Theme 2: Memory Chest 3D Tokens -->
+    <color name="chest_pink">#F0728F</color>
+    <color name="chest_pink_light">#FBA3B5</color>
+    <color name="chest_pink_container">#FFE1E8</color>
+    <color name="chest_bg">#FFF3F6</color>
+    <color name="chest_surface">#FFFFFF</color>
+    <color name="chest_border_soft">#F3CFD8</color>
+    <color name="chest_border_subtle">#FCE7EC</color>
+    <color name="chest_text_primary">#3E1622</color>
+    <color name="chest_text_secondary">#825763</color>
+    <color name="chest_gold">#C58F58</color>
+    <color name="chest_gold_container">#FEF3C7</color>
+    <color name="chest_star">#FBBF24</color>
+    <color name="chest_ribbon">#FF6B6B</color>
+
+    <!-- Theme 3: Memory Journal 3D Tokens -->
+    <color name="journal_mint">#2A9D8F</color>
+    <color name="journal_mint_light">#48CAE4</color>
+    <color name="journal_mint_container">#E6F7F5</color>
+    <color name="journal_bg">#F4FBF9</color>
+    <color name="journal_surface">#FFFFFF</color>
+    <color name="journal_border_soft">#D2EFEA</color>
+    <color name="journal_border_subtle">#E2F5F2</color>
+    <color name="journal_text_primary">#133E3E</color>
+    <color name="journal_text_secondary">#4A7272</color>
+    <color name="journal_kraft">#D4A373</color>
+    <color name="journal_kraft_container">#FDF6EB</color>
+    <color name="journal_silver">#CBD5E0</color>
+    <color name="journal_ribbon">#FF6B6B</color>
 </resources>
