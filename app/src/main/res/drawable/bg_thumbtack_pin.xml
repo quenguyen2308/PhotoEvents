@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="16dp"
+    android:height="16dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+    <!-- Shadow -->
+    <path
+        android:fillColor="#40000000"
+        android:pathData="M8,9m-7,0a7,7 0,1 1,14 0a7,7 0,1 1,-14 0" />
+    <!-- Outer brass rim -->
+    <path
+        android:fillColor="#8C6A30"
+        android:pathData="M8,8m-6.5,0a6.5,6.5 0,1 1,13 0a6.5,6.5 0,1 1,-13 0" />
+    <!-- Main golden head -->
+    <path
+        android:fillColor="#D4AF37"
+        android:pathData="M8,8m-5.5,0a5.5,5.5 0,1 1,11 0a5.5,5.5 0,1 1,-11 0" />
+    <!-- Highlight light reflection -->
+    <path
+        android:fillColor="#FFF4D0"
+        android:pathData="M6.5,6m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+</vector>

@@ -462,10 +462,7 @@ class EventDetailActivity : AppCompatActivity() {
     private fun triggerSync() {
         // SyncScope (sống theo cả app) chứ không phải lifecycleScope — người dùng có thể bấm
         // back rời màn hình này ngay sau khi xoá/thêm ảnh hoặc đổi ảnh đại diện.
-        val helper = DriveSession.getHelper(this) ?: return
-        SyncScope.scope.launch {
-            runCatching { SyncManager(applicationContext, helper).sync() }
-        }
+        DriveSession.triggerSilentSync(applicationContext)
     }
 
     private fun showFocusAdjuster(image: EventImage) {
@@ -515,11 +512,7 @@ class EventDetailActivity : AppCompatActivity() {
             val now = System.currentTimeMillis()
             db.eventDao().softDelete(eventId, now)
             db.eventImageDao().softDeleteForEvents(setOf(eventId), now)
-            DriveSession.getHelper(this@EventDetailActivity)?.let { helper ->
-                SyncScope.scope.launch {
-                    runCatching { SyncManager(applicationContext, helper).sync() }
-                }
-            }
+            triggerSync()
             Toast.makeText(this@EventDetailActivity, "Đã xoá sự kiện $currentTitle", Toast.LENGTH_SHORT).show()
             finish()
         }

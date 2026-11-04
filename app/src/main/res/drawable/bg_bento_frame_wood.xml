@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Lớp 1: Khung phào gỗ óc chó ngoài cùng với góc bo 14dp -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="14dp" />
+            <solid android:color="#4A3427" />
+            <stroke
+                android:width="1.5dp"
+                android:color="#5C4233" />
+        </shape>
+    </item>
+
+    <!-- Lớp 2: Rãnh phào chỉ vát nghiêng khắc chìm (recessed bevel groove) -->
+    <item
+        android:top="3dp"
+        android:bottom="3dp"
+        android:left="3dp"
+        android:right="3dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="11dp" />
+            <solid android:color="#231710" />
+        </shape>
+    </item>
+
+    <!-- Lớp 3: Đường nẹp chỉ gỗ / đồng thau phản quang viền trong -->
+    <item
+        android:top="5dp"
+        android:bottom="5dp"
+        android:left="5dp"
+        android:right="5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="9dp" />
+            <solid android:color="#5A3E2D" />
+            <stroke
+                android:width="1dp"
+                android:color="#7A553E" />
+        </shape>
+    </item>
+
+    <!-- Lớp 4: Lòng khung gỗ đặt tranh (recessed matting) -->
+    <item
+        android:top="7dp"
+        android:bottom="7dp"
+        android:left="7dp"
+        android:right="7dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="7dp" />
+            <solid android:color="#140E0B" />
+        </shape>
+    </item>
+</layer-list>

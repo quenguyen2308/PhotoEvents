@@ -353,10 +353,6 @@ class CategoryManagementActivity : AppCompatActivity() {
     }
 
     private fun runSync() {
-        DriveSession.getHelper(this)?.let { helper ->
-            SyncScope.scope.launch {
-                runCatching { SyncManager(applicationContext, helper).sync() }
-            }
-        }
+        DriveSession.triggerSilentSync(applicationContext)
     }
 }

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Thuộc tính tuỳ biến giao diện động theo từng Theme -->
+    <attr name="eventCardCornerRadius" format="dimension" />
+    <attr name="eventCardElevation" format="dimension" />
+    <attr name="eventCardStrokeWidth" format="dimension" />
+    <attr name="eventCardStrokeColor" format="color" />
+
+    <attr name="bentoContainerBackground" format="reference|color" />
+    <attr name="bentoImageBorderWidth" format="dimension" />
+    <attr name="bentoImageBorderColor" format="color" />
+    <attr name="bentoThumbtackVisible" format="boolean" />
+    <attr name="bentoWashiTapeVisible" format="boolean" />
+    <attr name="bentoSpiralRingsVisible" format="boolean" />
+
+    <attr name="overlayMoreBackground" format="color" />
+    <attr name="overlayMoreTextColor" format="color" />
+
+    <attr name="badgeCountBackground" format="reference" />
+    <attr name="badgeCountTextColor" format="color" />
+
+    <attr name="badgeDateBackground" format="reference" />
+    <attr name="badgeDateTextColor" format="color" />
+
+    <attr name="fabCornerRadius" format="dimension" />
+</resources>

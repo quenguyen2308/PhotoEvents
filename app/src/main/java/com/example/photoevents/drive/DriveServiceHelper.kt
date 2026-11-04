@@ -116,16 +116,19 @@ class DriveServiceHelper private constructor(
     }
 
     /**
-     * Đọc metadata.json hiện có trên Drive trong appDataFolder.
-     * Sử dụng cachedMetadataFileId để tải thẳng (1 request duy nhất) thay vì list query 2 lần.
+     * Xác định canonical file ID của metadata.json trong appDataFolder:
+     * - Luôn sắp xếp theo modifiedTime desc để chọn bản ghi mới nhất giữa các thiết bị.
+     * - Tự động dọn dẹp các bản ghi trùng lặp (nếu từng phát sinh nhiều file metadata.json).
+     * - Chỉ tạo file mới nếu thực sự chưa có file nào trên Drive.
      */
-    suspend fun downloadMetadataJson(): String? = withContext(Dispatchers.IO) {
-        val fileId = cachedMetadataFileId
-        if (fileId != null) {
+    private suspend fun resolveCanonicalMetadataFileId(): String? = withContext(Dispatchers.IO) {
+        val cached = cachedMetadataFileId
+        if (cached != null) {
             try {
-                val out = ByteArrayOutputStream()
-                drive.files().get(fileId).executeMediaAndDownloadTo(out)
-                return@withContext out.toString("UTF-8")
+                val file = drive.files().get(cached).setFields("id, trashed").execute()
+                if (file != null && file.trashed != true) {
+                    return@withContext cached
+                }
             } catch (e: GoogleJsonResponseException) {
                 if (e.statusCode == 404) {
                     saveMetadataFileId(null)
@@ -135,26 +138,56 @@ class DriveServiceHelper private constructor(
             }
         }
 
-        // Nếu chưa cache hoặc fileId cũ bị 404, tìm kiếm trong appDataFolder
-        val existing = drive.files().list()
+        val fileList = drive.files().list()
             .setSpaces(APPDATA_FOLDER)
             .setQ("name = '$METADATA_FILE_NAME' and trashed = false")
-            .setFields("files(id)")
-            .execute().files?.firstOrNull() ?: return@withContext null
+            .setOrderBy("modifiedTime desc")
+            .setFields("files(id, modifiedTime)")
+            .execute().files.orEmpty()
 
-        saveMetadataFileId(existing.id)
-        val out = ByteArrayOutputStream()
-        drive.files().get(existing.id).executeMediaAndDownloadTo(out)
-        out.toString("UTF-8")
+        if (fileList.isNotEmpty()) {
+            val primary = fileList.first()
+            saveMetadataFileId(primary.id)
+
+            // Dọn dẹp các file trùng lặp cũ hơn để tránh phân mảnh giữa các thiết bị
+            if (fileList.size > 1) {
+                for (dup in fileList.drop(1)) {
+                    runCatching { drive.files().delete(dup.id).execute() }
+                }
+            }
+            return@withContext primary.id
+        }
+
+        null
+    }
+
+    /**
+     * Đọc metadata.json hiện có trên Drive trong appDataFolder.
+     * Sử dụng resolveCanonicalMetadataFileId để bảo đảm luôn đọc đúng file mới nhất và đồng nhất.
+     */
+    suspend fun downloadMetadataJson(): String? = withContext(Dispatchers.IO) {
+        val fileId = resolveCanonicalMetadataFileId() ?: return@withContext null
+        try {
+            val out = ByteArrayOutputStream()
+            drive.files().get(fileId).executeMediaAndDownloadTo(out)
+            val json = out.toString("UTF-8").trim()
+            if (json.isEmpty() || json == "{}") null else json
+        } catch (e: GoogleJsonResponseException) {
+            if (e.statusCode == 404) {
+                saveMetadataFileId(null)
+                null
+            } else {
+                throw e
+            }
+        }
     }
 
     /**
      * Ghi đè metadata.json trên Drive trong appDataFolder bằng dữ liệu đã merge.
-     * Sử dụng cachedMetadataFileId để update thẳng 1 request duy nhất.
      */
     suspend fun uploadMetadataJson(json: String): Unit = withContext(Dispatchers.IO) {
         val content = ByteArrayContent("application/json", json.toByteArray())
-        val fileId = cachedMetadataFileId
+        val fileId = resolveCanonicalMetadataFileId()
 
         if (fileId != null) {
             try {
@@ -169,23 +202,12 @@ class DriveServiceHelper private constructor(
             }
         }
 
-        val existing = drive.files().list()
-            .setSpaces(APPDATA_FOLDER)
-            .setQ("name = '$METADATA_FILE_NAME' and trashed = false")
-            .setFields("files(id)")
-            .execute().files?.firstOrNull()
-
-        if (existing != null) {
-            saveMetadataFileId(existing.id)
-            drive.files().update(existing.id, null, content).execute()
-        } else {
-            val meta = DriveFile().apply {
-                name = METADATA_FILE_NAME
-                parents = listOf(APPDATA_FOLDER)
-            }
-            val created = drive.files().create(meta, content).setFields("id").execute()
-            saveMetadataFileId(created.id)
+        val meta = DriveFile().apply {
+            name = METADATA_FILE_NAME
+            parents = listOf(APPDATA_FOLDER)
         }
+        val created = drive.files().create(meta, content).setFields("id").execute()
+        saveMetadataFileId(created.id)
     }
 
     /**

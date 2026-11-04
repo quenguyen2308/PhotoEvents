@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="70dp"
+    android:height="20dp"
+    android:viewportWidth="70"
+    android:viewportHeight="20">
+    <!-- Washi tape body with soft translucent coral color -->
+    <path
+        android:fillColor="#D9E76F51"
+        android:pathData="M2,1 L68,3 L67,19 L1,17 Z" />
+    <!-- Perforated / ripped dashed lines at ends -->
+    <path
+        android:strokeColor="#80FFFFFF"
+        android:strokeWidth="1.2"
+        android:pathData="M2,2 L1,18 M68,4 L67,18" />
+</vector>

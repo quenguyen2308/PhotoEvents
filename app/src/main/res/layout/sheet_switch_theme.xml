@@ -231,7 +231,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Rương gỗ hồng viền đồng thau cổ, polaroid &amp; icon rương 3D."
+                        android:text="Rương hồng viền đồng thau, khung bento may chỉ nổi (Stitched Scrapbook)."
                         android:textSize="11.5sp"
                         android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
@@ -314,7 +314,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Sổ tay xanh mint aqua, gáy lò xo kim loại, kẹp giấy &amp; nhãn Memories."
+                        android:text="Sổ tay xanh mint aqua, khung bento dải thước phim 35mm hoài niệm."
                         android:textSize="11.5sp"
                         android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>

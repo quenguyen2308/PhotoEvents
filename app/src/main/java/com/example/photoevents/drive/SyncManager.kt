@@ -118,7 +118,14 @@ class SyncManager(private val context: Context, private val drive: DriveServiceH
     private val imageDao = AppDatabase.get(context).eventImageDao()
 
     suspend fun sync(): SyncResult = withContext(Dispatchers.IO + NonCancellable) {
-        syncMutex.withLock { doSync() }
+        try {
+            syncMutex.withLock { doSync() }
+        } catch (e: Exception) {
+            if (e is com.google.api.client.googleapis.json.GoogleJsonResponseException && e.statusCode == 401) {
+                DriveSession.clearSession()
+            }
+            throw e
+        }
     }
 
     private suspend fun doSync(): SyncResult {

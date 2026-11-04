@@ -55,7 +55,7 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:fontFamily="sans-serif-black"
-                        android:textColor="@color/sakura_text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                 </LinearLayout>
 
@@ -73,21 +73,21 @@
                 android:insetBottom="0dp"
                 android:padding="0dp"
                 android:layout_marginEnd="8dp"
-                app:backgroundTint="@color/surface"
-                android:backgroundTint="@color/surface"
-                app:strokeColor="@color/sakura_border_soft"
+                app:backgroundTint="?attr/colorSurface"
+                android:backgroundTint="?attr/colorSurface"
+                app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1.2dp"
                 app:cornerRadius="100dp"
                 app:elevation="1dp"
                 app:rippleColor="#33FF6584"
                 app:icon="@drawable/ic_more_vert"
                 app:iconSize="18dp"
-                app:iconTint="@color/sakura_pink"
+                app:iconTint="?attr/colorPrimary"
                 app:iconGravity="textStart"
                 app:iconPadding="0dp"
                 android:contentDescription="Tùy chọn mở rộng" />
 
-            <!-- Bên phải: Nút sắp xếp dạng Sakura Pill Button -->
+            <!-- Bên phải: Nút sắp xếp dạng Pill Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSort"
                 style="@style/Widget.Material3.Button.OutlinedButton"
@@ -104,10 +104,10 @@
                 android:text="Mới nhất"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                android:textColor="@color/sakura_text_primary"
-                app:backgroundTint="@color/surface"
-                android:backgroundTint="@color/surface"
-                app:strokeColor="@color/sakura_border_soft"
+                android:textColor="?attr/colorOnSurface"
+                app:backgroundTint="?attr/colorSurface"
+                android:backgroundTint="?attr/colorSurface"
+                app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1.2dp"
                 app:cornerRadius="100dp"
                 app:elevation="1dp"
@@ -333,11 +333,17 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="20dp"
-        android:src="@drawable/ic_add"
-        app:tint="?attr/colorOnPrimary"
-        app:backgroundTint="?attr/colorPrimary"
-        app:elevation="4dp"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_launcher_sakura"
+        app:tint="@null"
+        app:fabCustomSize="56dp"
+        app:maxImageSize="56dp"
+        app:backgroundTint="@android:color/transparent"
+        app:elevation="0dp"
+        app:pressedTranslationZ="0dp"
+        app:borderWidth="0dp"
+        app:rippleColor="?attr/colorControlHighlight"
+        android:scaleType="fitCenter"
         android:contentDescription="Thêm sự kiện" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

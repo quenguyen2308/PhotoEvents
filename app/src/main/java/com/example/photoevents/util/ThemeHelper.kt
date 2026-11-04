@@ -37,7 +37,7 @@ enum class AppTheme(
         aliasName = "com.example.photoevents.MainActivityMemoryChest",
         iconResId = R.drawable.ic_launcher_memory_chest,
         title = "Memory Chest 3D",
-        description = "Ấm cúng, rương gỗ hồng viền đồng thau cổ, polaroid & icon rương 3D.",
+        description = "Rương kỷ vật hồng viền đồng thau, khung bento may chỉ nổi (Stitched Scrapbook).",
         badgeText = "Mới",
         primaryColorHex = "#F0728F"
     ),
@@ -47,7 +47,7 @@ enum class AppTheme(
         aliasName = "com.example.photoevents.MainActivityMemoryJournal",
         iconResId = R.drawable.ic_launcher_memory_journal,
         title = "Memory Journal 3D",
-        description = "Sổ tay xanh mint aqua, gáy lò xo kim loại, kẹp giấy & nhãn Memories.",
+        description = "Sổ tay xanh mint aqua, khung bento dải thước phim 35mm hoài niệm.",
         badgeText = "Mới",
         primaryColorHex = "#2A9D8F"
     );

@@ -149,7 +149,6 @@ object PhotoLightboxDialog {
         context: Context,
         image: EventImage,
         isCover: Boolean,
-        indexText: String = "",
         onToggleCover: ((EventImage) -> Unit)? = null,
         onDelete: ((EventImage) -> Unit)? = null,
         onAdjustFocus: ((EventImage) -> Unit)? = null

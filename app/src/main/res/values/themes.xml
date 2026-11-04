@@ -5,9 +5,28 @@
         <item name="bottomSheetDialogTheme">@style/Theme.PhotoEvents.BottomSheetDialog</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.PhotoEvents.MaterialAlertDialog</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.PhotoEvents.MaterialAlertDialog</item>
+
+        <!-- Default Theme Attributes Fallback -->
+        <item name="eventCardCornerRadius">20dp</item>
+        <item name="eventCardElevation">1dp</item>
+        <item name="eventCardStrokeWidth">1dp</item>
+        <item name="eventCardStrokeColor">?attr/colorOutline</item>
+        <item name="bentoContainerBackground">?attr/colorSurfaceVariant</item>
+        <item name="bentoImageBorderWidth">0dp</item>
+        <item name="bentoImageBorderColor">@android:color/transparent</item>
+        <item name="bentoThumbtackVisible">false</item>
+        <item name="bentoWashiTapeVisible">false</item>
+        <item name="bentoSpiralRingsVisible">false</item>
+        <item name="overlayMoreBackground">#80000000</item>
+        <item name="overlayMoreTextColor">#FFFFFF</item>
+        <item name="badgeCountBackground">@drawable/bg_count_badge</item>
+        <item name="badgeCountTextColor">?attr/colorOnSurface</item>
+        <item name="badgeDateBackground">@drawable/bg_floating_date_badge</item>
+        <item name="badgeDateTextColor">?attr/colorPrimary</item>
+        <item name="fabCornerRadius">100dp</item>
     </style>
 
-    <!-- Theme 1: Sakura Blossom (Mặc định) -->
+    <!-- Theme 1: Sakura Blossom (Zen Bento Minimalist) -->
     <style name="Theme.PhotoEvents.Sakura" parent="Base.Theme.PhotoEvents">
         <item name="android:windowLightStatusBar">true</item>
         <item name="colorPrimary">@color/sakura_pink</item>
@@ -26,9 +45,28 @@
         <item name="colorOutlineVariant">@color/sakura_border_subtle</item>
         <item name="android:colorBackground">@color/sakura_blush_bg</item>
         <item name="android:statusBarColor">@color/sakura_blush_bg</item>
+
+        <!-- Đặc trưng riêng của Sakura: Bo tròn mượt 22dp, thanh thoát, không đinh ghim/băng dính -->
+        <item name="eventCardCornerRadius">22dp</item>
+        <item name="eventCardElevation">1dp</item>
+        <item name="eventCardStrokeWidth">1.2dp</item>
+        <item name="eventCardStrokeColor">@color/sakura_border_soft</item>
+        <item name="bentoContainerBackground">#FFF0F3</item>
+        <item name="bentoImageBorderWidth">0dp</item>
+        <item name="bentoImageBorderColor">@android:color/transparent</item>
+        <item name="bentoThumbtackVisible">false</item>
+        <item name="bentoWashiTapeVisible">false</item>
+        <item name="bentoSpiralRingsVisible">false</item>
+        <item name="overlayMoreBackground">#B3FF6584</item>
+        <item name="overlayMoreTextColor">#FFFFFF</item>
+        <item name="badgeCountBackground">@drawable/bg_count_badge_sakura</item>
+        <item name="badgeCountTextColor">@color/sakura_pink</item>
+        <item name="badgeDateBackground">@drawable/bg_date_badge_sakura</item>
+        <item name="badgeDateTextColor">@color/sakura_pink</item>
+        <item name="fabCornerRadius">100dp</item>
     </style>
 
-    <!-- Theme 2: Memory Chest 3D -->
+    <!-- Theme 2: Memory Chest 3D (Giữ nguyên màu chủ đạo, khung Bento Khung Gỗ Nghệ Nhân) -->
     <style name="Theme.PhotoEvents.MemoryChest" parent="Base.Theme.PhotoEvents">
         <item name="android:windowLightStatusBar">true</item>
         <item name="colorPrimary">@color/chest_pink</item>
@@ -47,9 +85,28 @@
         <item name="colorOutlineVariant">@color/chest_border_subtle</item>
         <item name="android:colorBackground">@color/chest_bg</item>
         <item name="android:statusBarColor">@color/chest_bg</item>
+
+        <!-- Khung viền Bento: Mẫu 4 Sổ Da May Chỉ (Stitched Scrapbook, viền chỉ may đứt nét) -->
+        <item name="eventCardCornerRadius">18dp</item>
+        <item name="eventCardElevation">2.5dp</item>
+        <item name="eventCardStrokeWidth">1.5dp</item>
+        <item name="eventCardStrokeColor">#D4A373</item>
+        <item name="bentoContainerBackground">@drawable/bg_bento_frame_stitched</item>
+        <item name="bentoImageBorderWidth">2dp</item>
+        <item name="bentoImageBorderColor">#FFFFFF</item>
+        <item name="bentoThumbtackVisible">false</item>
+        <item name="bentoWashiTapeVisible">false</item>
+        <item name="bentoSpiralRingsVisible">false</item>
+        <item name="overlayMoreBackground">#D93E1622</item>
+        <item name="overlayMoreTextColor">#FDF0CD</item>
+        <item name="badgeCountBackground">@drawable/bg_count_badge_chest</item>
+        <item name="badgeCountTextColor">#5C4033</item>
+        <item name="badgeDateBackground">@drawable/bg_date_badge_chest</item>
+        <item name="badgeDateTextColor">#5C4033</item>
+        <item name="fabCornerRadius">100dp</item>
     </style>
 
-    <!-- Theme 3: Memory Journal 3D -->
+    <!-- Theme 3: Memory Journal 3D (Giữ nguyên màu chủ đạo, khung Bento Khung Thước Phim Hoài Niệm) -->
     <style name="Theme.PhotoEvents.MemoryJournal" parent="Base.Theme.PhotoEvents">
         <item name="android:windowLightStatusBar">true</item>
         <item name="colorPrimary">@color/journal_mint</item>
@@ -68,6 +125,25 @@
         <item name="colorOutlineVariant">@color/journal_border_subtle</item>
         <item name="android:colorBackground">@color/journal_bg</item>
         <item name="android:statusBarColor">@color/journal_bg</item>
+
+        <!-- Khung viền Bento: Khung Thước Phim Hoài Niệm (gờ phim sprocket 35mm, kẹp góc vintage) -->
+        <item name="eventCardCornerRadius">16dp</item>
+        <item name="eventCardElevation">2.5dp</item>
+        <item name="eventCardStrokeWidth">1.5dp</item>
+        <item name="eventCardStrokeColor">@color/journal_border_soft</item>
+        <item name="bentoContainerBackground">#141312</item>
+        <item name="bentoImageBorderWidth">1.5dp</item>
+        <item name="bentoImageBorderColor">#2E2A25</item>
+        <item name="bentoThumbtackVisible">false</item>
+        <item name="bentoWashiTapeVisible">false</item>
+        <item name="bentoSpiralRingsVisible">false</item>
+        <item name="overlayMoreBackground">#E02A9D8F</item>
+        <item name="overlayMoreTextColor">#FFFFFF</item>
+        <item name="badgeCountBackground">@drawable/bg_count_badge_journal</item>
+        <item name="badgeCountTextColor">#FFFFFF</item>
+        <item name="badgeDateBackground">@drawable/bg_date_badge_journal</item>
+        <item name="badgeDateTextColor">#2A9D8F</item>
+        <item name="fabCornerRadius">16dp</item>
     </style>
 
     <!-- Theme mặc định của ứng dụng kế thừa từ Theme.PhotoEvents.Sakura -->

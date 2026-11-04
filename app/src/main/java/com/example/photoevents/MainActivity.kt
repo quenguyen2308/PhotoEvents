@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
                         if (isCover && currentEvent?.coverImageId != image.id) {
                             db.eventDao().setCover(event.id, image.id, now)
                         }
-                        runSync()
+                        DriveSession.triggerSilentSync(this@MainActivity)
                     }
                 }
             }
@@ -234,14 +234,24 @@ class MainActivity : AppCompatActivity() {
             }
         }.also { callback -> backPressedCallback = callback })
 
-        findViewById<View>(R.id.fabAdd).setOnClickListener {
-            val intent = Intent(this, AddEventActivity::class.java)
-            val currentCat = selectedCategoryFlow.value
-            if (currentCat != com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID &&
-                currentCat != com.example.photoevents.data.CategoryHelper.UNCATEGORIZED_CATEGORY_ID) {
-                intent.putExtra(EXTRA_CATEGORY, currentCat)
+        findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAdd)?.let { fab ->
+            fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+            fab.compatElevation = 0f
+            fab.elevation = 0f
+            fab.stateListAnimator = null
+            fab.imageTintList = null
+            fab.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+            fab.setImageResource(currentTheme.iconResId)
+
+            fab.setOnClickListener {
+                val intent = Intent(this, AddEventActivity::class.java)
+                val currentCat = selectedCategoryFlow.value
+                if (currentCat != com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID &&
+                    currentCat != com.example.photoevents.data.CategoryHelper.UNCATEGORIZED_CATEGORY_ID) {
+                    intent.putExtra(EXTRA_CATEGORY, currentCat)
+                }
+                startActivity(intent)
             }
-            startActivity(intent)
         }
 
         // Khôi phục kiểu sắp xếp đã chọn lần trước
@@ -348,6 +358,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var lastResumeSyncTime = 0L
+
     override fun onResume() {
         super.onResume()
         val savedCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
@@ -358,6 +370,22 @@ class MainActivity : AppCompatActivity() {
             selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
         }
         categoryRevisionFlow.value++
+
+        triggerSilentSyncOnResume()
+    }
+
+    private fun triggerSilentSyncOnResume() {
+        val now = System.currentTimeMillis()
+        if (now - lastResumeSyncTime < 15_000L) return
+        lastResumeSyncTime = now
+
+        DriveSession.triggerSilentSync(this) {
+            lifecycleScope.launch(Dispatchers.Main) {
+                val updatedCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
+                customCategoriesFlow.value = updatedCustom
+                categoryRevisionFlow.value++
+            }
+        }
     }
 
     private fun showSortDialog() {
@@ -638,13 +666,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun runSync() {
-        val helper = DriveSession.getHelper(this)
-        if (helper == null) {
-            swipeRefresh.isRefreshing = false
-            return
-        }
         lifecycleScope.launch {
             try {
+                val helper = DriveSession.getHelperSuspend(this@MainActivity)
+                if (helper == null) {
+                    swipeRefresh.isRefreshing = false
+                    return@launch
+                }
                 val result = SyncManager(this@MainActivity, helper).sync()
                 val updatedCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
                 customCategoriesFlow.value = updatedCustom
@@ -664,6 +692,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 // Đồng bộ thành công thì âm thầm, không hiện Toast — chỉ báo khi có lỗi.
             } catch (e: Exception) {
+                if (e is com.google.api.client.googleapis.json.GoogleJsonResponseException && e.statusCode == 401) {
+                    DriveSession.clearSession()
+                }
                 Toast.makeText(this@MainActivity, "Lỗi đồng bộ: ${e.message}", Toast.LENGTH_LONG).show()
             } finally {
                 swipeRefresh.isRefreshing = false

@@ -11,8 +11,8 @@
     app:cardCornerRadius="18dp"
     app:cardElevation="1dp"
     app:strokeWidth="1dp"
-    app:strokeColor="@color/sakura_border_soft"
-    app:cardBackgroundColor="@color/surface"
+    app:strokeColor="?attr/colorOutline"
+    app:cardBackgroundColor="?attr/colorSurface"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground">

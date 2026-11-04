@@ -106,13 +106,26 @@ class EventsAdapter(
         val imagesStrip: LinearLayout = view.findViewById(R.id.imagesStrip)
 
         // Bento Mosaic views:
+        val layoutMosaic: LinearLayout = view.findViewById(R.id.layoutMosaic)
+        val bentoContainer: View = view.findViewById(R.id.bentoContainer)
         val frameMainImage: View = view.findViewById(R.id.frameMainImage)
         val layoutSubImages: View = view.findViewById(R.id.layoutSubImages)
         val imgSub1: ShapeableImageView = view.findViewById(R.id.imgSub1)
         val frameSub2: View = view.findViewById(R.id.frameSub2)
         val imgSub2: ShapeableImageView = view.findViewById(R.id.imgSub2)
-        val txtMoreOverlay: TextView = view.findViewById(R.id.txtMoreImagesOverlay)
         val btnAdjustFocus: ImageButton = view.findViewById(R.id.btnAdjustFocus)
+
+        // Theme-specific decorative views:
+        val layoutSpiralHeader: View? = view.findViewById(R.id.layoutSpiralHeader)
+        val layoutSpiralRings: View? = view.findViewById(R.id.layoutSpiralRings)
+        val imgThumbtackPin: View? = view.findViewById(R.id.imgThumbtackPin)
+        val imgWashiTape: View? = view.findViewById(R.id.imgWashiTape)
+        val imgPaperclip: View? = view.findViewById(R.id.imgPaperclip)
+        val layoutFilmHeader: View? = view.findViewById(R.id.layoutFilmHeader)
+        val imgFilmCornerMainTL: View? = view.findViewById(R.id.imgFilmCornerMainTL)
+        val imgFilmCornerMainBR: View? = view.findViewById(R.id.imgFilmCornerMainBR)
+        val imgFilmCornerSub1TL: View? = view.findViewById(R.id.imgFilmCornerSub1TL)
+        val imgFilmCornerSub2BR: View? = view.findViewById(R.id.imgFilmCornerSub2BR)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -149,7 +162,71 @@ class EventsAdapter(
         val otherImages = images.filter { it.id != cover?.id }
         val displayMetrics = holder.itemView.context.resources.displayMetrics
         val density = displayMetrics.density
-        val radius = 20 * density
+
+        val currentTheme = com.example.photoevents.util.ThemeHelper.getSavedTheme(holder.itemView.context)
+        val isFilmTheme = (currentTheme == com.example.photoevents.util.AppTheme.MEMORY_JOURNAL)
+
+        // Khung Thước Phim 35mm (Memory Journal):
+        holder.layoutFilmHeader?.visibility = if (isFilmTheme) View.VISIBLE else View.GONE
+        holder.imgFilmCornerMainTL?.visibility = if (isFilmTheme) View.VISIBLE else View.GONE
+        holder.imgFilmCornerMainBR?.visibility = if (isFilmTheme) View.VISIBLE else View.GONE
+        holder.imgFilmCornerSub1TL?.visibility = if (isFilmTheme && otherImages.isNotEmpty()) View.VISIBLE else View.GONE
+        holder.imgFilmCornerSub2BR?.visibility = if (isFilmTheme && otherImages.size >= 2) View.VISIBLE else View.GONE
+
+        // Mẫu 4: Stitched Scrapbook (Sổ Da May Chỉ) cho Memory Chest
+        holder.imgThumbtackPin?.visibility = View.GONE
+
+        // Ẩn các view cũ:
+        holder.layoutSpiralHeader?.visibility = View.GONE
+        holder.layoutSpiralRings?.visibility = View.GONE
+        holder.imgWashiTape?.visibility = View.GONE
+        holder.imgPaperclip?.visibility = View.GONE
+
+        // Căn chỉnh khung Bento bên trong thẻ (Khung Sổ Da May Chỉ được bo viền đặt lồng vào trong):
+        val (bentoMarginH, bentoMarginTop) = when (currentTheme) {
+            com.example.photoevents.util.AppTheme.SAKURA -> 0 to 0
+            com.example.photoevents.util.AppTheme.MEMORY_CHEST -> (8 * density).toInt() to (8 * density).toInt()
+            com.example.photoevents.util.AppTheme.MEMORY_JOURNAL -> 0 to 0
+        }
+        (holder.bentoContainer.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
+            if (lp.leftMargin != bentoMarginH || lp.rightMargin != bentoMarginH || lp.topMargin != bentoMarginTop) {
+                lp.setMargins(bentoMarginH, bentoMarginTop, bentoMarginH, 0)
+                holder.bentoContainer.layoutParams = lp
+            }
+        }
+
+        val (mosaicMarginH, mosaicMarginV) = when (currentTheme) {
+            com.example.photoevents.util.AppTheme.SAKURA -> (4 * density).toInt() to (4 * density).toInt()
+            com.example.photoevents.util.AppTheme.MEMORY_CHEST -> (7 * density).toInt() to (7 * density).toInt()
+            com.example.photoevents.util.AppTheme.MEMORY_JOURNAL -> (6 * density).toInt() to (6 * density).toInt()
+        }
+
+        val gap = when (currentTheme) {
+            com.example.photoevents.util.AppTheme.SAKURA -> (4 * density).toInt()
+            com.example.photoevents.util.AppTheme.MEMORY_CHEST -> (6 * density).toInt()
+            com.example.photoevents.util.AppTheme.MEMORY_JOURNAL -> (5 * density).toInt()
+        }
+
+        (holder.layoutMosaic.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
+            if (lp.leftMargin != mosaicMarginH || lp.topMargin != mosaicMarginV ||
+                lp.rightMargin != mosaicMarginH || lp.bottomMargin != mosaicMarginV) {
+                lp.setMargins(mosaicMarginH, mosaicMarginV, mosaicMarginH, mosaicMarginV)
+                holder.layoutMosaic.layoutParams = lp
+            }
+        }
+
+        (holder.layoutSubImages.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
+            if (lp.marginStart != gap) {
+                lp.marginStart = gap
+                holder.layoutSubImages.layoutParams = lp
+            }
+        }
+        (holder.frameSub2.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
+            if (lp.topMargin != gap) {
+                lp.topMargin = gap
+                holder.frameSub2.layoutParams = lp
+            }
+        }
 
         val cardWidth = if (holder.itemView.width > 0) {
             holder.itemView.width
@@ -157,23 +234,78 @@ class EventsAdapter(
             displayMetrics.widthPixels - (32 * density).toInt()
         }
         val containerHeight = (215 * density).toInt()
-        val gap = (3 * density).toInt()
+        val usableWidth = (cardWidth - 2 * mosaicMarginH).coerceAtLeast(10)
+        val usableHeight = (containerHeight - 2 * mosaicMarginV).coerceAtLeast(10)
 
         val (mainTargetWidth, mainTargetHeight) = if (otherImages.isNotEmpty()) {
-            val availWidth = (cardWidth - gap).coerceAtLeast(10)
+            val availWidth = (usableWidth - gap).coerceAtLeast(10)
             val w = (availWidth * 0.6f).toInt()
-            w to containerHeight
+            w to usableHeight
         } else {
-            cardWidth to containerHeight
+            usableWidth to usableHeight
         }
 
         if (cover != null) {
             if (otherImages.isNotEmpty()) {
                 // Có từ 2 ảnh trở lên: Kích hoạt Bento Mosaic
-                holder.img.shapeAppearanceModel = holder.img.shapeAppearanceModel.toBuilder()
-                    .setTopLeftCornerSize(radius)
-                    .setTopRightCornerSize(0f)
-                    .build()
+                when (currentTheme) {
+                    com.example.photoevents.util.AppTheme.SAKURA -> {
+                        val outerRadius = 16 * density
+                        val innerRadius = 6 * density
+                        val subBottomRadius = if (otherImages.size >= 2) innerRadius else outerRadius
+
+                        holder.img.shapeAppearanceModel = holder.img.shapeAppearanceModel.toBuilder()
+                            .setTopLeftCornerSize(outerRadius)
+                            .setBottomLeftCornerSize(outerRadius)
+                            .setTopRightCornerSize(innerRadius)
+                            .setBottomRightCornerSize(innerRadius)
+                            .build()
+
+                        holder.imgSub1.shapeAppearanceModel = holder.imgSub1.shapeAppearanceModel.toBuilder()
+                            .setTopRightCornerSize(outerRadius)
+                            .setTopLeftCornerSize(innerRadius)
+                            .setBottomRightCornerSize(subBottomRadius)
+                            .setBottomLeftCornerSize(innerRadius)
+                            .build()
+
+                        if (otherImages.size >= 2) {
+                            holder.imgSub2.shapeAppearanceModel = holder.imgSub2.shapeAppearanceModel.toBuilder()
+                                .setBottomRightCornerSize(outerRadius)
+                                .setTopRightCornerSize(innerRadius)
+                                .setTopLeftCornerSize(innerRadius)
+                                .setBottomLeftCornerSize(innerRadius)
+                                .build()
+                        }
+                    }
+                    com.example.photoevents.util.AppTheme.MEMORY_CHEST -> {
+                        val scrapbookRadius = 9 * density
+                        holder.img.shapeAppearanceModel = holder.img.shapeAppearanceModel.toBuilder()
+                            .setAllCornerSizes(scrapbookRadius)
+                            .build()
+                        holder.imgSub1.shapeAppearanceModel = holder.imgSub1.shapeAppearanceModel.toBuilder()
+                            .setAllCornerSizes(scrapbookRadius)
+                            .build()
+                        if (otherImages.size >= 2) {
+                            holder.imgSub2.shapeAppearanceModel = holder.imgSub2.shapeAppearanceModel.toBuilder()
+                                .setAllCornerSizes(scrapbookRadius)
+                                .build()
+                        }
+                    }
+                    com.example.photoevents.util.AppTheme.MEMORY_JOURNAL -> {
+                        val filmRadius = 8 * density
+                        holder.img.shapeAppearanceModel = holder.img.shapeAppearanceModel.toBuilder()
+                            .setAllCornerSizes(filmRadius)
+                            .build()
+                        holder.imgSub1.shapeAppearanceModel = holder.imgSub1.shapeAppearanceModel.toBuilder()
+                            .setAllCornerSizes(filmRadius)
+                            .build()
+                        if (otherImages.size >= 2) {
+                            holder.imgSub2.shapeAppearanceModel = holder.imgSub2.shapeAppearanceModel.toBuilder()
+                                .setAllCornerSizes(filmRadius)
+                                .build()
+                        }
+                    }
+                }
 
                 val mainParams = holder.frameMainImage.layoutParams as LinearLayout.LayoutParams
                 mainParams.weight = 60f
@@ -183,23 +315,19 @@ class EventsAdapter(
 
                 if (otherImages.size >= 2) {
                     holder.frameSub2.visibility = View.VISIBLE
-                    val moreCount = images.size - 3
-                    if (moreCount > 0) {
-                        holder.txtMoreOverlay.visibility = View.VISIBLE
-                        holder.txtMoreOverlay.text = "+$moreCount"
-                    } else {
-                        holder.txtMoreOverlay.visibility = View.GONE
-                    }
                 } else {
                     holder.frameSub2.visibility = View.GONE
                     Glide.with(holder.imgSub2).clear(holder.imgSub2)
-                    holder.txtMoreOverlay.visibility = View.GONE
                 }
             } else {
                 // Chỉ có 1 ảnh duy nhất: Ảnh chính phủ toàn bộ chiều ngang
+                val singleRadius = when (currentTheme) {
+                    com.example.photoevents.util.AppTheme.SAKURA -> 16 * density
+                    com.example.photoevents.util.AppTheme.MEMORY_CHEST -> 9 * density
+                    com.example.photoevents.util.AppTheme.MEMORY_JOURNAL -> 8 * density
+                }
                 holder.img.shapeAppearanceModel = holder.img.shapeAppearanceModel.toBuilder()
-                    .setTopLeftCornerSize(radius)
-                    .setTopRightCornerSize(radius)
+                    .setAllCornerSizes(singleRadius)
                     .build()
 
                 val mainParams = holder.frameMainImage.layoutParams as LinearLayout.LayoutParams
@@ -221,11 +349,11 @@ class EventsAdapter(
                 .into(holder.img)
 
             if (otherImages.isNotEmpty()) {
-                val availWidth = (cardWidth - gap).coerceAtLeast(10)
+                val availWidth = (usableWidth - gap).coerceAtLeast(10)
                 val subWidth = availWidth - mainTargetWidth
                 val hasTwoSubs = otherImages.size >= 2
-                val sub1Height = if (hasTwoSubs) (containerHeight - gap) / 2 else containerHeight
-                val sub2Height = if (hasTwoSubs) containerHeight - gap - sub1Height else 0
+                val sub1Height = if (hasTwoSubs) (usableHeight - gap) / 2 else usableHeight
+                val sub2Height = if (hasTwoSubs) usableHeight - gap - sub1Height else 0
 
                 val sub1 = otherImages[0]
                 val srcSub1: Any? = sub1.localImagePath ?: sub1.driveThumbnailLink
@@ -298,9 +426,13 @@ class EventsAdapter(
         } else {
             holder.btnAdjustFocus.visibility = View.GONE
             // Không có ảnh
+            val placeholderRadius = when (currentTheme) {
+                com.example.photoevents.util.AppTheme.SAKURA -> 16 * density
+                com.example.photoevents.util.AppTheme.MEMORY_CHEST -> 9 * density
+                com.example.photoevents.util.AppTheme.MEMORY_JOURNAL -> 8 * density
+            }
             holder.img.shapeAppearanceModel = holder.img.shapeAppearanceModel.toBuilder()
-                .setTopLeftCornerSize(radius)
-                .setTopRightCornerSize(radius)
+                .setAllCornerSizes(placeholderRadius)
                 .build()
 
             val mainParams = holder.frameMainImage.layoutParams as LinearLayout.LayoutParams

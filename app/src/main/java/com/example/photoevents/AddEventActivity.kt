@@ -184,11 +184,7 @@ class AddEventActivity : AppCompatActivity() {
                 }
                 // Bắn sync ngầm ngay — dùng SyncScope (sống theo cả app) chứ không phải
                 // lifecycleScope, vì Activity này finish() ngay sau đây.
-                DriveSession.getHelper(this@AddEventActivity)?.let { helper ->
-                    SyncScope.scope.launch {
-                        runCatching { SyncManager(applicationContext, helper).sync() }
-                    }
-                }
+                DriveSession.triggerSilentSync(applicationContext)
                 finish()
             }
         }
