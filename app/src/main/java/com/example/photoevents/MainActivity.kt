@@ -26,11 +26,14 @@ import com.google.api.services.drive.DriveScopes
 import com.example.photoevents.data.AppDatabase
 import com.example.photoevents.drive.DriveSession
 import com.example.photoevents.drive.SyncManager
+import com.example.photoevents.drive.SyncScope
 import com.example.photoevents.ui.BentoDialogHelper
 import com.example.photoevents.ui.EventsAdapter
 import com.example.photoevents.ui.FocusAdjustBottomSheet
 import com.example.photoevents.ui.SortOption
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -666,38 +669,59 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun runSync() {
-        lifecycleScope.launch {
+        val appContext = applicationContext
+        SyncScope.scope.launch {
             try {
-                val helper = DriveSession.getHelperSuspend(this@MainActivity)
+                val helper = DriveSession.getHelperSuspend(appContext)
                 if (helper == null) {
-                    swipeRefresh.isRefreshing = false
+                    withContext(Dispatchers.Main) {
+                        if (!isFinishing && !isDestroyed && ::swipeRefresh.isInitialized) {
+                            swipeRefresh.isRefreshing = false
+                        }
+                    }
                     return@launch
                 }
-                val result = SyncManager(this@MainActivity, helper).sync()
-                val updatedCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
-                customCategoriesFlow.value = updatedCustom
-                val deletedSet = com.example.photoevents.data.CategoryHelper.getDeletedCategories(this@MainActivity)
-                val currentClean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(selectedCategoryFlow.value)
-                if (deletedSet.contains(currentClean.lowercase())) {
-                    selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
-                }
-                categoryRevisionFlow.value++
+                val result = SyncManager(appContext, helper).sync()
+                withContext(Dispatchers.Main) {
+                    val updatedCustom = prefs.getStringSet(PREF_CUSTOM_CATEGORIES, emptySet()) ?: emptySet()
+                    customCategoriesFlow.value = updatedCustom
+                    val deletedSet = com.example.photoevents.data.CategoryHelper.getDeletedCategories(this@MainActivity)
+                    val currentClean = com.example.photoevents.data.CategoryHelper.extractCleanTextName(selectedCategoryFlow.value)
+                    if (deletedSet.contains(currentClean.lowercase())) {
+                        selectedCategoryFlow.value = com.example.photoevents.data.CategoryHelper.ALL_CATEGORY_ID
+                    }
+                    categoryRevisionFlow.value++
 
-                if (result.downloadFailed > 0) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Đã đồng bộ, nhưng ${result.downloadFailed} ảnh chưa tải về được: ${result.firstError}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    if (result.downloadFailed > 0) {
+                        Toast.makeText(
+                            appContext,
+                            "Đã đồng bộ, nhưng ${result.downloadFailed} ảnh chưa tải về được: ${result.firstError}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    if (!isFinishing && !isDestroyed && ::swipeRefresh.isInitialized) {
+                        swipeRefresh.isRefreshing = false
+                    }
                 }
                 // Đồng bộ thành công thì âm thầm, không hiện Toast — chỉ báo khi có lỗi.
+            } catch (e: CancellationException) {
+                // CancellationException là cơ chế huỷ luồng coroutine bình thường của hệ thống, không phải lỗi đồng bộ
+                withContext(NonCancellable + Dispatchers.Main) {
+                    if (!isFinishing && !isDestroyed && ::swipeRefresh.isInitialized) {
+                        swipeRefresh.isRefreshing = false
+                    }
+                }
+                throw e
             } catch (e: Exception) {
                 if (e is com.google.api.client.googleapis.json.GoogleJsonResponseException && e.statusCode == 401) {
                     DriveSession.clearSession()
                 }
-                Toast.makeText(this@MainActivity, "Lỗi đồng bộ: ${e.message}", Toast.LENGTH_LONG).show()
-            } finally {
-                swipeRefresh.isRefreshing = false
+                withContext(Dispatchers.Main) {
+                    if (!isFinishing && !isDestroyed && ::swipeRefresh.isInitialized) {
+                        swipeRefresh.isRefreshing = false
+                    }
+                    Toast.makeText(appContext, "Lỗi đồng bộ: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }

@@ -63,9 +63,7 @@ object ThemeHelper {
     private const val PREF_NAME = "theme_prefs"
     private const val KEY_THEME = "selected_theme"
 
-    private var isLifecycleRegistered = false
-    private var startedActivitiesCount = 0
-    private var pendingCleanupNeeded = false
+    private var isInitialAliasVerified = false
 
     fun getSavedTheme(context: Context): AppTheme {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -77,54 +75,48 @@ object ThemeHelper {
      * Bắt buộc gọi trước super.onCreate() trong tất cả các Activity
      */
     fun applyTheme(activity: Activity) {
-        registerLifecycleIfNeeded(activity.application)
+        ensureOnlyActiveAliasEnabled(activity.applicationContext)
         val theme = getSavedTheme(activity)
         activity.setTheme(theme.styleResId)
     }
 
-    private fun registerLifecycleIfNeeded(application: Application) {
-        if (isLifecycleRegistered) return
-        isLifecycleRegistered = true
+    /**
+     * Đảm bảo trên hệ điều hành chỉ có duy nhất 1 activity-alias của Theme hiện tại được bật (ENABLED).
+     * Tất cả các alias khác đều phải DISABLED.
+     * Tự động dọn dẹp các alias thừa/rác phát sinh từ các phiên bản trước đó trên launcher Samsung.
+     */
+    private fun ensureOnlyActiveAliasEnabled(context: Context) {
+        if (isInitialAliasVerified) return
+        isInitialAliasVerified = true
 
-        application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
-            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
-            override fun onActivityStarted(activity: Activity) {
-                startedActivitiesCount++
-            }
-            override fun onActivityResumed(activity: Activity) {}
-            override fun onActivityPaused(activity: Activity) {}
-            override fun onActivityStopped(activity: Activity) {
-                startedActivitiesCount = maxOf(0, startedActivitiesCount - 1)
-                // Khi người dùng thực sự rời khỏi app (không phải do recreate đổi theme):
-                if (!activity.isChangingConfigurations && startedActivitiesCount == 0 && pendingCleanupNeeded) {
-                    cleanUpOldAliases(activity.applicationContext)
-                }
-            }
-            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
-            override fun onActivityDestroyed(activity: Activity) {}
-        })
-    }
-
-    private fun cleanUpOldAliases(context: Context) {
         val currentTheme = getSavedTheme(context)
         val pm = context.packageManager
         val packageName = context.packageName
 
-        for (other in AppTheme.entries) {
-            if (other != currentTheme) {
-                val disableComponent = ComponentName(packageName, other.aliasName)
-                try {
-                    pm.setComponentEnabledSetting(
-                        disableComponent,
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                        PackageManager.DONT_KILL_APP
-                    )
-                } catch (e: Exception) {
-                    // Bỏ qua nếu đã tắt hoặc lỗi không nghiêm trọng
+        try {
+            for (other in AppTheme.entries) {
+                if (other != currentTheme) {
+                    val comp = ComponentName(packageName, other.aliasName)
+                    if (pm.getComponentEnabledSetting(comp) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+                        pm.setComponentEnabledSetting(
+                            comp,
+                            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                            PackageManager.DONT_KILL_APP
+                        )
+                    }
                 }
             }
+            val targetComp = ComponentName(packageName, currentTheme.aliasName)
+            if (pm.getComponentEnabledSetting(targetComp) != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                pm.setComponentEnabledSetting(
+                    targetComp,
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            }
+        } catch (e: Exception) {
+            // Bỏ qua lỗi PackageManager
         }
-        pendingCleanupNeeded = false
     }
 
     /**
@@ -138,17 +130,15 @@ object ThemeHelper {
     }
 
     /**
-     * Chuyển đổi Theme và Icon Launcher đồng bộ:
-     * - Lưu theme mới và kích hoạt alias mới ngay lập tức.
-     * - KHÔNG tắt alias cũ trong lúc app đang chạy để tránh Android OS kill task làm app bị văng ra Home Screen.
-     * - Recreate Activity mượt mà để giao diện đổi theme ngay lập tức mà người dùng vẫn ở nguyên trong ứng dụng.
-     * - Việc tắt alias cũ được trì hoãn an toàn khi người dùng thoát app ra màn hình chính (onActivityStopped).
+     * Chuyển đổi Theme và Icon Launcher đồng bộ theo Hướng 2:
+     * - Tắt (DISABLE) toàn bộ activity-alias của các theme khác TRƯỚC.
+     * - Bật (ENABLE) activity-alias của targetTheme SAU.
+     * - Tuyệt đối không để xảy ra thời điểm có 2 alias cùng ENABLED để Samsung One UI không chèn thêm icon mới vào App Drawer.
+     * - Recreate Activity hiện tại để giao diện đổi theme ngay lập tức.
      */
     fun switchThemeAndIcon(activity: Activity, targetTheme: AppTheme) {
         val currentTheme = getSavedTheme(activity)
         if (currentTheme == targetTheme) return
-
-        registerLifecycleIfNeeded(activity.application)
 
         // 1. Lưu theme được chọn vào SharedPreferences
         activity.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -156,21 +146,37 @@ object ThemeHelper {
             .putString(KEY_THEME, targetTheme.key)
             .apply()
 
-        // 2. Kích hoạt activity-alias của Launcher Icon mới
+        // 2. Chuyển đổi Launcher Icon: Tắt tất cả alias cũ TRƯỚC, rồi mới BẬT alias mới SAU
         val pm = activity.packageManager
         val packageName = activity.packageName
 
+        for (other in AppTheme.entries) {
+            if (other != targetTheme) {
+                val disableComponent = ComponentName(packageName, other.aliasName)
+                try {
+                    pm.setComponentEnabledSetting(
+                        disableComponent,
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        PackageManager.DONT_KILL_APP
+                    )
+                } catch (e: Exception) {
+                    // Bỏ qua nếu đã tắt hoặc lỗi không nghiêm trọng
+                }
+            }
+        }
+
         val enableComponent = ComponentName(packageName, targetTheme.aliasName)
-        pm.setComponentEnabledSetting(
-            enableComponent,
-            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-            PackageManager.DONT_KILL_APP
-        )
+        try {
+            pm.setComponentEnabledSetting(
+                enableComponent,
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP
+            )
+        } catch (e: Exception) {
+            // Bỏ qua nếu lỗi không nghiêm trọng
+        }
 
-        // Đánh dấu cần dọn dẹp các alias cũ khi người dùng rời app
-        pendingCleanupNeeded = true
-
-        // 3. Tải lại Activity hiện tại để áp dụng theme mới ngay lập tức, giữ người dùng ở nguyên trong ứng dụng
+        // 3. Tải lại Activity hiện tại để áp dụng theme mới ngay lập tức
         activity.recreate()
     }
 }
